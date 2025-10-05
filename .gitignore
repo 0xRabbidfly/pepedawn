@@ -118,3 +118,21 @@ public
 # Temporary folders
 tmp/
 temp/
+
+# Large files and media assets
+*.gif
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.tiff
+*.svg
+*.ico
+
+# Files larger than 50MB (use git-lfs instead)
+# Check file size before committing: git ls-files -s | awk '{if ($4 > 52428800) print $4/1024/1024 "MB " $NF}'

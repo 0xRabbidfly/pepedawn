@@ -26,6 +26,10 @@ out/
 *.swo
 *~
 
+# Cursor and VS Code workspace files
+*.code-workspace
+.cursor/
+
 # OS generated files
 .DS_Store
 .DS_Store?

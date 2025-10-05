@@ -18,6 +18,8 @@
    → Core: models, services, CLI commands
    → Integration: DB, middleware, logging
    → Polish: unit tests, performance, docs
+   → Observability: structured events/logging, read-only endpoints (round status, tickets, weights)
+   → On-chain specifics: VRF config, round params, emit events, prize vault mapping
 4. Apply task rules:
    → Different files = mark [P] for parallel
    → Same file = sequential (no [P])
@@ -75,6 +77,19 @@
 - [ ] T021 [P] Update docs/api.md
 - [ ] T022 Remove duplication
 - [ ] T023 Run manual-testing.md
+
+## Phase 3.6: Observability & Governance
+- [ ] T0XX [P] Emit round lifecycle events (created, opened, closed, snapshot_taken, randomness_requested,
+      randomness_fulfilled, winners_assigned, prizes_distributed)
+- [ ] T0XX [P] Add structured JSON logging with correlation and round ids
+- [ ] T0XX [P] Expose read-only endpoints: round status, ticket counts, weights, expected prize counts
+- [ ] T0XX Record deploy artifacts (addresses, ABIs, VRF config) in repo and announce via events
+
+## Phase 3.7: On-Chain Fairness & Distribution
+- [ ] T0XX Configure Chainlink VRF (subId, keyHash, callbackGasLimit)
+- [ ] T0XX Snapshot draw parameters prior to randomness request
+- [ ] T0XX Implement puzzle proof submission/verification and weight cap logic
+- [ ] T0XX Ensure prize distribution via Emblem Vault; map events from winners → vaults
 
 ## Dependencies
 - Tests (T004-T007) before implementation (T008-T014)

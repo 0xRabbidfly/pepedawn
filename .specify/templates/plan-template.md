@@ -18,7 +18,7 @@
    → Update Progress Tracking: Initial Constitution Check
 5. Execute Phase 0 → research.md
    → If NEEDS CLARIFICATION remain: ERROR "Resolve unknowns"
-6. Execute Phase 1 → contracts, data-model.md, quickstart.md, agent-specific template file (e.g., `CLAUDE.md` for Claude Code, `.github/copilot-instructions.md` for GitHub Copilot, `GEMINI.md` for Gemini CLI, `QWEN.md` for Qwen Code or `AGENTS.md` for opencode).
+6. Execute Phase 1 → contracts, data-model.md, quickstart.md, and the agent guidance file for the agent (e.g., `AGENT.md`).
 7. Re-evaluate Constitution Check section
    → If new violations: Refactor design, return to Phase 1
    → Update Progress Tracking: Post-Design Constitution Check
@@ -47,7 +47,34 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Project MUST demonstrate compliance with the constitution. For features touching rounds, wagers,
+randomness, or prize distribution, address each:
+
+- VRF Fairness:
+  - Identify VRF provider and network config (e.g., Chainlink VRF v2/v2.5).
+  - Show how randomness is reproducible from on-chain data (request id, seed, block).
+  - Confirm no off-chain salts post-wager; tests use deterministic PRNG only.
+  - Describe snapshot timing of draw parameters prior to VRF request.
+
+- On-Chain Wager & Escrow:
+  - Document round lifecycle (start/end) and on-chain storage.
+  - Specify min/max, caps, fee schedule, and emitted events.
+  - Describe queries for balances, ticket counts, and effective weights.
+
+- Skill-Weighted Odds via Puzzle Proofs:
+  - Define submission method (on-chain or signed message verification).
+  - Provide formula for bounded multipliers and hard caps.
+  - Describe anti-abuse constraints and events for adjustments.
+
+- Emblem Vault Distribution (No BTC/XCP ops):
+  - Specify prize tiers and pre-commitment (vault IDs or minting plan).
+  - Describe transfer to winners or escrow with on-chain eligibility proof.
+  - Map winners to vaults via events.
+
+- Spec-First, Test-First, Observability:
+  - Link to spec and failing tests (unit, invariant/fuzz, scenarios).
+  - Ensure structured events/logs with correlation and round ids.
+  - Expose read-only endpoints for round status, ticket counts, weights, expected prizes.
 
 ## Project Structure
 
@@ -152,7 +179,7 @@ directories captured above]
    - Quickstart test = story validation steps
 
 5. **Update agent file incrementally** (O(1) operation):
-   - Run `.specify/scripts/powershell/update-agent-context.ps1 -AgentType cursor`
+   - Run `.specify/scripts/powershell/update-agent-context.ps1 -AgentType <agent>`
      **IMPORTANT**: Execute it exactly as specified above. Do not add or remove any arguments.
    - If exists: Add only NEW tech from current plan
    - Preserve manual additions between markers
@@ -216,4 +243,4 @@ directories captured above]
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*

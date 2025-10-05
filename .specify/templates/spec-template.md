@@ -100,6 +100,13 @@ When creating this spec from a user prompt:
 - [ ] Scope is clearly bounded
 - [ ] Dependencies and assumptions identified
 
+### Constitution Alignment (PEPEDAWN)
+- [ ] If randomness involved: Specifies VRF provider and reproducibility from on-chain data
+- [ ] If wagers/rounds involved: Defines on-chain storage, lifecycle, and events
+- [ ] If puzzle weights involved: Defines submission, formula, caps, and anti-abuse rules
+- [ ] If prize distribution involved: Uses Emblem Vault only, tiers pre-committed, event mappings
+- [ ] Spec-first and test-first approach explicit; observability requirements listed
+
 ---
 
 ## Execution Status

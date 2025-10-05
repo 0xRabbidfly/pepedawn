@@ -1,50 +1,105 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version: new 1.0.0 (initial adoption)
+- Modified principles: N/A (initial)
+- Added sections: Domain Constraints, Security, and Compliance; Development Workflow, Quality Gates, and Release Policy
+- Removed sections: None
+- Templates requiring updates:
+  - ✅ .specify/templates/plan-template.md
+  - ✅ .specify/templates/spec-template.md
+  - ✅ .specify/templates/tasks-template.md
+  - ⚠ .specify/templates/commands/*.md (not present)
+- Follow-ups: None
+-->
+
+# PEPEDAWN Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Verifiable Fairness (VRF-backed random draws)
+- Rationale: Users must be able to independently verify that winners are selected fairly.
+- Rules:
+  - Random winner selection MUST use an on-chain verifiable randomness provider (e.g., Chainlink VRF v2/v2.5).
+  - All draws MUST be reproducible from on-chain data (request id, seed, block number).
+  - No off-chain secret salt may influence outcomes post-wager.
+  - Development environments MAY use deterministic PRNG only for tests; never in production.
+  - Draw parameters (round id, eligible ticket set, weights) MUST be snapshotted on-chain or provably derivable from on-chain events prior to randomness request.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. On-Chain Wager Accounting and Escrow
+- Rationale: Bets and weights must be transparent and immutable.
+- Rules:
+  - All wagers MUST be recorded in an Ethereum smart contract with clear state transitions.
+  - Each round has a defined start/end timestamp (multi-week cadence) stored on-chain.
+  - ETH wagers are held in the contract until settlement; no off-chain custody.
+  - Bet caps, min/max stake, and fee schedule MUST be configurable per round and emitted via events.
+  - User balances, ticket counts, and effective weights MUST be queryable on-chain and emitted via events.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Skill-Weighted Odds via Puzzle Proofs
+- Rationale: Solving steganographic puzzles increases odds while remaining auditable.
+- Rules:
+  - Puzzle solutions MUST be submitted on-chain or proven via a signed message verified by the contract.
+  - Each unique puzzle per round can increase a wallet’s weight by a bounded multiplier (e.g., +x%) subject to a hard cap.
+  - Weight gains MUST be deterministic, formulaic, and publicly documented; no manual overrides.
+  - Anti-abuse constraints: one solution per wallet per puzzle; identical solutions across wallets are permitted unless disallowed by spec; total weight cap per wallet MUST be enforced.
+  - All accepted solutions/weight adjustments MUST be emitted via events and factored into the pre-randomness snapshot.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Emblem Vault Distribution; No Direct Bitcoin Chain Touch
+- Rationale: We distribute Counterparty fakes (PEPEDAWN) without interacting with Bitcoin directly.
+- Rules:
+  - Prizes MUST be distributed as Emblem Vault-wrapped assets/NFTs on Ethereum; no direct BTC/XCP chain ops.
+  - Prize tiers (Gold/Silver/Bronze packs) and their vault token IDs or minting process MUST be pre-committed per round.
+  - Distribution MUST transfer prizes directly to winning ETH addresses or escrow for manual claim with on-chain eligibility proof.
+  - Mapping from winners to prize vaults MUST be emitted via events for auditability.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Spec-First, Test-First, and Observability
+- Rationale: Predictable delivery and safety depend on specs, tests, and telemetry.
+- Rules:
+  - Spec-driven development is MANDATORY; feature work begins with specs and tests (Red-Green-Refactor).
+  - Contracts MUST include unit tests, invariant/property tests, and scenario tests for rounds, weights, draws, and payouts.
+  - Public functions MUST emit structured events; services MUST log structured JSON with correlation ids and round ids.
+  - CLI/HTTP interfaces MUST provide read-only endpoints for round status, ticket counts, weights, and expected prize counts.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Domain Constraints, Security, and Compliance
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Rounds:
+  - Duration: multi-week; exact timestamps set per round and immutable once started.
+  - Parameters (fees, caps, tier counts) MUST be announced via on-chain events before wagers open.
+- Security:
+  - Contracts MUST undergo automated static analysis and differential fuzzing in CI; severity HIGH blockers MUST be resolved before deploy.
+  - Upgradability (if any) MUST be restricted via timelock + multisig; upgrade intent MUST be announced via events.
+  - Payout and randomness code paths MUST have explicit re-entrancy protection, checks-effects-interactions ordering, and pull-pattern withdrawals where applicable.
+- Compliance and Eligibility:
+  - Eligibility rules MUST be configurable; default denylist/allowlist strategy documented.
+  - The app MUST present clear disclaimers and age/jurisdiction gating (enforced off-chain in the web tier; on-chain lists where legally required).
+- Economics:
+  - Fee recipients and percentages MUST be configurable per round and emitted via events.
+  - Prize reserves MUST be verifiably funded before wagers open (e.g., vaults pre-minted and escrowed or attestations published).
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow, Quality Gates, and Release Policy
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Workflow:
+  - All changes require a spec and tests prior to implementation.
+  - CI MUST run lint, unit, fuzz/invariant tests, gas snapshots, and contract size checks.
+  - Minimum coverage thresholds: contracts ≥ 90% line/branch; critical paths 100% branch on access control and payout.
+- Releases:
+  - Versioning adheres to SemVer across contracts and services.
+  - Deploy artifacts (addresses, ABIs, VRF config) MUST be recorded in repo and announced via events on deployment.
+- Runtime Observability:
+  - Emit round lifecycle events: created, opened, closed, snapshot_taken, randomness_requested, randomness_fulfilled, winners_assigned, prizes_distributed.
+  - Public read endpoints MUST reflect on-chain state; discrepancies are operational incidents.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- Authority:
+  - This constitution supersedes other practices for randomness, escrow, and prize distribution.
+- Amendments:
+  - Proposals require rationale, impact, migration plan, and risk assessment.
+  - MINOR: add/expand principles/sections; PATCH: clarifications; MAJOR: incompatible governance/principle removals/redefinitions.
+  - Amendments require approval by project maintainers (multisig vote or documented consent) and MUST bump version and LAST_AMENDED_DATE.
+- Compliance:
+  - All PRs MUST reference applicable principles and demonstrate compliance in description/checklist.
+  - Merges blocked if CI, security gates, or coverage thresholds fail.
+- Records:
+  - Maintain a CHANGELOG entry for each constitution update with version, date, and summary of changes.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-05

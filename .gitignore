@@ -10,9 +10,7 @@ lerna-debug.log*
 build/
 out/
 .vite/
-# Ignore dist generally but allow frontend dist for deployment
-dist/
-!frontend/dist/
+# Note: frontend/dist/ is tracked for deployment
 
 # Environment variables
 .env

@@ -221,7 +221,7 @@ export async function updateLeaderboard(contract) {
     
     // Show current user stats if available
     const leaderboardData = [];
-    if (window.pepedawn && window.pepedawn.userAddress) {
+    if (window.pepedawn && window.pepedawn.userAddress && currentRoundId > 0) {
       try {
         const stats = await contract.getUserStats(currentRoundId, window.pepedawn.userAddress);
         const fakeOdds = roundData.totalWeight > 0 
@@ -236,7 +236,7 @@ export async function updateLeaderboard(contract) {
           hasProof: stats.hasProof
         });
       } catch (error) {
-        console.error('Error fetching user stats:', error);
+        console.warn('Error fetching user stats (round may not exist):', error);
       }
     }
     
@@ -308,8 +308,20 @@ export async function updateUserStats(contract, userAddress) {
     }
     
     // Get user stats for current round
-    const stats = await contract.getUserStats(currentRoundId, userAddress);
-    const roundData = await contract.getRound(currentRoundId);
+    let stats, roundData;
+    try {
+      stats = await contract.getUserStats(currentRoundId, userAddress);
+      roundData = await contract.getRound(currentRoundId);
+    } catch (error) {
+      console.warn('Round does not exist or user has no stats:', error);
+      // Show "no round" state
+      if (userTickets) userTickets.textContent = '0';
+      if (userWeight) userWeight.textContent = '0';
+      if (userProofStatus) userProofStatus.textContent = 'Round Not Created';
+      if (userFakeOdds) userFakeOdds.textContent = '0%';
+      if (capRemaining) capRemaining.textContent = '1.0';
+      return;
+    }
     
     // Update tickets
     if (userTickets) {

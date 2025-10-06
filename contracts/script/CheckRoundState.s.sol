@@ -26,31 +26,19 @@ contract CheckRoundStateScript is Script {
         }
         
         // Get round details
-        (
-            uint256 id,
-            uint64 startTime,
-            uint64 endTime,
-            uint8 status,
-            uint256 totalTickets,
-            uint256 totalWeight,
-            uint256 totalWagered,
-            uint256 vrfRequestId,
-            uint64 vrfRequestedAt,
-            bool feesDistributed,
-            uint256 participantCount
-        ) = raffle.getRound(currentRoundId);
+        PepedawnRaffle.Round memory round = raffle.getRound(currentRoundId);
         
         console.log("\n=== ROUND", currentRoundId, "DETAILS ===");
-        console.log("Status:", getStatusName(status));
-        console.log("Start Time:", startTime);
-        console.log("End Time:", endTime);
-        console.log("Total Tickets:", totalTickets);
-        console.log("Total Weight:", totalWeight);
-        console.log("Total Wagered:", totalWagered, "wei");
-        console.log("Participant Count:", participantCount);
-        console.log("VRF Request ID:", vrfRequestId);
-        console.log("VRF Requested At:", vrfRequestedAt);
-        console.log("Fees Distributed:", feesDistributed);
+        console.log("Status:", getStatusName(uint8(round.status)));
+        console.log("Start Time:", round.startTime);
+        console.log("End Time:", round.endTime);
+        console.log("Total Tickets:", round.totalTickets);
+        console.log("Total Weight:", round.totalWeight);
+        console.log("Total Wagered:", round.totalWagered, "wei");
+        console.log("Participant Count:", round.participantCount);
+        console.log("VRF Request ID:", round.vrfRequestId);
+        console.log("VRF Requested At:", round.vrfRequestedAt);
+        console.log("Fees Distributed:", round.feesDistributed);
         
         // Check contract security state
         console.log("\n=== SECURITY STATE ===");
@@ -59,6 +47,7 @@ contract CheckRoundStateScript is Script {
         
         // Provide next steps based on status
         console.log("\n=== NEXT STEPS ===");
+        uint8 status = uint8(round.status);
         if (status == 0) { // Created
             console.log("Round is created but not open. Call openRound(", currentRoundId, ") to open it.");
         } else if (status == 1) { // Open

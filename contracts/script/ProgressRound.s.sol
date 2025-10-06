@@ -22,46 +22,48 @@ contract ProgressRoundScript is Script {
         if (currentRoundId == 0) {
             console.log("No round exists. Creating new round...");
             raffle.createRound();
-            console.log("✅ Round created!");
+            console.log("Round created successfully!");
             vm.stopBroadcast();
             return;
         }
         
         // Get current round status
-        (, , , uint8 status, , , , , , , ) = raffle.getRound(currentRoundId);
+        PepedawnRaffle.Round memory round = raffle.getRound(currentRoundId);
+        uint8 status = uint8(round.status);
         console.log("Current Status:", getStatusName(status));
         
         if (status == 2) { // Closed - need to snapshot
             console.log("Taking snapshot...");
             raffle.snapshotRound(currentRoundId);
-            console.log("✅ Snapshot taken!");
+            console.log("Snapshot taken successfully!");
             
             // Update status for next check
-            (, , , status, , , , , , , ) = raffle.getRound(currentRoundId);
+            round = raffle.getRound(currentRoundId);
+            status = uint8(round.status);
         }
         
         if (status == 3) { // Snapshot - need VRF request
             console.log("Requesting VRF...");
             raffle.requestVRF(currentRoundId);
-            console.log("✅ VRF requested!");
-            console.log("⏳ Waiting for Chainlink VRF response...");
+            console.log("VRF requested successfully!");
+            console.log("Waiting for Chainlink VRF response...");
         }
         
         if (status == 4) { // VRF Requested
-            console.log("⏳ Round is waiting for VRF response from Chainlink.");
+            console.log("Round is waiting for VRF response from Chainlink.");
             console.log("This may take a few minutes. Once VRF responds, prizes will be distributed automatically.");
         }
         
         if (status == 5) { // Distributed
-            console.log("✅ Round completed! Creating new round...");
+            console.log("Round completed! Creating new round...");
             raffle.createRound();
             
             uint256 newRoundId = raffle.currentRoundId();
-            console.log("✅ New round created! Round ID:", newRoundId);
+            console.log("New round created! Round ID:", newRoundId);
             
             console.log("Opening new round...");
             raffle.openRound(newRoundId);
-            console.log("✅ Round", newRoundId, "is now open for betting!");
+            console.log("Round", newRoundId, "is now open for betting!");
         }
         
         vm.stopBroadcast();

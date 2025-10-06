@@ -327,15 +327,20 @@ export async function updateUserStats(contract, userAddress) {
       // Now safely get user stats
       stats = await contract.getUserStats(currentRoundId, userAddress);
     } catch (error) {
-      // Reduce console noise - only log if it's not the expected "no round" case
-      if (!error.message.includes('execution reverted') && !error.message.includes('Round not initialized')) {
+      // Completely silence expected contract errors to prevent console spam
+      const isExpectedError = error.message.includes('execution reverted') || 
+                             error.message.includes('Round not initialized') ||
+                             error.message.includes('call revert exception') ||
+                             error.code === 'CALL_EXCEPTION';
+      
+      if (!isExpectedError) {
         console.warn('Unexpected error fetching round data:', error);
       }
       
       // Show "no round" state
       if (userTickets) userTickets.textContent = '0';
       if (userWeight) userWeight.textContent = '0';
-      if (userProofStatus) userProofStatus.textContent = 'Round Not Created';
+      if (userProofStatus) userProofStatus.textContent = 'Round Not Available';
       if (userFakeOdds) userFakeOdds.textContent = '0%';
       if (capRemaining) capRemaining.textContent = '1.0';
       return;

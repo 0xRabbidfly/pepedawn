@@ -259,14 +259,20 @@ function setupContractEventListeners() {
   try {
     console.log('🎧 Setting up enhanced contract event listeners...');
     
+    // Remove any existing listeners to prevent duplicates
+    contract.removeAllListeners();
+    
     // Round lifecycle events
-    contract.on('RoundCreated', (roundId, startTime, endTime, event) => {
+    contract.on('RoundCreated', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId, startTime, endTime] = args;
+      
       const eventData = { 
         roundId: roundId.toString(), 
         startTime: Number(startTime), 
         endTime: Number(endTime),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('🆕 Round created:', eventData);
       logEvent('RoundCreated', eventData);
@@ -275,11 +281,14 @@ function setupContractEventListeners() {
       updateRoundStatus(contract);
     });
     
-    contract.on('RoundOpened', (roundId, event) => {
+    contract.on('RoundOpened', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId] = args;
+      
       const eventData = { 
         roundId: roundId.toString(),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('🟢 Round opened:', eventData);
       logEvent('RoundOpened', eventData);
@@ -288,11 +297,14 @@ function setupContractEventListeners() {
       updateRoundStatus(contract);
     });
     
-    contract.on('RoundClosed', (roundId, event) => {
+    contract.on('RoundClosed', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId] = args;
+      
       const eventData = { 
         roundId: roundId.toString(),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('🔴 Round closed:', eventData);
       logEvent('RoundClosed', eventData);
@@ -301,13 +313,16 @@ function setupContractEventListeners() {
       updateRoundStatus(contract);
     });
     
-    contract.on('RoundSnapshot', (roundId, totalTickets, totalWeight, event) => {
+    contract.on('RoundSnapshot', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId, totalTickets, totalWeight] = args;
+      
       const eventData = { 
         roundId: roundId.toString(),
         totalTickets: totalTickets.toString(),
         totalWeight: totalWeight.toString(),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('📸 Round snapshot:', eventData);
       logEvent('RoundSnapshot', eventData);
@@ -317,15 +332,18 @@ function setupContractEventListeners() {
     });
     
     // User interaction events
-    contract.on('BetPlaced', (roundId, user, amount, tickets, weight, event) => {
+    contract.on('BetPlaced', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId, user, amount, tickets, weight] = args;
+      
       const eventData = {
         roundId: roundId.toString(),
         user: user.toLowerCase(),
         amount: ethers.formatEther(amount),
         tickets: tickets.toString(),
         weight: weight.toString(),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('🎲 Bet placed:', eventData);
       logEvent('BetPlaced', eventData);
@@ -771,8 +789,13 @@ function startPeriodicUpdates() {
           await updateUserStats(contract, userAddress);
         }
       } catch (error) {
-        // Silently handle expected errors when no round exists
-        if (!error.message.includes('execution reverted')) {
+        // Completely silence expected contract errors to prevent console spam
+        const isExpectedError = error.message.includes('execution reverted') || 
+                               error.message.includes('call revert exception') ||
+                               error.code === 'CALL_EXCEPTION' ||
+                               error.code === 3; // MetaMask execution reverted code
+        
+        if (!isExpectedError) {
           console.error('Periodic update error:', error);
         }
       }
@@ -785,8 +808,13 @@ function startPeriodicUpdates() {
       try {
         showSecurityStatus(contract, userAddress);
       } catch (error) {
-        // Silently handle expected errors
-        if (!error.message.includes('execution reverted')) {
+        // Completely silence expected contract errors to prevent console spam
+        const isExpectedError = error.message.includes('execution reverted') || 
+                               error.message.includes('call revert exception') ||
+                               error.code === 'CALL_EXCEPTION' ||
+                               error.code === 3; // MetaMask execution reverted code
+        
+        if (!isExpectedError) {
           console.error('Security status error:', error);
         }
       }

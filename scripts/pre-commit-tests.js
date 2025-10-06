@@ -43,9 +43,22 @@ try {
     
     console.log('✅ All smart contract tests passed!');
     
-    // Run frontend linting (skipping TypeScript checking for JavaScript project)
-    console.log('🔍 Running frontend linting...');
+    // Run frontend build and linting
+    console.log('🔍 Running frontend build...');
     process.chdir(path.join(__dirname, '..', 'frontend'));
+    
+    try {
+        execSync('npm run build', { 
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+        console.log('✅ Frontend build completed!');
+    } catch (error) {
+        console.error('❌ Frontend build failed!');
+        process.exit(1);
+    }
+    
+    console.log('🔍 Running frontend linting...');
     try {
         execSync('npm run lint', { 
             stdio: 'inherit',

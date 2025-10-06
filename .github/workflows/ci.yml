@@ -24,7 +24,7 @@ jobs:
         ls -la frontend/dist/
         echo "✅ Pre-built files found and ready for deployment"
         
-    - name: Deploy to FTP (Small Files First)
+    - name: Deploy to FTP
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
@@ -46,24 +46,7 @@ jobs:
           **/vite.config.js
           **/src/**
           **/public/deploy/**
-          **/assets/*.js
         log-level: verbose
         timeout: 600000
-        dry-run: false
-        dangerous-clean-slate: false
-        
-    - name: Deploy Large JS Files Separately
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        local-dir: ./frontend/dist/assets/
-        server-dir: /assets/
-        include: |
-          *.js
-        log-level: verbose
-        timeout: 1800000
         dry-run: false
         dangerous-clean-slate: false

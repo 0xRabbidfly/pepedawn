@@ -62,7 +62,9 @@ jobs:
         run: |
           cd frontend
           rm -f package-lock.json
-          npm install
+          rm -rf node_modules
+          npm cache clean --force
+          npm install --no-optional --no-audit --no-fund
       
       - name: Run TypeScript type checking
         run: cd frontend && npm run type-check

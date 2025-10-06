@@ -16,6 +16,10 @@ export default defineConfig({
         betting: 'main.html',
         rules: 'rules.html'
       }
+    },
+    // Handle platform-specific dependencies
+    commonjsOptions: {
+      include: [/node_modules/]
     }
   },
   
@@ -26,5 +30,10 @@ export default defineConfig({
   define: {
     // Enable development mode features
     __DEV__: true
+  },
+  
+  // Optimize dependencies to handle platform issues
+  optimizeDeps: {
+    include: ['ethers']
   }
 })

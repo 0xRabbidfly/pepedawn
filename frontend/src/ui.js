@@ -239,8 +239,8 @@ export async function updateLeaderboard(contract) {
           });
         }
       } catch (error) {
-        // Only log unexpected errors, not the expected "no round" case
-        if (!error.message.includes('execution reverted')) {
+        // Silently handle expected errors when no round exists
+        if (!error.message.includes('execution reverted') && !error.message.includes('Round not initialized')) {
           console.warn('Error fetching user stats for leaderboard:', error);
         }
       }
@@ -304,7 +304,7 @@ export async function updateUserStats(contract, userAddress) {
     const currentRoundId = await contract.currentRoundId();
     
     if (currentRoundId.toString() === '0') {
-      // No active round
+      // No active round - update UI and return early
       if (userTickets) userTickets.textContent = '0';
       if (userWeight) userWeight.textContent = '0';
       if (userProofStatus) userProofStatus.textContent = 'No Active Round';

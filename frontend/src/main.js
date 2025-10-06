@@ -760,25 +760,38 @@ async function submitProof() {
 
 // Start periodic updates with security monitoring
 function startPeriodicUpdates() {
-  // Update round status every 30 seconds
+  // Update round status every 60 seconds (reduced frequency)
   setInterval(async () => {
     if (contract) {
-      await updateRoundStatus(contract);
-      await updateLeaderboard(contract);
-      
-      if (userAddress) {
-        await updateUserStats(contract, userAddress);
+      try {
+        await updateRoundStatus(contract);
+        await updateLeaderboard(contract);
+        
+        if (userAddress) {
+          await updateUserStats(contract, userAddress);
+        }
+      } catch (error) {
+        // Silently handle expected errors when no round exists
+        if (!error.message.includes('execution reverted')) {
+          console.error('Periodic update error:', error);
+        }
+      }
+    }
+  }, 60000);
+  
+  // Security status check every 30 seconds (reduced frequency)
+  setInterval(async () => {
+    if (contract && userAddress) {
+      try {
         showSecurityStatus(contract, userAddress);
+      } catch (error) {
+        // Silently handle expected errors
+        if (!error.message.includes('execution reverted')) {
+          console.error('Security status error:', error);
+        }
       }
     }
   }, 30000);
-  
-  // Security status check every 10 seconds
-  setInterval(async () => {
-    if (contract && userAddress) {
-      showSecurityStatus(contract, userAddress);
-    }
-  }, 10000);
   
   // Initial update
   if (contract) {

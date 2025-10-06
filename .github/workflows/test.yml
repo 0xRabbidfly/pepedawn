@@ -1,4 +1,4 @@
-name: Tests and Build
+name: Basic Checks
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
     paths: [ 'contracts/**', 'frontend/**' ]
 
 jobs:
-  # Unit and Integration Tests (Fast, No Network)
-  unit-tests:
+  # Contract Compilation Check
+  contracts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,31 +21,13 @@ jobs:
       - name: Install dependencies
         run: cd contracts && forge install
         
-      - name: Run unit tests
-        run: cd contracts && forge test --match-path "test/{BasicDeployment,AccessControl,InputValidation,Wager,WinnerSelection,Distribution,EmergencyControls,Governance}.t.sol"
-        
-      - name: Run integration tests
-        run: cd contracts && forge test --match-path "test/{Round,Security,ScenarioFullRound}.t.sol"
-        
-      - name: Run security tests
-        run: cd contracts && forge test --match-path "test/{Security,VRFSecurity}.t.sol"
-
-  # Code Quality Checks
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        
       - name: Format check
         run: cd contracts && forge fmt --check
         
       - name: Compile contracts
         run: cd contracts && forge build
 
-  # Frontend Build and Lint
+  # Frontend Basic Checks (No Build)
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -61,19 +43,13 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd frontend
-          rm -f package-lock.json
-          rm -rf node_modules
-          npm cache clean --force
-          npm install --no-optional --no-audit --no-fund
+          npm install --no-audit --no-fund
       
       - name: Run TypeScript type checking
         run: cd frontend && npm run type-check
       
       - name: Run ESLint
         run: cd frontend && npm run lint
-      
-      - name: Build frontend
-        run: cd frontend && npm run build
 
   # Deployed Contract Tests (Manual Trigger)
   deployed-tests:

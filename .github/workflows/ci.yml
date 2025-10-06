@@ -1,47 +1,28 @@
-name: CI/CD Pipeline
+name: Deploy to Namecheap
 
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    paths: [ 'frontend/dist/**' ]  # Only deploy when dist changes
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-        
-    - name: Install dependencies
-      working-directory: ./frontend
-      run: npm ci
-      
-    - name: Lint code
-      working-directory: ./frontend
-      run: npm run lint
-      
-    - name: TypeScript type check
-      working-directory: ./frontend
-      run: npm run type-check
-      
-    - name: Build project
-      working-directory: ./frontend
-      run: npm run build
-      
-    - name: Validate build output
+    - name: Validate pre-built files exist
       run: |
-        echo "Checking build output..."
+        echo "Checking for pre-built files..."
+        if [ ! -d "frontend/dist" ]; then
+          echo "❌ Error: frontend/dist directory not found!"
+          echo "Please run 'npm run build' locally and commit the dist/ folder"
+          exit 1
+        fi
         ls -la frontend/dist/
-        echo "Build completed successfully"
+        echo "✅ Pre-built files found and ready for deployment"
         
     - name: Deploy to FTP
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'

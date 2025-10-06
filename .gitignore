@@ -7,10 +7,12 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Build outputs
-dist/
 build/
 out/
 .vite/
+# Ignore dist generally but allow frontend dist for deployment
+dist/
+!frontend/dist/
 
 # Environment variables
 .env

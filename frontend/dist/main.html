@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PEPEDAWN - Betting Interface</title>
+    <script type="module" crossorigin src="/assets/main-D4iuziHU.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-DXiJJ4mx.css">
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>PEPEDAWN Raffle</h1>
+        <nav>
+          <a href="/">Home</a>
+          <a href="/main.html" class="active">Bet</a>
+          <a href="/rules.html">Rules</a>
+        </nav>
+      </header>
+
+      <main>
+        <section id="wallet-section">
+          <button id="connect-wallet">Connect Wallet</button>
+          <div id="wallet-info" style="display: none;">
+            <p>Connected: <span id="wallet-address"></span></p>
+            <p>Balance: <span id="wallet-balance"></span> ETH</p>
+          </div>
+        </section>
+
+        <section id="round-status">
+          <h2>Current Round</h2>
+          <div id="round-info">
+            <p>Status: <span id="round-status-text">Loading...</span></p>
+            <p>Time Remaining: <span id="time-remaining">--</span></p>
+            <p>Total Tickets: <span id="total-tickets">--</span></p>
+          </div>
+        </section>
+
+        <section id="betting-section">
+          <h2>Place Your Bet</h2>
+          <div id="betting-form">
+            <div class="ticket-options">
+              <button class="ticket-btn" data-tickets="1" data-amount="0.005">
+                1 Ticket - 0.005 ETH
+              </button>
+              <button class="ticket-btn" data-tickets="5" data-amount="0.0225">
+                5 Tickets - 0.0225 ETH (10% discount)
+              </button>
+              <button class="ticket-btn" data-tickets="10" data-amount="0.04">
+                10 Tickets - 0.04 ETH (20% discount)
+              </button>
+            </div>
+            <div id="bet-summary" style="display: none;">
+              <p>Tickets: <span id="selected-tickets">0</span></p>
+              <p>Amount: <span id="selected-amount">0</span> ETH</p>
+              <p>Your Cap Remaining: <span id="cap-remaining">1.0</span> ETH</p>
+              <button id="place-bet">Place Bet</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="proof-section">
+          <h2>Puzzle Proof Submission</h2>
+          <div id="proof-form">
+            <p>Submit one puzzle proof per round to get +40% weight multiplier</p>
+            <textarea id="proof-input" placeholder="Paste your puzzle proof here..."></textarea>
+            <button id="submit-proof">Submit Proof</button>
+            <div id="proof-status"></div>
+          </div>
+        </section>
+
+        <section id="leaderboard">
+          <h2>Live Leaderboard</h2>
+          <div id="leaderboard-list">
+            <p>Loading leaderboard...</p>
+          </div>
+        </section>
+
+        <section id="status-panel">
+          <h2>Your Status</h2>
+          <div id="user-stats">
+            <p>Your Tickets: <span id="user-tickets">0</span></p>
+            <p>Your Weight: <span id="user-weight">0</span></p>
+            <p>Proof Submitted: <span id="user-proof-status">No</span></p>
+            <p>Expected Fake Packs: <span id="user-fake-odds">0%</span></p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+  </body>
+</html>

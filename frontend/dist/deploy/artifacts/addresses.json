@@ -1,0 +1,16 @@
+{
+  "11155111": {
+    "PepedawnRaffle": "0xe4f1960f2be2bdc038206f5a7ac7adf297ea9025",
+    "deployedAt": "2025-01-31T10:14:36.772Z",
+    "deployedBy": "0xae8ca7a6e52af06d523c797ce210661e99a59a04",
+    "deploymentTx": "0x079e30f0c8d9e0bdb33c820906fa45d0b7274324f3cc4b76f29e65e3d8a7bd6e",
+    "verified": false
+  },
+  "1": {
+    "PepedawnRaffle": null,
+    "deployedAt": null,
+    "deployedBy": null,
+    "deploymentTx": null,
+    "verified": false
+  }
+}

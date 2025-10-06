@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PEPEDAWN - Rules & About</title>
+    <script type="module" crossorigin src="/assets/main-D4iuziHU.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-DXiJJ4mx.css">
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>PEPEDAWN Raffle</h1>
+        <nav>
+          <a href="/">Home</a>
+          <a href="/main.html">Bet</a>
+          <a href="/rules.html" class="active">Rules</a>
+        </nav>
+      </header>
+
+      <main>
+        <section id="rules-content">
+          <h2>How PEPEDAWN Works</h2>
+          
+          <h3>Timeline</h3>
+          <ul>
+            <li><strong>Round Duration:</strong> 2 weeks per round</li>
+            <li><strong>Betting Phase:</strong> Open for most of the round</li>
+            <li><strong>Proof Submission:</strong> Available after placing first bet</li>
+            <li><strong>Draw Phase:</strong> Uses Chainlink VRF for verifiable randomness</li>
+            <li><strong>Distribution:</strong> Automatic Emblem Vault prize distribution</li>
+          </ul>
+
+          <h3>Betting Rules</h3>
+          <ul>
+            <li><strong>Minimum Bet:</strong> 0.005 ETH (1 ticket)</li>
+            <li><strong>Bundle Discounts:</strong>
+              <ul>
+                <li>5 tickets = 0.0225 ETH (10% discount)</li>
+                <li>10 tickets = 0.04 ETH (20% discount)</li>
+              </ul>
+            </li>
+            <li><strong>Per-Wallet Cap:</strong> 1.0 ETH maximum per round</li>
+            <li><strong>Network:</strong> Ethereum mainnet/testnet only</li>
+          </ul>
+
+          <h3>Skill-Weighted Odds</h3>
+          <ul>
+            <li><strong>Puzzle Proofs:</strong> Submit one proof per round</li>
+            <li><strong>Weight Bonus:</strong> +40% multiplier on your effective weight</li>
+            <li><strong>Hard Cap:</strong> Maximum +40% increase, no stacking</li>
+            <li><strong>Verification:</strong> On-chain or signed message verification</li>
+          </ul>
+
+          <h3>Randomness & Fairness</h3>
+          <ul>
+            <li><strong>VRF Provider:</strong> Chainlink VRF v2/v2.5</li>
+            <li><strong>Snapshot:</strong> Eligible tickets and weights captured before VRF request</li>
+            <li><strong>Reproducibility:</strong> All randomness derived from request ID, seed, and block</li>
+            <li><strong>No Manipulation:</strong> No off-chain salts after wagering begins</li>
+          </ul>
+
+          <h3>Prize Distribution</h3>
+          <ul>
+            <li><strong>Prize Tiers:</strong> Fake Packs, Kek Packs, Pepe Packs</li>
+            <li><strong>Source:</strong> Emblem Vault preloaded assets</li>
+            <li><strong>Distribution:</strong> Automatic post-VRF fulfillment</li>
+            <li><strong>Transparency:</strong> All winner assignments recorded on-chain</li>
+          </ul>
+
+          <h3>Fee Structure</h3>
+          <ul>
+            <li><strong>Creators:</strong> 80% of fees</li>
+            <li><strong>Next Round:</strong> 20% of fees</li>
+            <li><strong>Settlement:</strong> Applied at round close</li>
+            <li><strong>Events:</strong> All fee distributions logged on-chain</li>
+          </ul>
+
+          <h3>Expected Value (EV)</h3>
+          <p>The expected value varies based on:</p>
+          <ul>
+            <li>Total number of participants</li>
+            <li>Your ticket count and weight multiplier</li>
+            <li>Prize tier distribution</li>
+            <li>Current Emblem Vault asset values</li>
+          </ul>
+
+          <h3>Technical Details</h3>
+          <ul>
+            <li><strong>Smart Contracts:</strong> Solidity 0.8.x on Ethereum</li>
+            <li><strong>Testing:</strong> Foundry unit and invariant tests</li>
+            <li><strong>Frontend:</strong> Minimal vanilla JS with ethers v6</li>
+            <li><strong>Performance:</strong> ≤100KB JS bundle for fast loading</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "pepedawn",
+  "version": "1.0.0",
+  "description": "Pepedawn Raffle Smart Contract and Frontend",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "pre-commit": "node scripts/pre-commit-tests.js"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

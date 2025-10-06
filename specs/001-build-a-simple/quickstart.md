@@ -50,13 +50,36 @@ cp .env.example .env
 
 ### 3. Run Tests
 ```bash
-# Test smart contracts
+# Test smart contracts locally (no deployment needed)
 cd contracts
 forge test
 
 # Test frontend (basic)
 cd ../frontend
 npm run test
+```
+
+**⚠️ Expected Results**: 
+- **✅ BasicDeploymentTest**: Should pass (local contract deployment)
+- **❌ DeployedContractTest**: Will fail until you deploy to testnet
+- **❌ Other tests**: May fail due to VRF/ownership issues (expected for now)
+
+**To test deployed contract after deployment**:
+```bash
+# Load environment variables from .env
+Get-Content .env | ForEach-Object { if($_ -match "^([^#][^=]+)=(.*)$") { [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process") } }
+# Test deployed contract specifically
+forge test --match-path "test/DeployedContractTest.t.sol" --fork-url $env:SEPOLIA_RPC_URL
+```
+
+**⚠️ Important Note**: The test suite includes `DeployedContractTest` which requires a deployed contract on Sepolia. If you haven't deployed yet, you'll see failures like "call to non-contract address". To deploy:
+
+```bash
+# Deploy to Sepolia (requires environment setup)
+forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+
+# Or deploy manually using Remix IDE (recommended for beginners)
+# See deployment section below for details
 ```
 
 ### 4. Start Development
@@ -124,13 +147,55 @@ forge coverage
 ```
 
 #### 3. Deploy to Testnet
+
+**Option A: Deploy with Foundry (Advanced)**
 ```bash
+# Set up environment variables (create .env file in contracts/ directory)
+# Required variables:
+# SEPOLIA_RPC_URL=https://sepolia.drpc.org  # or your Infura/Alchemy URL
+# PRIVATE_KEY=0x...  # your wallet private key
+# VRF_COORDINATOR=0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625
+# VRF_SUBSCRIPTION_ID=1
+# VRF_KEY_HASH=0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c
+# CREATORS_ADDRESS=0x...  # your address
+# EMBLEM_VAULT_ADDRESS=0x...  # your address
+
+# Test deployment first (simulation)
+$env:SEPOLIA_RPC_URL = "https://sepolia.drpc.org"
+forge script script/Deploy.s.sol --rpc-url $env:SEPOLIA_RPC_URL
+
 # Deploy to Sepolia
-forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+forge script script/Deploy.s.sol --rpc-url $env:SEPOLIA_RPC_URL --broadcast
 
 # Update contract addresses in frontend
 cp deploy/artifacts/addresses.json frontend/public/deploy/
+
+# Test deployed contract
+forge test --match-path "test/DeployedContractTest.t.sol" --fork-url $env:SEPOLIA_RPC_URL
 ```
+
+**Option B: Deploy with Remix IDE (Recommended for beginners)**
+1. Open [Remix IDE](https://remix.ethereum.org/)
+2. Create new file: `PepedawnRaffle.sol`
+3. Copy your contract code
+4. Compile with Solidity 0.8.20
+5. In "Deploy & Run Transactions":
+   - Environment: "Injected Web3" (MetaMask)
+   - Network: Sepolia Testnet
+   - Contract: PepedawnRaffle
+   - Constructor parameters:
+     - VRF Coordinator: `0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625`
+     - Subscription ID: `1`
+     - Key Hash: `0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c`
+     - Creators Address: Your address
+     - Emblem Vault Address: Your address
+6. Deploy and copy the contract address
+
+**⚠️ Important Notes**:
+- **DeployedContractTest**: The test suite includes tests that connect to a deployed contract. Without deployment, you'll see "call to non-contract address" errors.
+- **Environment Variables**: Foundry requires environment variables to be set in the shell session (not just in .env file)
+- **RPC URLs**: Some Infura projects may not have Sepolia access. Use `https://sepolia.drpc.org` as a fallback.
+- **Testing Deployed Contracts**: Use `--fork-url` when testing deployed contracts to connect to the actual network.
 
 ### Frontend Development
 
@@ -286,6 +351,22 @@ foundryup
 forge clean
 forge build
 ```
+
+#### "call to non-contract address" or DeployedContractTest failures
+This happens when `forge test` tries to connect to a deployed contract that doesn't exist or has the wrong address.
+
+**Solutions:**
+1. **Deploy the contract first** (see deployment section above)
+2. **Update the contract address** in `test/DeployedContractTest.t.sol`:
+   ```solidity
+   address constant DEPLOYED_CONTRACT = 0xYOUR_NEW_CONTRACT_ADDRESS;
+   ```
+3. **Run only local tests** (skip deployed contract tests):
+   ```bash
+   forge test --match-path "test/BasicDeployment.t.sol"
+   forge test --match-path "test/AccessControl.t.sol"
+   # etc. (skip DeployedContractTest.t.sol)
+   ```
 
 #### "Frontend won't connect to wallet"
 - Check MetaMask is installed and unlocked

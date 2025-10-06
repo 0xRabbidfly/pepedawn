@@ -33,7 +33,7 @@ jobs:
     - name: Run Foundry security profile tests
       run: |
         cd contracts
-        forge test --profile security
+        forge test --match-path "test/{Security,VRFSecurity}.t.sol"
     
     - name: Install Slither
       run: |

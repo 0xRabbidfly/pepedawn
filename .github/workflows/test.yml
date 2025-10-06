@@ -1,0 +1,82 @@
+name: Smart Contract Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ 'contracts/**' ]
+  pull_request:
+    branches: [ main, develop ]
+    paths: [ 'contracts/**' ]
+
+jobs:
+  # Unit and Integration Tests (Fast, No Network)
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        
+      - name: Install dependencies
+        run: cd contracts && forge install
+        
+      - name: Run unit tests
+        run: cd contracts && forge test --match-path "test/{BasicDeployment,AccessControl,InputValidation,Wager,WinnerSelection,Distribution,EmergencyControls,Governance}.t.sol"
+        
+      - name: Run integration tests
+        run: cd contracts && forge test --match-path "test/{Round,Security,ScenarioFullRound}.t.sol"
+        
+      - name: Run security tests
+        run: cd contracts && forge test --match-path "test/{Security,VRFSecurity}.t.sol"
+
+  # Code Quality Checks
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        
+      - name: Format check
+        run: cd contracts && forge fmt --check
+        
+      - name: Compile contracts
+        run: cd contracts && forge build
+
+  # Deployed Contract Tests (Manual Trigger)
+  deployed-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        
+      - name: Install dependencies
+        run: cd contracts && forge install
+        
+      - name: Run deployed contract tests
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+        run: cd contracts && forge test --match-path "test/DeployedContractTest.t.sol"
+
+  # VRF Tests (Manual Trigger - Requires Funding)
+  vrf-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        
+      - name: Install dependencies
+        run: cd contracts && forge install
+        
+      - name: Run VRF tests
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+        run: cd contracts && forge test --profile vrf

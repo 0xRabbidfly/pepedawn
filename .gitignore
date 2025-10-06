@@ -57,13 +57,17 @@ coverage/
 .nyc_output/
 
 # Foundry/Forge specific
-cache/
-lib/
-broadcast/
+contracts/cache/
+contracts/lib/
+contracts/out/
+contracts/broadcast/
 *.sol.cache
 foundry.lock
-script/
-test/
+# Note: scripts/ and test/ directories should be committed as they contain project code
+
+# Foundry build artifacts that shouldn't be committed
+contracts/out/
+contracts/cache/
 
 # Temporary files
 tmp/

@@ -6,7 +6,7 @@ test = "test"
 cache_path = "cache"
 
 # Solidity version
-solc_version = "0.8.19"
+solc_version = "0.8.20"
 
 # Optimizer settings
 optimizer = true
@@ -32,6 +32,30 @@ evm_version = "london"
 via_ir = true
 bytecode_hash = "none"
 cbor_metadata = false
+
+# Security and linting enhancements
+[profile.default.model_checker]
+contracts = { "src/PepedawnRaffle.sol" = ["PepedawnRaffle"] }
+engine = "chc"
+timeout = 20000
+targets = ["assert", "underflow", "overflow", "divByZero", "constantCondition", "popEmptyArray", "outOfBounds"]
+
+# Enhanced security warnings
+extra_output = ["storageLayout", "devdoc", "userdoc"]
+extra_output_files = ["storageLayout", "devdoc", "userdoc"]
+
+# Strict compilation settings for security
+deny_warnings = true
+ignored_error_codes = []
+
+# Security-focused compiler settings
+[profile.security]
+optimizer = false  # Disable optimizer for security analysis
+optimizer_runs = 1
+verbosity = 3
+fuzz_runs = 10000
+invariant_runs = 1000
+invariant_depth = 100
 
 [profile.ci]
 fuzz_runs = 10000

@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { validateNetwork, SECURITY_CONFIG } from './contract-config.js';
 
 // Initialize UI components
 export function initUI() {
@@ -54,13 +55,14 @@ function resetForms() {
   ticketBtns.forEach(btn => btn.classList.remove('selected'));
 }
 
-// Update wallet information display
+// Update wallet information display with security validations
 export async function updateWalletInfo(address, provider) {
   try {
     const walletInfo = document.getElementById('wallet-info');
     const walletAddress = document.getElementById('wallet-address');
     const walletBalance = document.getElementById('wallet-balance');
     const connectBtn = document.getElementById('connect-wallet');
+    const networkStatus = document.getElementById('network-status');
     
     if (walletAddress) {
       walletAddress.textContent = formatAddress(address);
@@ -70,6 +72,24 @@ export async function updateWalletInfo(address, provider) {
       const balance = await provider.getBalance(address);
       const balanceEth = ethers.formatEther(balance);
       walletBalance.textContent = parseFloat(balanceEth).toFixed(4);
+    }
+    
+    // Validate and display network status
+    if (provider && networkStatus) {
+      try {
+        const network = await provider.getNetwork();
+        validateNetwork(network.chainId);
+        
+        const networkName = SECURITY_CONFIG.NETWORK_NAMES[Number(network.chainId)] || `Chain ${network.chainId}`;
+        networkStatus.textContent = `✅ ${networkName}`;
+        networkStatus.className = 'network-status valid';
+      } catch (networkError) {
+        networkStatus.textContent = `❌ ${networkError.message}`;
+        networkStatus.className = 'network-status invalid';
+        
+        // Show network switch prompt
+        showNetworkSwitchPrompt();
+      }
     }
     
     if (walletInfo) {
@@ -83,6 +103,7 @@ export async function updateWalletInfo(address, provider) {
     
   } catch (error) {
     console.error('Error updating wallet info:', error);
+    showTransactionStatus('Failed to update wallet information', 'error');
   }
 }
 
@@ -393,4 +414,171 @@ export function hideTransactionStatus() {
   if (statusEl) {
     statusEl.style.display = 'none';
   }
+}
+
+// Show network switch prompt
+export function showNetworkSwitchPrompt() {
+  const supportedNetworks = SECURITY_CONFIG.SUPPORTED_NETWORKS
+    .map(id => SECURITY_CONFIG.NETWORK_NAMES[id] || `Chain ID ${id}`)
+    .join(', ');
+  
+  const message = `Please switch to a supported network: ${supportedNetworks}`;
+  showTransactionStatus(message, 'warning');
+  
+  // Add switch network button if MetaMask is available
+  if (window.ethereum && window.ethereum.request) {
+    const switchBtn = document.createElement('button');
+    switchBtn.textContent = 'Switch to Sepolia';
+    switchBtn.className = 'switch-network-btn';
+    switchBtn.onclick = async () => {
+      try {
+        await switchToSepolia();
+        hideTransactionStatus();
+      } catch (error) {
+        console.error('Failed to switch network:', error);
+        showTransactionStatus('Failed to switch network: ' + error.message, 'error');
+      }
+    };
+    
+    const statusEl = document.getElementById('tx-status');
+    if (statusEl && !statusEl.querySelector('.switch-network-btn')) {
+      statusEl.appendChild(switchBtn);
+    }
+  }
+}
+
+// Switch to Sepolia testnet
+export async function switchToSepolia() {
+  if (!window.ethereum) {
+    throw new Error('MetaMask not detected');
+  }
+  
+  try {
+    // Try to switch to Sepolia
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0xaa36a7' }], // Sepolia chainId in hex
+    });
+  } catch (switchError) {
+    // If Sepolia is not added, add it
+    if (switchError.code === 4902) {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [{
+          chainId: '0xaa36a7',
+          chainName: 'Sepolia Testnet',
+          nativeCurrency: {
+            name: 'SepoliaETH',
+            symbol: 'ETH',
+            decimals: 18,
+          },
+          rpcUrls: ['https://sepolia.infura.io/v3/'],
+          blockExplorerUrls: ['https://sepolia.etherscan.io/'],
+        }],
+      });
+    } else {
+      throw switchError;
+    }
+  }
+}
+
+// Enhanced security status display
+export function showSecurityStatus(contract, userAddress) {
+  if (!contract || !userAddress) return;
+  
+  const securityEl = document.getElementById('security-status');
+  if (!securityEl) return;
+  
+  // Check security status
+  Promise.all([
+    contract.paused().catch(() => false),
+    contract.emergencyPaused().catch(() => false),
+    contract.denylisted(userAddress).catch(() => false)
+  ]).then(([paused, emergencyPaused, denylisted]) => {
+    let status = '✅ All systems operational';
+    let className = 'security-status normal';
+    
+    if (denylisted) {
+      status = '🚫 Address is denylisted';
+      className = 'security-status error';
+    } else if (emergencyPaused) {
+      status = '⚠️ Emergency pause active';
+      className = 'security-status warning';
+    } else if (paused) {
+      status = '⏸️ Contract paused';
+      className = 'security-status warning';
+    }
+    
+    securityEl.textContent = status;
+    securityEl.className = className;
+  }).catch(error => {
+    console.error('Error checking security status:', error);
+    securityEl.textContent = '❓ Security status unknown';
+    securityEl.className = 'security-status unknown';
+  });
+}
+
+// Validate transaction parameters
+export function validateTransactionParams(params) {
+  const { amount, tickets, userAddress } = params;
+  
+  // Validate amount
+  if (!amount || isNaN(amount) || amount <= 0) {
+    throw new Error('Invalid bet amount');
+  }
+  
+  // Validate tickets
+  if (!tickets || !Number.isInteger(tickets) || tickets <= 0) {
+    throw new Error('Invalid ticket count');
+  }
+  
+  // Validate user address
+  if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+    throw new Error('Invalid user address');
+  }
+  
+  return true;
+}
+
+// Simple transaction monitoring for small-scale site
+export function monitorTransaction(txHash, type) {
+  console.log(`📡 ${type} transaction: ${txHash}`);
+  return { hash: txHash, type: type };
+}
+
+// Simple transaction status update
+export function updateTransactionStatus(txHash, status) {
+  console.log(`📊 Transaction ${txHash}: ${status}`);
+}
+
+// Enhanced error handling with user feedback
+export function handleTransactionError(error, txType) {
+  console.error(`Transaction error (${txType}):`, error);
+  
+  let userMessage = 'Transaction failed';
+  let errorType = 'error';
+  
+  // Parse common error types
+  if (error.message.includes('user rejected')) {
+    userMessage = 'Transaction cancelled by user';
+    errorType = 'info';
+  } else if (error.message.includes('insufficient funds')) {
+    userMessage = 'Insufficient ETH balance for transaction';
+  } else if (error.message.includes('gas')) {
+    userMessage = 'Transaction failed due to gas issues';
+  } else if (error.message.includes('nonce')) {
+    userMessage = 'Transaction nonce error - please try again';
+  } else if (error.message.includes('network')) {
+    userMessage = 'Network error - please check connection';
+  } else if (error.code === 'CALL_EXCEPTION') {
+    userMessage = 'Contract call failed - check requirements';
+  }
+  
+  showTransactionStatus(userMessage, errorType);
+  
+  return {
+    message: userMessage,
+    type: errorType,
+    originalError: error
+  };
 }

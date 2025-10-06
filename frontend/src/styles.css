@@ -517,15 +517,39 @@ section h2 {
   color: var(--error-color);
 }
 
-/* Responsive Design */
+/* Enhanced Responsive Design for Small-Scale Site */
+
+/* Tablet and small desktop */
+@media (max-width: 1024px) {
+  main {
+    padding: var(--spacing-lg);
+  }
+  
+  .title-container {
+    max-width: 70vw;
+  }
+  
+  .ticket-options {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+/* Mobile landscape and portrait */
 @media (max-width: 768px) {
   header {
     flex-direction: column;
     text-align: center;
+    padding: var(--spacing-md);
   }
   
   nav {
     justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  nav a {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
   }
   
   main {
@@ -534,6 +558,7 @@ section h2 {
   
   section {
     padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
   }
   
   .title-container {
@@ -555,12 +580,14 @@ section h2 {
   
   .title-actions {
     gap: var(--spacing-sm);
+    flex-direction: column;
   }
   
   .leaderboard-header,
   .leaderboard-entry {
     grid-template-columns: 40px 1fr 60px 60px 80px;
     font-size: var(--font-size-sm);
+    padding: var(--spacing-sm);
   }
   
   .title-gif {
@@ -572,11 +599,56 @@ section h2 {
     width: 150px;
     height: 150px;
   }
+  
+  /* Mobile-friendly buttons */
+  button {
+    min-height: 44px; /* Touch-friendly size */
+    font-size: var(--font-size-base);
+  }
+  
+  /* Mobile-friendly form inputs */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Transaction status positioning for mobile */
+  .tx-status {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    max-width: none;
+    text-align: center;
+  }
 }
 
+/* Small mobile devices */
 @media (max-width: 480px) {
+  header {
+    padding: var(--spacing-sm);
+  }
+  
+  header h1 {
+    font-size: var(--font-size-xl);
+  }
+  
+  nav {
+    gap: var(--spacing-sm);
+  }
+  
+  nav a {
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+  }
+  
+  main {
+    padding: var(--spacing-sm);
+  }
+  
   .title-logo {
     font-size: 2.5rem;
+    letter-spacing: 0.05em;
   }
   
   .title-subtitle {
@@ -585,14 +657,28 @@ section h2 {
   
   .title-description {
     font-size: var(--font-size-sm);
+    line-height: 1.4;
   }
   
   .title-container {
     padding: var(--spacing-sm);
+    max-width: 98vw;
   }
   
+  .title-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .title-actions button {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  /* Single column layouts for mobile */
   .ticket-options {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
   }
   
   #user-stats {
@@ -601,5 +687,51 @@ section h2 {
   
   #round-info {
     grid-template-columns: 1fr;
+  }
+  
+  /* Simplified leaderboard for small screens */
+  .leaderboard-header,
+  .leaderboard-entry {
+    grid-template-columns: 30px 1fr 50px 70px;
+    font-size: var(--font-size-sm);
+    gap: var(--spacing-xs);
+  }
+  
+  /* Hide less important columns on very small screens */
+  .leaderboard-header .tickets,
+  .leaderboard-entry .tickets {
+    display: none;
+  }
+  
+  /* Stack form elements vertically */
+  .form-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .form-group label {
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  /* Larger touch targets */
+  .ticket-btn {
+    min-height: 50px;
+    font-size: var(--font-size-base);
+  }
+  
+  /* Simplified sections */
+  section {
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  section h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  section h3 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-xs);
   }
 }

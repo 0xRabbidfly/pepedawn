@@ -13,9 +13,13 @@
     "deploy:prod": "npm run build && echo 'Production build completed - deploy dist/ folder'"
   },
   "devDependencies": {
-    "typescript": "~5.9.3",
-    "vite": "^7.1.7",
-    "eslint": "^8.57.0"
+    "typescript": "~5.6.3",
+    "vite": "^5.4.8",
+    "eslint": "^9.12.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-config-security": "^1.4.0"
   },
   "dependencies": {
     "ethers": "^6.15.0"

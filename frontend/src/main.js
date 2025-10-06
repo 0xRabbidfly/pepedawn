@@ -1,13 +1,44 @@
 import { ethers } from 'ethers';
 import './styles.css';
-import { initUI, updateWalletInfo, updateRoundStatus, updateLeaderboard, updateUserStats, showTransactionStatus } from './ui.js';
-import { CONTRACT_CONFIG, validateContractConfig } from './contract-config.js';
+import { 
+  initUI, 
+  updateWalletInfo, 
+  updateRoundStatus, 
+  updateLeaderboard, 
+  updateUserStats, 
+  showTransactionStatus,
+  showSecurityStatus,
+  validateTransactionParams,
+  monitorTransaction,
+  updateTransactionStatus,
+  handleTransactionError
+} from './ui.js';
+import { 
+  CONTRACT_CONFIG, 
+  validateContractConfig, 
+  validateNetwork,
+  sanitizeInput,
+  checkRateLimit,
+  validateSecurityState,
+  SECURITY_CONFIG
+} from './contract-config.js';
 
 // Global state
 let provider = null;
 let signer = null;
 let contract = null;
 let userAddress = null;
+
+// Simple event logging for small-scale site
+function logEvent(eventType, eventData) {
+  console.log(`🎲 ${eventType}:`, eventData);
+}
+
+// Format Ethereum address for display
+function formatAddress(address) {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 
 // Initialize the application
 async function init() {
@@ -61,13 +92,15 @@ function setupEventListeners() {
   }
 }
 
-// Connect to wallet
+// Connect to wallet with enhanced security validations
 async function connectWallet() {
   try {
     if (!window.ethereum) {
-      alert('Please install MetaMask or another Web3 wallet');
+      showTransactionStatus('Please install MetaMask or another Web3 wallet', 'error');
       return;
     }
+    
+    showTransactionStatus('Connecting to wallet...', 'info');
     
     // Request account access
     await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -79,24 +112,95 @@ async function connectWallet() {
     
     console.log('Wallet connected:', userAddress);
     
+    // Validate network
+    try {
+      const network = await provider.getNetwork();
+      validateNetwork(network.chainId);
+      console.log('✅ Network validated:', SECURITY_CONFIG.NETWORK_NAMES[Number(network.chainId)]);
+    } catch (networkError) {
+      console.warn('⚠️ Network validation failed:', networkError.message);
+      showTransactionStatus(networkError.message, 'warning');
+    }
+    
+    // Set up network change listener
+    if (window.ethereum.on) {
+      window.ethereum.on('chainChanged', handleNetworkChange);
+      window.ethereum.on('accountsChanged', handleAccountChange);
+    }
+    
     // Update UI
-    updateWalletInfo(userAddress, provider);
+    await updateWalletInfo(userAddress, provider);
     
     // Load contract with signer
     await loadContract();
     
-    // Update user stats
+    // Update user stats and security status
     if (contract) {
       await updateUserStats(contract, userAddress);
+      showSecurityStatus(contract, userAddress);
     }
+    
+    showTransactionStatus('Wallet connected successfully', 'success');
     
   } catch (error) {
     console.error('Error connecting wallet:', error);
-    alert('Failed to connect wallet: ' + error.message);
+    showTransactionStatus('Failed to connect wallet: ' + error.message, 'error');
   }
 }
 
-// Load contract from configuration
+// Handle network changes
+function handleNetworkChange(chainId) {
+  console.log('Network changed to:', chainId);
+  
+  try {
+    validateNetwork(chainId);
+    console.log('✅ Network change validated');
+    
+    // Reload contract and update UI
+    loadContract().then(() => {
+      if (userAddress) {
+        updateWalletInfo(userAddress, provider);
+        if (contract) {
+          updateUserStats(contract, userAddress);
+          showSecurityStatus(contract, userAddress);
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.warn('⚠️ Network change validation failed:', error.message);
+    showTransactionStatus(error.message, 'warning');
+  }
+}
+
+// Handle account changes
+function handleAccountChange(accounts) {
+  console.log('Account changed:', accounts);
+  
+  if (accounts.length === 0) {
+    // User disconnected wallet
+    userAddress = null;
+    signer = null;
+    contract = null;
+    
+    // Reset UI
+    const walletInfo = document.getElementById('wallet-info');
+    if (walletInfo) walletInfo.style.display = 'none';
+    
+    const connectBtn = document.getElementById('connect-wallet');
+    if (connectBtn) {
+      connectBtn.textContent = 'Connect Wallet';
+      connectBtn.disabled = false;
+    }
+    
+    showTransactionStatus('Wallet disconnected', 'info');
+  } else {
+    // Account switched - reconnect
+    connectWallet();
+  }
+}
+
+// Load contract from configuration with enhanced security
 async function loadContract() {
   try {
     // Validate contract configuration
@@ -107,10 +211,13 @@ async function loadContract() {
     
     // Check if we're on the correct network
     if (provider) {
-      const network = await provider.getNetwork();
-      if (Number(network.chainId) !== CONTRACT_CONFIG.chainId) {
-        console.warn(`⚠️ Wrong network! Expected Sepolia (${CONTRACT_CONFIG.chainId}), got ${network.chainId}`);
-        console.log('Please switch to Sepolia testnet in MetaMask');
+      try {
+        const network = await provider.getNetwork();
+        validateNetwork(network.chainId);
+        console.log('✅ Network validated for contract loading');
+      } catch (networkError) {
+        console.warn('⚠️ Network validation failed:', networkError.message);
+        showTransactionStatus(networkError.message, 'warning');
         return;
       }
     }
@@ -124,6 +231,16 @@ async function loadContract() {
     
     console.log('✅ Contract loaded:', CONTRACT_CONFIG.address);
     
+    // Verify contract is accessible
+    try {
+      await contract.currentRoundId();
+      console.log('✅ Contract accessibility verified');
+    } catch (contractError) {
+      console.error('❌ Contract not accessible:', contractError.message);
+      showTransactionStatus('Contract not accessible. Please check deployment.', 'error');
+      return;
+    }
+    
     // Set up event listeners
     if (contract) {
       setupContractEventListeners();
@@ -131,21 +248,94 @@ async function loadContract() {
     
   } catch (error) {
     console.error('Error loading contract:', error);
+    showTransactionStatus('Failed to load contract: ' + error.message, 'error');
   }
 }
 
-// Set up contract event listeners
+// Set up comprehensive contract event listeners with error handling
 function setupContractEventListeners() {
   if (!contract) return;
   
   try {
-    // Listen for wager events (Remix version uses 'BetPlaced')
+    console.log('🎧 Setting up enhanced contract event listeners...');
+    
+    // Round lifecycle events
+    contract.on('RoundCreated', (roundId, startTime, endTime, event) => {
+      const eventData = { 
+        roundId: roundId.toString(), 
+        startTime: Number(startTime), 
+        endTime: Number(endTime),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🆕 Round created:', eventData);
+      logEvent('RoundCreated', eventData);
+      
+      showTransactionStatus(`New round #${eventData.roundId} created!`, 'success');
+      updateRoundStatus(contract);
+    });
+    
+    contract.on('RoundOpened', (roundId, event) => {
+      const eventData = { 
+        roundId: roundId.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🟢 Round opened:', eventData);
+      logEvent('RoundOpened', eventData);
+      
+      showTransactionStatus(`Round #${eventData.roundId} is now open for betting!`, 'success');
+      updateRoundStatus(contract);
+    });
+    
+    contract.on('RoundClosed', (roundId, event) => {
+      const eventData = { 
+        roundId: roundId.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🔴 Round closed:', eventData);
+      logEvent('RoundClosed', eventData);
+      
+      showTransactionStatus(`Round #${eventData.roundId} closed. No more bets accepted.`, 'info');
+      updateRoundStatus(contract);
+    });
+    
+    contract.on('RoundSnapshot', (roundId, totalTickets, totalWeight, event) => {
+      const eventData = { 
+        roundId: roundId.toString(),
+        totalTickets: totalTickets.toString(),
+        totalWeight: totalWeight.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('📸 Round snapshot:', eventData);
+      logEvent('RoundSnapshot', eventData);
+      
+      showTransactionStatus(`Round #${eventData.roundId} snapshot taken. Preparing for draw...`, 'info');
+      updateRoundStatus(contract);
+    });
+    
+    // User interaction events
     contract.on('BetPlaced', (roundId, user, amount, tickets, weight, event) => {
-      console.log('Bet placed:', { user, roundId: roundId.toString(), amount: ethers.formatEther(amount), tickets: tickets.toString() });
+      const eventData = {
+        roundId: roundId.toString(),
+        user: user.toLowerCase(),
+        amount: ethers.formatEther(amount),
+        tickets: tickets.toString(),
+        weight: weight.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🎲 Bet placed:', eventData);
+      logEvent('BetPlaced', eventData);
       
       // Update UI if it's the current user
-      if (user.toLowerCase() === userAddress?.toLowerCase()) {
+      if (eventData.user === userAddress?.toLowerCase()) {
+        showTransactionStatus(`✅ Your bet confirmed! ${eventData.tickets} tickets for ${eventData.amount} ETH`, 'success');
         updateUserStats(contract, userAddress);
+      } else {
+        showTransactionStatus(`New bet: ${eventData.tickets} tickets by ${formatAddress(eventData.user)}`, 'info');
       }
       
       // Update leaderboard and round status
@@ -153,37 +343,187 @@ function setupContractEventListeners() {
       updateLeaderboard(contract);
     });
     
-    // Listen for proof events (Remix version uses 'ProofSubmitted')
     contract.on('ProofSubmitted', (roundId, user, weight, event) => {
-      console.log('Proof submitted:', { user, roundId: roundId.toString(), weight: weight.toString() });
+      const eventData = {
+        roundId: roundId.toString(),
+        user: user.toLowerCase(),
+        weight: weight.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🧩 Proof submitted:', eventData);
+      logEvent('ProofSubmitted', eventData);
       
       // Update UI if it's the current user
-      if (user.toLowerCase() === userAddress?.toLowerCase()) {
+      if (eventData.user === userAddress?.toLowerCase()) {
+        showTransactionStatus(`✅ Puzzle proof confirmed! Weight bonus applied.`, 'success');
         updateUserStats(contract, userAddress);
+      } else {
+        showTransactionStatus(`Puzzle solved by ${formatAddress(eventData.user)}!`, 'info');
       }
       
       // Update leaderboard
       updateLeaderboard(contract);
     });
     
-    // Listen for round events
-    contract.on('RoundCreated', (roundId, startTime, endTime, event) => {
-      console.log('Round created:', { roundId: roundId.toString(), startTime, endTime });
+    // VRF and prize distribution events
+    contract.on('VRFRequested', (roundId, requestId, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        requestId: requestId.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🎰 VRF requested:', eventData);
+      logEvent('VRFRequested', eventData);
+      
+      showTransactionStatus(`🎰 Random number requested for round #${eventData.roundId}. Drawing winners...`, 'info');
       updateRoundStatus(contract);
     });
     
-    contract.on('RoundOpened', (roundId, event) => {
-      console.log('Round opened:', { roundId: roundId.toString() });
+    contract.on('PrizesDistributed', (roundId, randomWords, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        randomWords: randomWords.map(w => w.toString()),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🏆 Prizes distributed:', eventData);
+      logEvent('PrizesDistributed', eventData);
+      
+      showTransactionStatus(`🏆 Winners selected for round #${eventData.roundId}! Check results.`, 'success');
+      updateRoundStatus(contract);
+      updateLeaderboard(contract);
+    });
+    
+    // Emblem Vault integration events
+    contract.on('EmblemVaultPrizeAssigned', (roundId, winner, assetId, timestamp, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        winner: winner.toLowerCase(),
+        assetId: assetId.toString(),
+        timestamp: Number(timestamp),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🎁 Emblem Vault prize assigned:', eventData);
+      logEvent('EmblemVaultPrizeAssigned', eventData);
+      
+      // Show notification if it's the current user
+      if (eventData.winner === userAddress?.toLowerCase()) {
+        showTransactionStatus(`🎁 Congratulations! You won asset #${eventData.assetId}!`, 'success');
+      }
+    });
+    
+    contract.on('RoundPrizesDistributed', (roundId, winnerCount, timestamp, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        winnerCount: Number(winnerCount),
+        timestamp: Number(timestamp),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🏆 Round prizes distribution completed:', eventData);
+      logEvent('RoundPrizesDistributed', eventData);
+      
+      showTransactionStatus(`🏆 Round #${eventData.roundId} completed! ${eventData.winnerCount} prizes distributed.`, 'success');
       updateRoundStatus(contract);
     });
     
-    contract.on('RoundClosed', (roundId, event) => {
-      console.log('Round closed:', { roundId: roundId.toString() });
-      updateRoundStatus(contract);
+    contract.on('FeesDistributed', (roundId, creatorsAmount, nextRoundAmount, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        creatorsAmount: ethers.formatEther(creatorsAmount),
+        nextRoundAmount: ethers.formatEther(nextRoundAmount),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('💰 Fees distributed:', eventData);
+      logEvent('FeesDistributed', eventData);
     });
+    
+    // Security events
+    contract.on('AddressDenylisted', (user, status, event) => {
+      const eventData = {
+        user: user.toLowerCase(),
+        status: status,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🚫 Address denylist status changed:', eventData);
+      logEvent('AddressDenylisted', eventData);
+      
+      if (eventData.user === userAddress?.toLowerCase()) {
+        const message = status ? 'Your address has been denylisted' : 'Your address has been removed from denylist';
+        showTransactionStatus(message, status ? 'error' : 'success');
+        showSecurityStatus(contract, userAddress);
+      }
+    });
+    
+    contract.on('EmergencyPauseToggled', (paused, event) => {
+      const eventData = {
+        paused: paused,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('⚠️ Emergency pause toggled:', eventData);
+      logEvent('EmergencyPauseToggled', eventData);
+      
+      const message = paused ? 'Emergency pause activated' : 'Emergency pause deactivated';
+      showTransactionStatus(message, paused ? 'warning' : 'success');
+      
+      if (userAddress) {
+        showSecurityStatus(contract, userAddress);
+      }
+    });
+    
+    contract.on('CircuitBreakerTriggered', (roundId, reason, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        reason: reason,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('🔒 Circuit breaker triggered:', eventData);
+      logEvent('CircuitBreakerTriggered', eventData);
+      
+      showTransactionStatus(`⚠️ Circuit breaker: ${eventData.reason}`, 'warning');
+    });
+    
+    contract.on('SecurityValidationFailed', (user, reason, event) => {
+      const eventData = {
+        user: user.toLowerCase(),
+        reason: reason,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('❌ Security validation failed:', eventData);
+      logEvent('SecurityValidationFailed', eventData);
+      
+      if (eventData.user === userAddress?.toLowerCase()) {
+        showTransactionStatus(`Security validation failed: ${eventData.reason}`, 'error');
+      }
+    });
+    
+    // VRF security events
+    contract.on('VRFTimeoutDetected', (roundId, requestTime, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        requestTime: requestTime.toString(),
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('⏰ VRF timeout detected:', eventData);
+      logEvent('VRFTimeoutDetected', eventData);
+      
+      showTransactionStatus(`⏰ VRF timeout detected for round #${eventData.roundId}`, 'warning');
+    });
+    
+    console.log('✅ Contract event listeners set up successfully');
     
   } catch (error) {
-    console.error('Error setting up contract event listeners:', error);
+    console.error('❌ Error setting up contract event listeners:', error);
+    showTransactionStatus('Failed to set up event listeners', 'error');
   }
 }
 
@@ -205,11 +545,11 @@ function selectTickets(event) {
   btn.classList.add('selected');
 }
 
-// Place bet
+// Place bet with enhanced security validations
 async function placeBet() {
   try {
-    if (!contract || !signer) {
-      alert('Please connect your wallet first');
+    if (!contract || !signer || !userAddress) {
+      showTransactionStatus('Please connect your wallet first', 'error');
       return;
     }
     
@@ -217,7 +557,31 @@ async function placeBet() {
     const amount = parseFloat(document.getElementById('selected-amount').textContent);
     
     if (!tickets || !amount) {
-      alert('Please select a ticket bundle first');
+      showTransactionStatus('Please select a ticket bundle first', 'error');
+      return;
+    }
+    
+    // Validate transaction parameters
+    try {
+      validateTransactionParams({ amount, tickets, userAddress });
+    } catch (validationError) {
+      showTransactionStatus(validationError.message, 'error');
+      return;
+    }
+    
+    // Check rate limiting
+    try {
+      checkRateLimit(userAddress);
+    } catch (rateLimitError) {
+      showTransactionStatus(rateLimitError.message, 'warning');
+      return;
+    }
+    
+    // Validate security state
+    try {
+      await validateSecurityState(contract, userAddress);
+    } catch (securityError) {
+      showTransactionStatus(securityError.message, 'error');
       return;
     }
     
@@ -228,7 +592,7 @@ async function placeBet() {
     
     try {
       // Show transaction status
-      showTransactionStatus('Placing bet...', 'info');
+      showTransactionStatus('Validating bet parameters...', 'info');
       
       // Get current round ID for the transaction
       const currentRoundId = await contract.currentRoundId();
@@ -236,8 +600,16 @@ async function placeBet() {
         throw new Error('No active round available');
       }
       
-      // Call contract method (Remix version uses roundId parameter)
-      const tx = await contract.placeBet(currentRoundId, { value: amountWei });
+      // Get round status to ensure it's open
+      const roundData = await contract.getRound(currentRoundId);
+      if (roundData.status !== 1) { // 1 = Open
+        throw new Error('Round is not currently open for betting');
+      }
+      
+      showTransactionStatus('Submitting bet transaction...', 'info');
+      
+      // Call contract method (enhanced version uses tickets parameter)
+      const tx = await contract.placeBet(tickets, { value: amountWei });
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);
@@ -246,31 +618,19 @@ async function placeBet() {
       const receipt = await tx.wait();
       
       console.log('Bet placed successfully:', receipt);
-      showTransactionStatus(`Bet placed successfully! ${tickets} tickets for ${amount} ETH`, 'success');
+      showTransactionStatus(`✅ Bet placed successfully! ${tickets} tickets for ${amount} ETH`, 'success');
       
       // Reset form
       document.getElementById('bet-summary').style.display = 'none';
       document.querySelectorAll('.ticket-btn').forEach(btn => btn.classList.remove('selected'));
       
-      // Update user stats
+      // Update user stats and security status
       await updateUserStats(contract, userAddress);
+      showSecurityStatus(contract, userAddress);
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
-      
-      // Handle specific contract errors
-      let errorMessage = 'Failed to place bet';
-      if (contractError.message.includes('Round not open')) {
-        errorMessage = 'Round is not currently open for betting';
-      } else if (contractError.message.includes('Exceeds wallet cap')) {
-        errorMessage = 'This bet would exceed your 1.0 ETH wallet cap';
-      } else if (contractError.message.includes('Incorrect payment')) {
-        errorMessage = 'Incorrect payment amount for selected tickets';
-      } else if (contractError.message.includes('user rejected')) {
-        errorMessage = 'Transaction was cancelled';
-      }
-      
-      showTransactionStatus(errorMessage, 'error');
+      handleTransactionError(contractError, 'Place Bet');
     }
     
   } catch (error) {
@@ -279,11 +639,11 @@ async function placeBet() {
   }
 }
 
-// Submit puzzle proof
+// Submit puzzle proof with enhanced security validations
 async function submitProof() {
   try {
-    if (!contract || !signer) {
-      alert('Please connect your wallet first');
+    if (!contract || !signer || !userAddress) {
+      showTransactionStatus('Please connect your wallet first', 'error');
       return;
     }
     
@@ -291,18 +651,40 @@ async function submitProof() {
     const proof = proofInput.value.trim();
     
     if (!proof) {
-      alert('Please enter your puzzle proof');
+      showTransactionStatus('Please enter your puzzle proof', 'error');
       return;
     }
     
-    console.log('Submitting proof:', proof);
+    // Sanitize and validate proof input
+    let sanitizedProof;
+    try {
+      sanitizedProof = sanitizeInput(proof, 'proof');
+    } catch (sanitizeError) {
+      showTransactionStatus(sanitizeError.message, 'error');
+      return;
+    }
+    
+    // Check rate limiting
+    try {
+      checkRateLimit(userAddress);
+    } catch (rateLimitError) {
+      showTransactionStatus(rateLimitError.message, 'warning');
+      return;
+    }
+    
+    // Validate security state
+    try {
+      await validateSecurityState(contract, userAddress);
+    } catch (securityError) {
+      showTransactionStatus(securityError.message, 'error');
+      return;
+    }
+    
+    console.log('Submitting proof:', sanitizedProof.substring(0, 50) + '...');
     
     try {
       // Show transaction status
-      showTransactionStatus('Submitting puzzle proof...', 'info');
-      
-      // Hash the proof for on-chain storage
-      const proofHash = ethers.keccak256(ethers.toUtf8Bytes(proof));
+      showTransactionStatus('Validating proof submission...', 'info');
       
       // Get current round ID for the transaction
       const currentRoundId = await contract.currentRoundId();
@@ -310,8 +692,30 @@ async function submitProof() {
         throw new Error('No active round available');
       }
       
-      // Call contract method (Remix version uses roundId parameter)
-      const tx = await contract.submitProof(currentRoundId, proofHash);
+      // Get round status to ensure it's open
+      const roundData = await contract.getRound(currentRoundId);
+      if (roundData.status !== 1) { // 1 = Open
+        throw new Error('Round is not currently open for proof submission');
+      }
+      
+      // Check if user has placed a bet
+      const userStats = await contract.getUserStats(currentRoundId, userAddress);
+      if (userStats.tickets.toString() === '0') {
+        throw new Error('You must place a bet before submitting a proof');
+      }
+      
+      // Check if proof already submitted
+      if (userStats.hasProof) {
+        throw new Error('You have already submitted a proof for this round');
+      }
+      
+      showTransactionStatus('Submitting puzzle proof...', 'info');
+      
+      // Hash the proof for on-chain storage
+      const proofHash = ethers.keccak256(ethers.toUtf8Bytes(sanitizedProof));
+      
+      // Call contract method (enhanced version uses proofHash parameter)
+      const tx = await contract.submitProof(proofHash);
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);
@@ -320,41 +724,29 @@ async function submitProof() {
       const receipt = await tx.wait();
       
       console.log('Proof submitted successfully:', receipt);
-      showTransactionStatus('Puzzle proof submitted successfully! +40% weight bonus applied.', 'success');
+      showTransactionStatus('✅ Puzzle proof submitted successfully! +40% weight bonus applied.', 'success');
       
       // Clear input and show success status
       proofInput.value = '';
       const proofStatus = document.getElementById('proof-status');
       if (proofStatus) {
-        proofStatus.textContent = 'Proof submitted successfully! +40% weight bonus applied.';
+        proofStatus.textContent = '✅ Proof submitted successfully! +40% weight bonus applied.';
         proofStatus.className = 'success';
         proofStatus.style.display = 'block';
       }
       
-      // Update user stats
+      // Update user stats and security status
       await updateUserStats(contract, userAddress);
+      showSecurityStatus(contract, userAddress);
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
-      
-      // Handle specific contract errors
-      let errorMessage = 'Failed to submit proof';
-      if (contractError.message.includes('Round not open')) {
-        errorMessage = 'Round is not currently open for proof submission';
-      } else if (contractError.message.includes('Must place wager')) {
-        errorMessage = 'You must place a wager before submitting a proof';
-      } else if (contractError.message.includes('Proof already submitted')) {
-        errorMessage = 'You have already submitted a proof for this round';
-      } else if (contractError.message.includes('user rejected')) {
-        errorMessage = 'Transaction was cancelled';
-      }
-      
-      showTransactionStatus(errorMessage, 'error');
+      const errorInfo = handleTransactionError(contractError, 'Submit Proof');
       
       // Show error in proof status
       const proofStatus = document.getElementById('proof-status');
       if (proofStatus) {
-        proofStatus.textContent = errorMessage;
+        proofStatus.textContent = errorInfo.message;
         proofStatus.className = 'error';
         proofStatus.style.display = 'block';
       }
@@ -366,7 +758,7 @@ async function submitProof() {
   }
 }
 
-// Start periodic updates
+// Start periodic updates with security monitoring
 function startPeriodicUpdates() {
   // Update round status every 30 seconds
   setInterval(async () => {
@@ -376,14 +768,26 @@ function startPeriodicUpdates() {
       
       if (userAddress) {
         await updateUserStats(contract, userAddress);
+        showSecurityStatus(contract, userAddress);
       }
     }
   }, 30000);
+  
+  // Security status check every 10 seconds
+  setInterval(async () => {
+    if (contract && userAddress) {
+      showSecurityStatus(contract, userAddress);
+    }
+  }, 10000);
   
   // Initial update
   if (contract) {
     updateRoundStatus(contract);
     updateLeaderboard(contract);
+    
+    if (userAddress) {
+      showSecurityStatus(contract, userAddress);
+    }
   }
 }
 
@@ -394,7 +798,7 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// Export for debugging
+// Export for debugging (simplified for small-scale site)
 window.pepedawn = {
   provider,
   signer,

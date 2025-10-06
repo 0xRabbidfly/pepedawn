@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npx tsc && vite build",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit",
+    "type-check": "npx tsc --noEmit",
     "lint": "eslint src/**/*.js",
     "deploy:test": "npm run build && node scripts/deploy-test.js",
     "deploy:prod": "npm run build && echo 'Production build completed - deploy dist/ folder'",

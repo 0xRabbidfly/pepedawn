@@ -24,7 +24,6 @@ Visit `http://localhost:5173` to access the application.
 ### Contract Development
 ```bash
 cd contracts
-# Install Foundry first: https://book.getfoundry.sh/getting-started/installation
 forge install
 forge test
 ```
@@ -40,170 +39,217 @@ pepedawn/
 │   └── src/
 │       ├── main.js          # Wallet connection + contract interaction
 │       ├── ui.js            # DOM helpers and UI updates
-│       └── styles.css       # Minimal modern styling
+│       ├── contract-config.js # Contract address & ABI configuration
+│       ├── styles.css       # Main application styles
+│       └── style.css        # Vite template styles (legacy)
 ├── contracts/               # Solidity contracts + tests
 │   ├── src/
 │   │   └── PepedawnRaffle.sol  # Main raffle contract
-│   └── test/                # Foundry unit + invariant tests
-└── deploy/artifacts/        # Deployment artifacts
-    ├── addresses.json       # Contract addresses by network
-    ├── vrf-config.json      # Chainlink VRF configuration
-    ├── abis/                # Contract ABIs
-    └── events/              # Event schemas for monitoring
+│   ├── test/                # Foundry unit + invariant tests
+│   ├── script/              # Deployment scripts
+│   └── scripts/             # Interaction utilities
+├── deploy/artifacts/        # Deployment artifacts
+│   ├── addresses.json       # Contract addresses by network
+│   └── vrf-config.json      # Chainlink VRF configuration
+└── specs/                   # Project specifications & planning
 ```
 
-## 🎮 How It Works
+## 🎯 Core Features
 
-### 1. Round Lifecycle
-- **Duration**: 2 weeks per round
-- **Phases**: Created → Open → Closed → Snapshot → VRF → Distributed
-- **Management**: Owner-controlled round state transitions
+### Smart Contract (Solidity + Foundry)
+- **Skill-weighted betting**: Puzzle proofs multiply your odds by 2x
+- **Chainlink VRF integration**: Verifiable random winner selection
+- **Security-first design**: Reentrancy protection, access controls, circuit breakers
+- **Comprehensive testing**: 16 test suites covering all scenarios
 
-### 2. Betting System
-- **Minimum**: 0.005 ETH (1 ticket)
-- **Bundles**: 5 tickets = 0.0225 ETH (10% discount), 10 tickets = 0.04 ETH (20% discount)
-- **Cap**: 1.0 ETH maximum per wallet per round
-- **Network**: Ethereum mainnet/testnet
+### Frontend (Vanilla JS + Vite)
+- **Multi-page application**: Title page, betting interface, rules
+- **Web3 wallet integration**: MetaMask support with network validation
+- **Real-time updates**: Live round status and leaderboard
+- **Security features**: Input validation, rate limiting, error handling
 
-### 3. Skill-Weighted Odds
-- **Puzzle Proofs**: Submit one proof per round for +40% weight multiplier
-- **Hard Cap**: Maximum 1.4x multiplier, no stacking
-- **Verification**: On-chain proof hash storage
+## 🔧 Development Workflow
 
-### 4. Verifiable Randomness
-- **Provider**: Chainlink VRF v2/v2.5
-- **Process**: Snapshot → VRF Request → Fulfillment → Winner Assignment
-- **Fairness**: All randomness derived from VRF output, no manipulation possible
+### Contract Development
+```bash
+cd contracts
 
-### 5. Prize Distribution
-- **Tiers**: Fake Packs (common), Kek Packs (rare), Pepe Packs (legendary)
-- **Source**: Emblem Vault preloaded assets
-- **Distribution**: Automatic post-VRF fulfillment
-- **Fees**: 80% to creators, 20% to next round
+# Run tests
+forge test                    # All tests
+forge test --match-path "test/BasicDeployment.t.sol" # Specific test
 
-## 🔧 Technical Details
+# Deploy to Sepolia
+forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast
 
-### Frontend
-- **Framework**: Vite MPA with vanilla JavaScript
-- **Web3**: ethers.js v6 for wallet connection
-- **Bundle Size**: 283.61 kB (102.67 kB gzipped) - right-sized for small-scale site
-- **Performance**: Fast wallet connect, responsive design, essential features only
+# Interact with deployed contract
+.\scripts\interact-sepolia.ps1 check        # Check contract state
+.\scripts\interact-sepolia.ps1 quick-start  # Create and open round
+```
 
-### Smart Contracts
-- **Language**: Solidity 0.8.20
-- **Testing**: Foundry security test suite (7 test files, 100% critical path coverage)
-- **Architecture**: Single contract with modular functions + security layers
-- **Security**: Constitutional v1.1.0 compliant, OpenZeppelin standards
-- **Dependencies**: Chainlink VRF v2, OpenZeppelin (ReentrancyGuard, Pausable, Ownable2Step)
+### Frontend Development
+```bash
+cd frontend
 
-### VRF Configuration
-Current network configurations in `deploy/artifacts/vrf-config.json`:
+# Development
+npm run dev          # Development server
+npm run build        # Production build
+npm run preview      # Preview production build
 
-- **Sepolia Testnet**: For development and testing
-- **Ethereum Mainnet**: For production deployment
-
-### Event Monitoring
-All contract events are structured with round IDs and correlation IDs for efficient monitoring:
-
-- **Wager Events**: Track betting activity and amounts
-- **Proof Events**: Monitor puzzle proof submissions
-- **VRF Events**: Track randomness requests and fulfillment
-- **Distribution Events**: Monitor prize and fee distribution
+# Code quality
+npm run lint         # ESLint
+npm run type-check   # TypeScript checking
+```
 
 ## 🚀 Deployment
 
-### 1. Deploy Contracts
-```bash
-cd contracts
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
-```
+### Contract Deployment
+1. **Set environment variables**:
+   ```bash
+   export PRIVATE_KEY="your_private_key"
+   export SEPOLIA_RPC_URL="your_sepolia_rpc_url"
+   export VRF_COORDINATOR="0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625"
+   export VRF_SUBSCRIPTION_ID="your_subscription_id"
+   export VRF_KEY_HASH="0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
+   export CREATORS_ADDRESS="your_creators_address"
+   export EMBLEM_VAULT_ADDRESS="your_emblem_vault_address"
+   ```
 
-### 2. Update Artifacts
-Update `deploy/artifacts/addresses.json` with deployed contract addresses.
+2. **Deploy contract**:
+   ```bash
+   cd contracts
+   forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+   ```
 
-### 3. Configure VRF
-Set up Chainlink VRF subscription and update `deploy/artifacts/vrf-config.json`.
+3. **Update frontend configuration**:
+   - Copy deployed contract address
+   - Update `frontend/src/contract-config.js` with new address
+   - Update `deploy/artifacts/addresses.json`
 
-### 4. Deploy Frontend
-```bash
-cd frontend
-npm run build
-# Deploy dist/ to your hosting provider
-```
+### Frontend Deployment
+The project uses GitHub Actions for automated deployment to pepedawn.art:
+
+1. **Local build** (when npm/Rollup works):
+   ```bash
+   cd frontend
+   npm run build
+   git add dist/
+   git commit -m "Update build for deployment"
+   git push
+   ```
+
+2. **GitHub Actions** automatically:
+   - Lints and type-checks code
+   - Builds the application
+   - Deploys to pepedawn.art via FTP
+
+**Required GitHub Secrets**:
+- `FTP_SERVER`: Your FTP hostname
+- `FTP_USERNAME`: Your FTP username  
+- `FTP_PASSWORD`: Your FTP password
 
 ## 🧪 Testing
 
-### Contract Tests
+### Contract Testing
+See `contracts/TESTING.md` for detailed testing guide.
+
+**Quick commands**:
 ```bash
 cd contracts
-forge test                    # Run all tests
-forge test --match-test testCompleteRoundScenario  # Run specific test
-forge test --gas-report      # Generate gas report
+
+# Unit tests (fast)
+forge test --match-path "test/{BasicDeployment,AccessControl,InputValidation}.t.sol"
+
+# Integration tests
+forge test --match-path "test/{Round,Security,ScenarioFullRound}.t.sol"
+
+# Security tests (extensive fuzzing)
+forge test --profile security
 ```
 
 ### Frontend Testing
-The frontend includes real-time integration with deployed contracts and falls back to mock data when contracts are unavailable.
+```bash
+cd frontend
 
-## 📊 Performance Metrics
+# Linting
+npm run lint
 
-- **Bundle Size**: 283.61 kB (102.67 kB gzipped) - appropriate for 133-asset distribution
-- **Load Time**: <3s on 3G connection (acceptable for small-scale site)
-- **Wallet Connect**: <1s response time
-- **Contract Calls**: Optimized for minimal gas usage
-- **Responsive Design**: Mobile-first, touch-friendly interface
-- **Security Features**: Essential protections without performance overhead
+# Type checking (TypeScript config available)
+npm run type-check
 
-## 🔐 Security Features
+# Build verification
+npm run build
 
-### Constitutional v1.1.0 Compliance ✅
-**Security Validation Status**: PASSED (100% compliance)
+# Manual testing with local development server
+npm run dev
+```
 
-- **✅ Reentrancy Protection**: OpenZeppelin ReentrancyGuard + CEI pattern
-- **✅ Access Control**: Ownable2Step + custom modifiers for secure ownership
-- **✅ Input Validation**: Address/amount validation prevents zero/invalid inputs
-- **✅ Emergency Controls**: Pausable contract + emergency pause + denylist system
-- **✅ External Call Safety**: All external calls protected with reentrancy guards
-- **✅ Winner Selection Security**: Duplicate prevention + weighted randomness
-- **✅ VRF Manipulation Protection**: Chainlink VRF v2 + timeout protection
-- **✅ Circuit Breakers**: Max participants (10K), max wager (1K ETH), wallet cap (1 ETH)
+## 🛡️ Security
 
-### Frontend Security
-- **Network Validation**: Sepolia testnet enforcement with auto-switching
-- **Input Sanitization**: Address/amount/proof validation with bounds checking
-- **Rate Limiting**: 30-second transaction cooldown per user
-- **Security Monitoring**: Real-time contract pause/denylist status display
+The project implements comprehensive security measures:
 
-### Security Assessment
-- **Risk Level**: LOW RISK (appropriate for 133-asset small-scale operation)
-- **Security Posture**: STRONG (defense in depth, industry standards)
-- **Deployment Status**: ✅ READY FOR DEPLOYMENT
+- **Reentrancy Protection**: OpenZeppelin's `ReentrancyGuard`
+- **Access Control**: `Ownable2Step` with custom modifiers
+- **Input Validation**: Comprehensive parameter checking
+- **Circuit Breakers**: Emergency pause functionality
+- **Rate Limiting**: Frontend transaction throttling
+- **Network Validation**: Ensures correct blockchain network
 
-*Full security validation report available in `SECURITY_VALIDATION_REPORT.md`*
+See `SECURITY_VALIDATION_REPORT.md` for detailed security analysis.
 
-## 📈 Monitoring & Analytics
+## 🔗 Contract Interaction
 
-Event schemas in `deploy/artifacts/events/` enable monitoring of:
-- Round participation and betting patterns
-- Proof submission rates and timing
-- VRF request/fulfillment latency
-- Prize distribution success rates
-- Fee collection and distribution
+### Using Remix IDE
+1. **Compile contract** in Remix with Solidity 0.8.20+ (project uses 0.8.20)
+2. **Connect to deployed contract** using address: `0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc`
+3. **Create and open round**:
+   ```solidity
+   createRound()    // Create new round
+   openRound(1)     // Open round 1 for betting
+   ```
+
+### Using Cast (Command Line)
+```bash
+# Check contract state
+cast call 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc "currentRoundId()" --rpc-url $SEPOLIA_RPC_URL
+
+# Create round (owner only)
+cast send 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+```
+
+### Using PowerShell Script
+```powershell
+# Windows users can use the provided script
+.\contracts\scripts\interact-sepolia.ps1 check        # Check status
+.\contracts\scripts\interact-sepolia.ps1 quick-start  # Create & open round
+.\contracts\scripts\interact-sepolia.ps1 bet 1 0.01   # Place bet
+```
+
+## 📋 Current Deployment
+
+**Sepolia Testnet**:
+- **Contract Address**: `0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc`
+- **Network**: Sepolia (Chain ID: 11155111)
+- **Frontend**: pepedawn.art (deployment configured via GitHub Actions)
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Run tests: `forge test` and `npm run build`
-4. Submit a pull request
+1. **Fork the repository**
+2. **Create feature branch**: `git checkout -b feature/amazing-feature`
+3. **Run tests**: `cd contracts && forge test`
+4. **Commit changes**: `git commit -m 'Add amazing feature'`
+5. **Push to branch**: `git push origin feature/amazing-feature`
+6. **Open Pull Request**
 
 ## 📄 License
 
-This project is aligned with the project constitution in `.specify/memory/constitution.md`.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🔗 Links
 
-- **Chainlink VRF**: [Documentation](https://docs.chain.link/vrf/v2/introduction)
-- **Emblem Vault**: [Platform](https://emblem.finance/)
-- **Foundry**: [Book](https://book.getfoundry.sh/)
-- **ethers.js**: [Documentation](https://docs.ethers.org/v6/)
+- **Live Application**: pepedawn.art
+- **Contract on Etherscan**: [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc)
+- **Chainlink VRF**: [Sepolia VRF Coordinator](https://sepolia.etherscan.io/address/0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625)
 
+---
+
+**Built with ❤️ for the Pepedawn community**

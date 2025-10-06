@@ -1,0 +1,29 @@
+{
+  "name": "pepedawn-raffle-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for PepedawnRaffle",
+  "scripts": {
+    "test": "forge test --profile ci",
+    "test:unit": "forge test --profile unit",
+    "test:integration": "forge test --profile integration",
+    "test:deployed": "forge test --profile deployed",
+    "test:vrf": "forge test --profile vrf",
+    "test:security": "forge test --profile security",
+    "test:all": "forge test --profile all",
+    "build": "forge build",
+    "compile": "forge build",
+    "fmt": "forge fmt",
+    "fmt:check": "forge fmt --check",
+    "clean": "forge clean",
+    "install": "forge install",
+    "update": "forge update",
+    "deploy": "forge script script/Deploy.s.sol --broadcast",
+    "deploy:simulate": "forge script script/Deploy.s.sol"
+  },
+  "keywords": ["solidity", "smart-contracts", "raffle", "vrf", "chainlink"],
+  "author": "Pepedawn Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

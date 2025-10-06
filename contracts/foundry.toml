@@ -49,7 +49,7 @@ deny_warnings = true
 ignored_error_codes = []
 
 # Security-focused compiler settings
-[profile.security]
+[profile.security-analysis]
 optimizer = false  # Disable optimizer for security analysis
 optimizer_runs = 1
 verbosity = 3
@@ -57,8 +57,47 @@ fuzz_runs = 10000
 invariant_runs = 1000
 invariant_depth = 100
 
+# Test Profiles for Different Scenarios
 [profile.ci]
+# CI/CD Pipeline - Fast, reliable tests
+fuzz_runs = 1000
+verbosity = 1
+test_pattern = "test/{BasicDeployment,AccessControl,InputValidation,Wager,WinnerSelection,Distribution,EmergencyControls,Governance,Round,Security,ScenarioFullRound}.t.sol"
+
+[profile.unit]
+# Unit tests only - Mocked dependencies
+test_pattern = "test/{BasicDeployment,AccessControl,InputValidation,Wager,WinnerSelection,Distribution,EmergencyControls,Governance}.t.sol"
+verbosity = 2
+
+[profile.integration]
+# Integration tests - Full workflow with mocks
+test_pattern = "test/{Round,Security,ScenarioFullRound}.t.sol"
+verbosity = 2
+fuzz_runs = 5000
+
+[profile.deployed]
+# Live network tests - Requires deployed contract
+test_pattern = "test/DeployedContractTest.t.sol"
+fork_url = "${SEPOLIA_RPC_URL}"
+verbosity = 3
+
+[profile.vrf]
+# VRF tests - Requires funded subscription
+test_pattern = "test/{VRFSecurity,VRFDraw}.t.sol"
+fork_url = "${SEPOLIA_RPC_URL}"
+verbosity = 3
+
+[profile.security]
+# Security-focused testing
+test_pattern = "test/{Security,VRFSecurity}.t.sol"
 fuzz_runs = 10000
+invariant_runs = 1000
+invariant_depth = 100
+
+[profile.all]
+# Run all tests (excluding VRF)
+test_pattern = "test/{BasicDeployment,AccessControl,InputValidation,Wager,WinnerSelection,Distribution,EmergencyControls,Governance,Round,Security,ScenarioFullRound,DeployedContractTest}.t.sol"
+verbosity = 2
 
 [fmt]
 line_length = 100

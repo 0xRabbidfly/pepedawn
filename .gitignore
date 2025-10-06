@@ -113,7 +113,7 @@ temp/
 
 # Gatsby files
 .cache/
-public
+# public
 
 # Storybook build outputs
 .out
@@ -137,6 +137,11 @@ temp/
 *.tiff
 *.svg
 *.ico
+
+# Exception: Allow favicon files
+!frontend/public/PEPEDAWN_thumbnail.png
+!frontend/public/*.ico
+!frontend/public/*.svg
 
 # Files larger than 50MB (use git-lfs instead)
 # Check file size before committing: git ls-files -s | awk '{if ($4 > 52428800) print $4/1024/1024 "MB " $NF}'

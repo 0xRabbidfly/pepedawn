@@ -6,11 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/**/*.js --ext .js",
+    "deploy:test": "npm run build && node scripts/deploy-test.js",
+    "deploy:prod": "npm run build && echo 'Production build completed - deploy dist/ folder'"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "eslint": "^8.57.0"
   },
   "dependencies": {
     "ethers": "^6.15.0"

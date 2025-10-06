@@ -47,4 +47,6 @@ jobs:
           **/src/**
           **/public/deploy/**
         log-level: verbose
-        timeout: 600000
+        timeout: 1200000
+        dry-run: false
+        dangerous-clean-slate: false

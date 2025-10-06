@@ -223,20 +223,26 @@ export async function updateLeaderboard(contract) {
     const leaderboardData = [];
     if (window.pepedawn && window.pepedawn.userAddress && currentRoundId > 0) {
       try {
-        const stats = await contract.getUserStats(currentRoundId, window.pepedawn.userAddress);
-        const fakeOdds = roundData.totalWeight > 0 
-          ? ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1)
-          : '0.0';
-        
-        leaderboardData.push({
-          address: window.pepedawn.userAddress,
-          tickets: Number(stats.tickets),
-          weight: Number(stats.weight),
-          fakeOdds: fakeOdds + '%',
-          hasProof: stats.hasProof
-        });
+        // Check if round is properly initialized before getting user stats
+        if (roundData && roundData.status !== undefined) {
+          const stats = await contract.getUserStats(currentRoundId, window.pepedawn.userAddress);
+          const fakeOdds = roundData.totalWeight > 0 
+            ? ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1)
+            : '0.0';
+          
+          leaderboardData.push({
+            address: window.pepedawn.userAddress,
+            tickets: Number(stats.tickets),
+            weight: Number(stats.weight),
+            fakeOdds: fakeOdds + '%',
+            hasProof: stats.hasProof
+          });
+        }
       } catch (error) {
-        console.warn('Error fetching user stats (round may not exist):', error);
+        // Only log unexpected errors, not the expected "no round" case
+        if (!error.message.includes('execution reverted')) {
+          console.warn('Error fetching user stats for leaderboard:', error);
+        }
       }
     }
     
@@ -310,10 +316,22 @@ export async function updateUserStats(contract, userAddress) {
     // Get user stats for current round
     let stats, roundData;
     try {
-      stats = await contract.getUserStats(currentRoundId, userAddress);
+      // First check if the round exists by getting round data
       roundData = await contract.getRound(currentRoundId);
+      
+      // Check if round is properly initialized (has a valid status)
+      if (!roundData || roundData.status === undefined) {
+        throw new Error('Round not initialized');
+      }
+      
+      // Now safely get user stats
+      stats = await contract.getUserStats(currentRoundId, userAddress);
     } catch (error) {
-      console.warn('Round does not exist or user has no stats:', error);
+      // Reduce console noise - only log if it's not the expected "no round" case
+      if (!error.message.includes('execution reverted') && !error.message.includes('Round not initialized')) {
+        console.warn('Unexpected error fetching round data:', error);
+      }
+      
       // Show "no round" state
       if (userTickets) userTickets.textContent = '0';
       if (userWeight) userWeight.textContent = '0';

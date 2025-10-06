@@ -798,6 +798,8 @@ if (document.readyState === 'loading') {
   init();
 }
 
+// Test comment to trigger new build hash
+
 // Export for debugging (simplified for small-scale site)
 window.pepedawn = {
   provider,

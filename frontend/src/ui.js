@@ -111,7 +111,7 @@ export async function updateRoundStatus(contract) {
       return;
     }
     
-    // Get round data
+    // Get round data (Remix version returns tuple)
     const roundData = await contract.getRound(currentRoundId);
     
     // Update status text
@@ -188,33 +188,34 @@ export async function updateLeaderboard(contract) {
       return;
     }
     
-    // Get round participants
-    const participants = await contract.getRoundParticipants(currentRoundId);
+    // Get round data
     const roundData = await contract.getRound(currentRoundId);
     
-    if (participants.length === 0) {
+    // Note: Remix version doesn't have getRoundParticipants function
+    // For now, we'll show a simplified leaderboard
+    if (roundData.totalTickets.toString() === '0') {
       leaderboardList.innerHTML = '<p>No participants yet</p>';
       return;
     }
     
-    // Fetch stats for each participant
+    // Show current user stats if available
     const leaderboardData = [];
-    for (const participant of participants) {
+    if (window.pepedawn && window.pepedawn.userAddress) {
       try {
-        const stats = await contract.getUserStats(currentRoundId, participant);
+        const stats = await contract.getUserStats(currentRoundId, window.pepedawn.userAddress);
         const fakeOdds = roundData.totalWeight > 0 
           ? ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1)
           : '0.0';
         
         leaderboardData.push({
-          address: participant,
+          address: window.pepedawn.userAddress,
           tickets: Number(stats.tickets),
           weight: Number(stats.weight),
           fakeOdds: fakeOdds + '%',
           hasProof: stats.hasProof
         });
       } catch (error) {
-        console.error('Error fetching stats for', participant, error);
+        console.error('Error fetching user stats:', error);
       }
     }
     

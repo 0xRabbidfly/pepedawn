@@ -1,29 +1,7 @@
 import { ethers } from 'ethers';
 import './styles.css';
 import { initUI, updateWalletInfo, updateRoundStatus, updateLeaderboard, updateUserStats, showTransactionStatus } from './ui.js';
-
-// Contract configuration - will be populated from deploy artifacts
-const CONTRACT_CONFIG = {
-  address: null, // To be set from deploy/artifacts/
-  abi: [
-    // Essential ABI for frontend interaction
-    "function createRound() external",
-    "function openRound(uint256 roundId) external",
-    "function closeRound(uint256 roundId) external",
-    "function placeBet(uint256 tickets) external payable",
-    "function submitProof(bytes32 proofHash) external",
-    "function getRound(uint256 roundId) external view returns (tuple(uint256 id, uint64 startTime, uint64 endTime, uint8 status, uint256 totalTickets, uint256 totalWeight, uint256 totalWagered, uint256 vrfRequestId, bool feesDistributed))",
-    "function getUserStats(uint256 roundId, address user) external view returns (uint256 wagered, uint256 tickets, uint256 weight, bool hasProof)",
-    "function getRoundParticipants(uint256 roundId) external view returns (address[])",
-    "function currentRoundId() external view returns (uint256)",
-    "event WagerPlaced(address indexed wallet, uint256 indexed roundId, uint256 amount, uint256 tickets, uint256 effectiveWeight)",
-    "event ProofSubmitted(address indexed wallet, uint256 indexed roundId, bytes32 proofHash, uint256 newWeight)",
-    "event RoundCreated(uint256 indexed roundId, uint64 startTime, uint64 endTime)",
-    "event RoundOpened(uint256 indexed roundId)",
-    "event RoundClosed(uint256 indexed roundId)"
-  ],
-  network: 'sepolia' // or 'mainnet'
-};
+import { CONTRACT_CONFIG, validateContractConfig } from './contract-config.js';
 
 // Global state
 let provider = null;
@@ -118,37 +96,33 @@ async function connectWallet() {
   }
 }
 
-// Load contract from deploy artifacts
+// Load contract from configuration
 async function loadContract() {
   try {
-    // Try to load contract address from deploy artifacts
-    if (!CONTRACT_CONFIG.address) {
-      try {
-        const response = await fetch('/deploy/artifacts/addresses.json');
-        if (response.ok) {
-          const addresses = await response.json();
-          const chainId = provider ? (await provider.getNetwork()).chainId.toString() : '11155111'; // Default to Sepolia
-          CONTRACT_CONFIG.address = addresses[chainId]?.PepedawnRaffle;
-        }
-      } catch (e) {
-        console.log('Deploy artifacts not found, using mock mode');
-        // For development, we'll work without a deployed contract
-        CONTRACT_CONFIG.address = null;
-      }
-    }
-    
-    if (!CONTRACT_CONFIG.address) {
-      console.log('Contract not yet deployed - working in mock mode');
+    // Validate contract configuration
+    if (!validateContractConfig()) {
+      console.log('Contract not configured - working in mock mode');
       return;
     }
     
+    // Check if we're on the correct network
+    if (provider) {
+      const network = await provider.getNetwork();
+      if (Number(network.chainId) !== CONTRACT_CONFIG.chainId) {
+        console.warn(`⚠️ Wrong network! Expected Sepolia (${CONTRACT_CONFIG.chainId}), got ${network.chainId}`);
+        console.log('Please switch to Sepolia testnet in MetaMask');
+        return;
+      }
+    }
+    
+    // Create contract instance
     if (signer) {
       contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, signer);
     } else if (provider) {
       contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, provider);
     }
     
-    console.log('Contract loaded:', CONTRACT_CONFIG.address);
+    console.log('✅ Contract loaded:', CONTRACT_CONFIG.address);
     
     // Set up event listeners
     if (contract) {
@@ -165,12 +139,12 @@ function setupContractEventListeners() {
   if (!contract) return;
   
   try {
-    // Listen for wager events
-    contract.on('WagerPlaced', (wallet, roundId, amount, tickets, effectiveWeight, event) => {
-      console.log('Wager placed:', { wallet, roundId: roundId.toString(), amount: ethers.formatEther(amount), tickets: tickets.toString() });
+    // Listen for wager events (Remix version uses 'BetPlaced')
+    contract.on('BetPlaced', (roundId, user, amount, tickets, weight, event) => {
+      console.log('Bet placed:', { user, roundId: roundId.toString(), amount: ethers.formatEther(amount), tickets: tickets.toString() });
       
       // Update UI if it's the current user
-      if (wallet.toLowerCase() === userAddress?.toLowerCase()) {
+      if (user.toLowerCase() === userAddress?.toLowerCase()) {
         updateUserStats(contract, userAddress);
       }
       
@@ -179,12 +153,12 @@ function setupContractEventListeners() {
       updateLeaderboard(contract);
     });
     
-    // Listen for proof events
-    contract.on('ProofSubmitted', (wallet, roundId, proofHash, newWeight, event) => {
-      console.log('Proof submitted:', { wallet, roundId: roundId.toString(), newWeight: newWeight.toString() });
+    // Listen for proof events (Remix version uses 'ProofSubmitted')
+    contract.on('ProofSubmitted', (roundId, user, weight, event) => {
+      console.log('Proof submitted:', { user, roundId: roundId.toString(), weight: weight.toString() });
       
       // Update UI if it's the current user
-      if (wallet.toLowerCase() === userAddress?.toLowerCase()) {
+      if (user.toLowerCase() === userAddress?.toLowerCase()) {
         updateUserStats(contract, userAddress);
       }
       
@@ -256,8 +230,14 @@ async function placeBet() {
       // Show transaction status
       showTransactionStatus('Placing bet...', 'info');
       
-      // Call contract method
-      const tx = await contract.placeBet(tickets, { value: amountWei });
+      // Get current round ID for the transaction
+      const currentRoundId = await contract.currentRoundId();
+      if (currentRoundId.toString() === '0') {
+        throw new Error('No active round available');
+      }
+      
+      // Call contract method (Remix version uses roundId parameter)
+      const tx = await contract.placeBet(currentRoundId, { value: amountWei });
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);
@@ -324,8 +304,14 @@ async function submitProof() {
       // Hash the proof for on-chain storage
       const proofHash = ethers.keccak256(ethers.toUtf8Bytes(proof));
       
-      // Call contract method
-      const tx = await contract.submitProof(proofHash);
+      // Get current round ID for the transaction
+      const currentRoundId = await contract.currentRoundId();
+      if (currentRoundId.toString() === '0') {
+        throw new Error('No active round available');
+      }
+      
+      // Call contract method (Remix version uses roundId parameter)
+      const tx = await contract.submitProof(currentRoundId, proofHash);
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);

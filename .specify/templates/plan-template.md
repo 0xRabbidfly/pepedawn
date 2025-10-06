@@ -76,6 +76,13 @@ randomness, or prize distribution, address each:
   - Ensure structured events/logs with correlation and round ids.
   - Expose read-only endpoints for round status, ticket counts, weights, expected prizes.
 
+- Security Requirements:
+  - Demonstrate reentrancy protection and checks-effects-interactions pattern.
+  - Show secure access control with ownership transfer mechanisms.
+  - Validate all external inputs and contract address parameters.
+  - Implement emergency pause functionality for critical operations.
+  - Protect against duplicate winner selection and VRF manipulation.
+
 ## Project Structure
 
 ### Documentation (this feature)

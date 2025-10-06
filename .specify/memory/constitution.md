@@ -1,15 +1,15 @@
 <!--
 Sync Impact Report
-- Version: new 1.0.0 (initial adoption)
-- Modified principles: N/A (initial)
-- Added sections: Domain Constraints, Security, and Compliance; Development Workflow, Quality Gates, and Release Policy
+- Version: 1.0.0 → 1.1.0 (security principles expansion)
+- Modified principles: Domain Constraints, Security, and Compliance (expanded security requirements)
+- Added sections: Enhanced security requirements for access control, input validation, emergency controls
 - Removed sections: None
 - Templates requiring updates:
   - ✅ .specify/templates/plan-template.md
   - ✅ .specify/templates/spec-template.md
   - ✅ .specify/templates/tasks-template.md
   - ⚠ .specify/templates/commands/*.md (not present)
-- Follow-ups: None
+- Follow-ups: Security audit findings integrated into constitutional requirements
 -->
 
 # PEPEDAWN Constitution
@@ -68,6 +68,11 @@ Sync Impact Report
   - Contracts MUST undergo automated static analysis and differential fuzzing in CI; severity HIGH blockers MUST be resolved before deploy.
   - Upgradability (if any) MUST be restricted via timelock + multisig; upgrade intent MUST be announced via events.
   - Payout and randomness code paths MUST have explicit re-entrancy protection, checks-effects-interactions ordering, and pull-pattern withdrawals where applicable.
+  - Access Control: All privileged functions MUST implement secure ownership transfer mechanisms; single points of failure in access control are prohibited.
+  - Input Validation: All external function parameters MUST be validated; contract addresses MUST be verified as valid contracts where applicable.
+  - Emergency Controls: Contracts MUST implement emergency pause functionality for critical operations (betting, prize distribution) with clear governance procedures.
+  - External Call Safety: All external calls MUST use the checks-effects-interactions pattern; reentrancy guards MUST be applied to functions making external calls.
+  - Winner Selection: Random selection algorithms MUST prevent duplicate winner selection and manipulation; VRF fulfillment MUST be protected against coordinator compromise.
 - Compliance and Eligibility:
   - Eligibility rules MUST be configurable; default denylist/allowlist strategy documented.
   - The app MUST present clear disclaimers and age/jurisdiction gating (enforced off-chain in the web tier; on-chain lists where legally required).
@@ -102,4 +107,4 @@ Sync Impact Report
 - Records:
   - Maintain a CHANGELOG entry for each constitution update with version, date, and summary of changes.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-05
+**Version**: 1.1.0 | **Ratified**: 2025-10-05 | **Last Amended**: 2025-10-06

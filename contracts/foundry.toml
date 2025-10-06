@@ -21,7 +21,7 @@ gas_reports = ["*"]
 
 # Remappings for dependencies
 remappings = [
-    "@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/",
+    "@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/src/v0.8/",
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
 
@@ -29,7 +29,7 @@ remappings = [
 evm_version = "london"
 
 # Additional compiler settings
-via_ir = false
+via_ir = true
 bytecode_hash = "none"
 cbor_metadata = false
 

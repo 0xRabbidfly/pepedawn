@@ -61,10 +61,17 @@ cache/
 lib/
 broadcast/
 *.sol.cache
+foundry.lock
+script/
+test/
 
 # Temporary files
 tmp/
 temp/
+
+# Installation scripts
+foundry-install.sh
+install.ps1
 
 # Local development
 .local/

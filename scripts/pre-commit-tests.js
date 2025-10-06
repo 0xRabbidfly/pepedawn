@@ -43,22 +43,9 @@ try {
     
     console.log('✅ All smart contract tests passed!');
     
-    // Run frontend type checking and linting
-    console.log('🔍 Running frontend type checking...');
-    process.chdir(path.join(__dirname, '..', 'frontend'));
-    
-    try {
-        execSync('npm run type-check', { 
-            stdio: 'inherit',
-            cwd: process.cwd()
-        });
-        console.log('✅ Frontend type checking passed!');
-    } catch (error) {
-        console.error('❌ Frontend type checking failed!');
-        process.exit(1);
-    }
-    
+    // Run frontend linting (skipping TypeScript checking for JavaScript project)
     console.log('🔍 Running frontend linting...');
+    process.chdir(path.join(__dirname, '..', 'frontend'));
     try {
         execSync('npm run lint', { 
             stdio: 'inherit',

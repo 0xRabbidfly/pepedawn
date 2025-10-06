@@ -1,7 +1,7 @@
 
-# Implementation Plan: PEPEDAWN betting site (wallet bets, VRF draws, Emblem Vault prizes)
+# Implementation Plan: PEPEDAWN betting site with VRF draws and Emblem Vault prizes
 
-**Branch**: `001-build-a-simple` | **Date**: 2025-10-05 | **Spec**: Z:\Projects\pepedawn\specs\001-build-a-simple\spec.md
+**Branch**: `001-build-a-simple` | **Date**: 2025-10-06 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `Z:\Projects\pepedawn\specs\001-build-a-simple\spec.md`
 
 ## Execution Flow (/plan command scope)
@@ -31,15 +31,10 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Build a minimal, fast web experience to place on-chain wagers for a 2-week
-round, show a live leaderboard, accept one puzzle proof per wallet to increase
-odds, draw winners using Chainlink VRF on Ethereum, and distribute Emblem Vault
-prizes automatically. Technical approach: Vite MPA + vanilla JS (minimal JS),
-ethers for wallet connection and on-chain reads/writes, Solidity contracts to
-hold escrow, track weights, request VRF, and distribute prizes.
+Build a skill-weighted decentralized raffle system where users connect Ethereum wallets to place bets in 2-week rounds, optionally submit puzzle proofs for +40% weight multiplier, compete for Emblem Vault prizes (Fake/Kek/Pepe packs containing PEPEDAWN cards), with winners selected via Chainlink VRF and prizes automatically distributed. Technical approach: Vite MPA + vanilla JS (minimal JS), ethers for wallet connection and on-chain reads/writes, Solidity contracts to hold escrow, track weights, request VRF, and distribute prizes.
 
 ## Technical Context
-**Language/Version**: JavaScript (ES2023) + Solidity 0.8.x  
+**Language/Version**: JavaScript (ES2023) + Solidity 0.8.19  
 **Primary Dependencies**: Vite (MPA), ethers v6, Chainlink VRF (v2/v2.5), viem (optional), Foundry (contracts tests)  
 **Storage**: On-chain (Ethereum); no off-chain DB  
 **Testing**: Foundry (unit/invariant), minimal browser tests (TBD), manual quickstart  
@@ -71,18 +66,28 @@ This plan satisfies the constitution based on the spec (FR-017..FR-024):
   - Submission on-chain or signed message verified; events emitted (FR-011/019).
 
 - Emblem Vault Distribution (No BTC/XCP ops):
-  - Prize tiers per spec; assets preloaded; auto-distribution post-VRF (FR-020).
-  - Winners→vault mapping events (FR-011/020).
+  - Prize tiers: 1x Fake, 1x Kek, 8x Pepe packs; pre-committed (FR-002/020).
+  - Transfer to winners or escrow with eligibility proof (FR-010).
+  - Winner-to-vault mapping via events (FR-011).
 
 - Spec-First, Test-First, Observability:
-  - Contracts tests: unit, invariant; scenario tests for rounds/draws/payouts.
-  - Structured events with round id/correlation id; read-only endpoints (FR-012).
+  - Spec: this document and spec.md with comprehensive FR/scenarios.
+  - Tests: Foundry unit/invariant/scenario tests planned.
+  - Events: structured with correlation/round ids (FR-011).
+  - Endpoints: read-only for round status, tickets, weights (FR-012).
+
+- Security Requirements:
+  - Reentrancy protection: checks-effects-interactions pattern required.
+  - Access control: secure ownership transfer mechanisms required.
+  - Input validation: all external parameters validated.
+  - Emergency controls: pause functionality for critical operations.
+  - Winner selection: duplicate prevention and VRF manipulation protection.
 
 ## Project Structure
 
 ### Documentation (this feature)
 ```
-specs/[###-feature]/
+specs/001-build-a-simple/
 ├── plan.md              # This file (/plan command output)
 ├── research.md          # Phase 0 output (/plan command)
 ├── data-model.md        # Phase 1 output (/plan command)
@@ -92,36 +97,56 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 ```
-
-```
-
-**Structure Decision**: Web + contracts
-```
-frontend/ (Vite MPA + vanilla)
-├── index.html            # title page (animation, music, enter button)
-├── rules.html            # rules/about page
-├── main.html             # betting UI + leaderboard
+frontend/
 ├── src/
-│   ├── main.js          # minimal JS to wire wallet connect (ethers)
-│   ├── ui.js            # DOM helpers; no framework
-│   └── styles.css       # minimal styles
-└── assets/              # images/audio (audio placeholders until FR-022 filled)
+│   ├── main.js          # Main betting page logic
+│   ├── contract-config.js # Contract addresses and ABIs
+│   ├── ui.js            # UI components and wallet connection
+│   ├── style.css        # Styling
+│   └── styles.css       # Additional styles
+├── index.html           # Title page with animation/music
+├── main.html            # Main betting interface
+├── rules.html           # Rules and about page
+├── public/              # Static assets
+└── dist/                # Built assets
 
 contracts/
 ├── src/
-│   └── PepedawnRaffle.sol
-└── test/                # Foundry tests: unit + invariant
+│   ├── PepedawnRaffle.sol    # Main raffle contract
+│   └── PepedawnRaffle-Remix.sol # Remix version
+├── test/
+│   ├── BasicDeployment.t.sol
+│   ├── Round.t.sol
+│   ├── Wager.t.sol
+│   ├── PuzzleProof.t.sol
+│   ├── VRFDraw.t.sol
+│   ├── Distribution.t.sol
+│   ├── InvariantWeights.t.sol
+│   └── ScenarioFullRound.t.sol
+├── script/
+│   ├── Deploy.s.sol
+│   └── TestEnv.s.sol
+└── foundry.toml
 
 deploy/
-└── artifacts/           # addresses, ABIs, VRF config, event refs
+└── artifacts/
+    ├── addresses.json
+    ├── vrf-config.json
+    └── abis/
 ```
+
+**Structure Decision**: Web application with frontend (Vite MPA) + contracts (Foundry). Existing structure already matches this layout with frontend/ and contracts/ directories at repository root.
+
+## Progress Tracking
+
+- [x] Initial Constitution Check: Passed - all requirements addressed in spec
+- [x] Phase 0: research.md - Technology decisions and security requirements documented
+- [x] Phase 1: Design artifacts completed
+  - [x] data-model.md - Entity definitions and relationships
+  - [x] contracts/ - Smart contract and frontend API specifications
+  - [x] quickstart.md - Development setup and testing guide
+- [x] Post-Design Constitution Check: Passed - design aligns with constitutional requirements
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -228,7 +253,29 @@ deploy/
 - [x] Initial Constitution Check: PASS
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
+- [x] Complexity deviations documented (none required)
+
+## Post-Design Constitution Check
+*Re-evaluation after Phase 1 design completion*
+
+**Status**: ✅ PASSED - Design artifacts fully comply with constitutional requirements
+
+**Security Requirements Compliance** (Constitution v1.1.0):
+- ✅ Reentrancy protection: Documented in smart-contract-interface.md security section
+- ✅ Access control: Owner-only functions with secure transfer mechanisms planned
+- ✅ Input validation: All external parameters validated per interface specifications
+- ✅ Emergency controls: Pause functionality included in security considerations
+- ✅ Winner selection: Duplicate prevention and VRF manipulation protection specified
+
+**Constitutional Principle Alignment**:
+- ✅ VRF Fairness: Chainlink VRF v2/v2.5 with reproducible randomness from request ID/seed/block
+- ✅ On-Chain Escrow: Complete round lifecycle with structured event emissions
+- ✅ Skill-Weighted Odds: Puzzle proof system with deterministic 40% multiplier and hard cap
+- ✅ Emblem Vault Distribution: Prize tiers pre-committed with winner-to-vault mapping via events
+- ✅ Spec-First Development: Comprehensive specifications and test-first approach documented
+- ✅ Observability: Structured events with correlation IDs and read-only endpoints specified
+
+**Security Integration**: All constitutional v1.1.0 security requirements integrated into design artifacts and will be implemented throughout development phases, not as afterthought.
 
 ---
-*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.1.0 - See `.specify/memory/constitution.md`*

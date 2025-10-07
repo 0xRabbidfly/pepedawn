@@ -179,6 +179,20 @@ async function updateButtonStates() {
   }
 }
 
+// Toggle proof section visibility - make it globally accessible
+window.toggleProofSection = function() {
+  const content = document.getElementById('proof-form');
+  const icon = document.querySelector('#proof-section .collapse-icon');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    icon.textContent = '▲';
+  } else {
+    content.style.display = 'none';
+    icon.textContent = '▼';
+  }
+}
+
 // Initialize the application
 async function init() {
   console.log('Initializing PEPEDAWN application...');

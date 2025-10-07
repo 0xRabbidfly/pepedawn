@@ -106,11 +106,18 @@ export async function updateRoundStatus(contract) {
   try {
     if (!contract) {
       // Show mock data when contract not available
-      const roundStatusText = document.getElementById('round-status-text');
       const timeRemaining = document.getElementById('time-remaining');
       const totalTickets = document.getElementById('total-tickets');
       
-      if (roundStatusText) roundStatusText.textContent = 'No Contract (Mock)';
+      // Highlight "Open" status for mock
+      const statusItems = document.querySelectorAll('.status-item');
+      statusItems.forEach(item => {
+        item.classList.remove('active');
+        if (Number(item.dataset.status) === 1) { // Mock as "Open"
+          item.classList.add('active');
+        }
+      });
+      
       if (timeRemaining) timeRemaining.textContent = '7d 0h 0m 0s (Mock)';
       if (totalTickets) totalTickets.textContent = '1,234 (Mock)';
       return;
@@ -125,8 +132,13 @@ export async function updateRoundStatus(contract) {
       if (roundNumber) {
         roundNumber.textContent = '';
       }
-      const roundStatusText = document.getElementById('round-status-text');
-      if (roundStatusText) roundStatusText.textContent = 'No Active Round';
+      
+      // Clear all status highlights
+      const statusItems = document.querySelectorAll('.status-item');
+      statusItems.forEach(item => {
+        item.classList.remove('active');
+      });
+      
       return;
     }
     
@@ -139,12 +151,14 @@ export async function updateRoundStatus(contract) {
       roundNumber.textContent = `: ${currentRoundId}`;
     }
     
-    // Update status text
-    const roundStatusText = document.getElementById('round-status-text');
-    if (roundStatusText) {
-      const statusNames = ['Created', 'Open', 'Closed', 'Snapshot', 'VRF Requested', 'Distributed'];
-      roundStatusText.textContent = statusNames[roundData.status] || 'Unknown';
-    }
+    // Update status highlighting
+    const statusItems = document.querySelectorAll('.status-item');
+    statusItems.forEach(item => {
+      item.classList.remove('active');
+      if (Number(item.dataset.status) === Number(roundData.status)) {
+        item.classList.add('active');
+      }
+    });
     
     // Update countdown
     const timeRemaining = document.getElementById('time-remaining');

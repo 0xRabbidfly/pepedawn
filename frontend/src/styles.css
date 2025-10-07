@@ -305,16 +305,17 @@ section h2 {
 /* Wallet Section */
 #wallet-section {
   text-align: center;
+  padding: var(--spacing-md);
 }
 
 #connect-wallet {
-  font-size: var(--font-size-lg);
-  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 #wallet-info {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
   background-color: rgba(76, 175, 80, 0.1);
   border-radius: var(--border-radius);
   border: 1px solid var(--primary-color);
@@ -324,12 +325,12 @@ section h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 
 .wallet-address {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--primary-color);
   font-family: 'Courier New', monospace;
@@ -337,7 +338,7 @@ section h2 {
 }
 
 .wallet-balance {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: 500;
   color: var(--text-color);
 }
@@ -354,11 +355,79 @@ section h2 {
   gap: var(--spacing-md);
 }
 
-#round-info p {
+/* Round Status Layout */
+#round-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.status-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--background-color);
-  padding: var(--spacing-md);
   border-radius: var(--border-radius);
-  margin: 0;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+.status-item.active {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: var(--primary-color);
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.status-icon {
+  font-size: 1.2em;
+  min-width: 24px;
+}
+
+.status-text {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.info-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+}
+
+.info-icon {
+  font-size: 1.2em;
+  min-width: 24px;
+}
+
+.info-text {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--text-color);
+  font-family: monospace;
 }
 
 /* Betting Section */
@@ -408,7 +477,35 @@ section h2 {
   margin-top: var(--spacing-md);
 }
 
+/* Collapsible Sections */
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all 0.2s ease;
+}
+
+.collapsible-header:hover {
+  color: var(--primary-color);
+}
+
+.collapse-icon {
+  transition: transform 0.2s ease;
+  font-size: 0.8em;
+}
+
+.collapsible-content {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
 /* Proof Section */
+#proof-form {
+  margin-top: var(--spacing-md);
+}
+
 #proof-form textarea {
   width: 100%;
   min-height: 120px;
@@ -796,6 +893,41 @@ section h2 {
   
   #round-info {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .status-column {
+    gap: var(--spacing-xs);
+  }
+  
+  .status-item {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .status-icon {
+    font-size: 1em;
+    min-width: 20px;
+  }
+  
+  .status-text {
+    font-size: var(--font-size-sm);
+  }
+  
+  .info-item {
+    padding: var(--spacing-sm);
+  }
+  
+  .info-icon {
+    font-size: 1em;
+    min-width: 20px;
+  }
+  
+  .info-text {
+    font-size: var(--font-size-sm);
+  }
+  
+  .info-value {
+    font-size: var(--font-size-sm);
   }
   
   /* Simplified leaderboard for small screens */

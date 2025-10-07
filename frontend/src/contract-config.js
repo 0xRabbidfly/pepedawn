@@ -30,14 +30,14 @@ export const CONTRACT_CONFIG = {
     "function paused() external view returns (bool)",
     "function emergencyPaused() external view returns (bool)",
     "function denylisted(address user) external view returns (bool)",
-    "function lastVRFRequestTime() external view returns (uint256)",
+    "function lastVrfRequestTime() external view returns (uint256)",
     
     // Owner functions
     "function createRound() external",
     "function openRound(uint256 roundId) external", 
     "function closeRound(uint256 roundId) external",
     "function snapshotRound(uint256 roundId) external",
-    "function requestVRF(uint256 roundId) external",
+    "function requestVrf(uint256 roundId) external",
     "function setValidProof(uint256 roundId, bytes32 proofHash) external",
     
     // Security management functions (owner only)

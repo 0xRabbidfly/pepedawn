@@ -145,10 +145,10 @@ export async function updateRoundStatus(contract) {
     // Get round data (Remix version returns tuple)
     const roundData = await contract.getRound(currentRoundId);
     
-    // Update round number
-    const roundNumber = document.getElementById('round-number');
-    if (roundNumber) {
-      roundNumber.textContent = `: ${currentRoundId}`;
+    // Update round title
+    const currentRoundTitle = document.getElementById('current-round-title');
+    if (currentRoundTitle) {
+      currentRoundTitle.textContent = `Current Round: ${currentRoundId}`;
     }
     
     // Update status highlighting

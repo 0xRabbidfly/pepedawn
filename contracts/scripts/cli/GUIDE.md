@@ -85,7 +85,7 @@ Get-Content .env | ForEach-Object {
 ### Set valid proof hash for the round (REQUIRED for proof validation)
 ``` BASH COMMANDS
 # Replace 0x... with the keccak256 hash of the correct proof solution
-cast send $CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 0x... --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send $CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 $(cast keccak256 "123") --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 **Requirements:**
@@ -139,15 +139,12 @@ When you call `check` and see the round details, the status field shows:
 # Close round when ready
 # IMPORTANT: If round has < 10 tickets, closeRound() automatically refunds all participants
 ``` BASH COMMANDS
-set -a; source contracts/.env; set +a
 cast send $CONTRACT_ADDRESS "closeRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
-# 6. If round has 10+ tickets, continue with snapshot
-set -a; source contracts/.env; set +a
+If round has 10+ tickets, continue with snapshot
 cast send $CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
-# 7. Request VRF for winner selection
-set -a; source contracts/.env; set +a
+Request VRF for winner selection
 cast send $CONTRACT_ADDRESS "requestVRF(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 

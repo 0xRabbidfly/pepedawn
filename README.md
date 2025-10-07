@@ -197,14 +197,6 @@ This workflow outlines the steps for deploying a new contract version and ensuri
    - Manually edit `deploy/artifacts/addresses.json` with the new contract address under the correct `chainId` (e.g., `11155111` for Sepolia).
    - MANUALLY UPDATE 'contracts/.env'
    - MANUALLY ADD CONSUMER to subscription on vrf.chain.link
-   - Example structure:
-     ```json
-     {
-       "11155111": {
-         "PepedawnRaffle": "0xNEW_CONTRACT_ADDRESS"
-       }
-     }
-     ```
 
 4. **Synchronize Configurations and Documentation**:
    - Run the automation script to update all dependent files:

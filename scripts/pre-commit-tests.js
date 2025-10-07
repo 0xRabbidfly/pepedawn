@@ -53,6 +53,16 @@ try {
             cwd: process.cwd()
         });
         console.log('✅ Frontend build completed!');
+        // Ensure newly built assets are included in this commit
+        try {
+            execSync('git add -A dist', {
+                stdio: 'inherit',
+                cwd: process.cwd()
+            });
+            console.log('✅ Staged frontend/dist for commit');
+        } catch (err) {
+            console.warn('⚠️  Could not stage frontend/dist automatically:', err?.message || err);
+        }
     } catch (error) {
         console.error('❌ Frontend build failed!');
         process.exit(1);

@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "../src/PepedawnRaffle.sol";
+import "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 
 contract CheckRoundStateScript is Script {
     PepedawnRaffle public raffle;
@@ -39,6 +40,15 @@ contract CheckRoundStateScript is Script {
         console.log("VRF Request ID:", round.vrfRequestId);
         console.log("VRF Requested At:", round.vrfRequestedAt);
         console.log("Fees Distributed:", round.feesDistributed);
+        
+        // Check VRF configuration
+        console.log("\n=== VRF CONFIGURATION ===");
+        (IVRFCoordinatorV2Plus coordinator, uint256 subscriptionId, bytes32 keyHash, uint32 callbackGasLimit, uint16 requestConfirmations) = raffle.vrfConfig();
+        console.log("VRF Coordinator:", address(coordinator));
+        console.log("Subscription ID:", subscriptionId);
+        console.log("Key Hash: 0x%x", uint256(keyHash));
+        console.log("Callback Gas Limit:", callbackGasLimit);
+        console.log("Request Confirmations:", requestConfirmations);
         
         // Check contract security state
         console.log("\n=== SECURITY STATE ===");

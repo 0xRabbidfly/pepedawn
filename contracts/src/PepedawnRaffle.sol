@@ -164,6 +164,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     event VRFRequested(uint256 indexed roundId, uint256 indexed requestId);
     event VRFFulfilled(uint256 indexed roundId, uint256 indexed requestId, uint256[] randomWords);
     
+    
     // Distribution events
     event WinnersAssigned(uint256 indexed roundId, address[] winners, uint8[] prizeTiers);
     event PrizeDistributed(
@@ -266,8 +267,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
             coordinator: IVRFCoordinatorV2Plus(_vrfCoordinator),
             subscriptionId: _subscriptionId,
             keyHash: _keyHash,
-            callbackGasLimit: 100000,
-            requestConfirmations: 3
+            callbackGasLimit: 500000, // Increased from 100000 for complex callback
+            requestConfirmations: 5   // Increased from 3 for better finality
         });
         
         // Initialize security state
@@ -618,7 +619,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     }
     
     /**
-     * @notice Request VRF randomness for winner selection
+     * @notice Request VRF randomness for winner selection with dynamic gas estimation
      * @param roundId The round to request VRF for
      */
     function requestVRF(uint256 roundId) 
@@ -645,6 +646,18 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
             "Invalid VRF coordinator"
         );
         
+        // Dynamic gas estimation following Chainlink best practices
+        uint32 estimatedGas = _estimateCallbackGas(roundId);
+        uint32 safetyBuffer = estimatedGas * 30 / 100; // 30% safety buffer
+        uint32 finalGasLimit = estimatedGas + safetyBuffer;
+        
+        // Ensure gas limit is within bounds
+        require(finalGasLimit >= 10000, "Estimated gas too low");
+        require(finalGasLimit <= 2500000, "Estimated gas too high");
+        
+        // Update gas limit for this request
+        vrfConfig.callbackGasLimit = finalGasLimit;
+        
         // Effects: Update round status and timing
         rounds[roundId].status = RoundStatus.VRFRequested;
         rounds[roundId].vrfRequestedAt = uint64(block.timestamp);
@@ -656,7 +669,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
                 keyHash: vrfConfig.keyHash,
                 subId: vrfConfig.subscriptionId,
                 requestConfirmations: vrfConfig.requestConfirmations,
-                callbackGasLimit: vrfConfig.callbackGasLimit,
+                callbackGasLimit: finalGasLimit,
                 numWords: 1,
                 extraArgs: VRFV2PlusClient._argsToBytes(
                     VRFV2PlusClient.ExtraArgsV1({nativePayment: false}) // Use LINK for payment
@@ -670,6 +683,56 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         
         // Interactions: Emit event
         emit VRFRequested(roundId, requestId);
+    }
+    
+    /**
+     * @notice Estimate callback gas based on round complexity following Chainlink best practices
+     * @param roundId The round to estimate gas for
+     * @return estimatedGas The estimated gas required for the callback
+     */
+    function _estimateCallbackGas(uint256 roundId) internal view returns (uint32) {
+        Round memory round = rounds[roundId];
+        address[] memory participants = roundParticipants[roundId];
+        
+        // Base gas for fulfillRandomWords function
+        uint32 baseGas = 50000; // Function overhead, event emission, basic checks
+        
+        // Gas for winner selection algorithm
+        uint32 winnerSelectionGas = 20000; // Base winner selection logic
+        
+        // Gas for prize distribution (per winner)
+        uint32 prizeDistributionGasPerWinner = 15000; // Per winner distribution
+        uint32 totalPrizeDistributionGas = prizeDistributionGasPerWinner * 10; // Max 10 winners
+        
+        // Gas for fee distribution
+        uint32 feeDistributionGas = 25000; // Fee calculation and transfer
+        
+        // Gas for storage operations (per participant)
+        uint32 storageGasPerParticipant = 5000; // Storage updates per participant
+        uint32 totalStorageGas = storageGasPerParticipant * uint32(participants.length);
+        
+        // Gas for event emissions
+        uint32 eventGas = 10000; // Multiple event emissions
+        
+        // Calculate total estimated gas
+        uint32 totalEstimatedGas = baseGas + winnerSelectionGas + totalPrizeDistributionGas + 
+                                 feeDistributionGas + totalStorageGas + eventGas;
+        
+        // Apply complexity multipliers based on round size
+        if (participants.length > 100) {
+            totalEstimatedGas = totalEstimatedGas * 120 / 100; // 20% increase for large rounds
+        }
+        
+        if (round.totalWeight > 1000) {
+            totalEstimatedGas = totalEstimatedGas * 110 / 100; // 10% increase for high weight rounds
+        }
+        
+        // Ensure minimum gas limit
+        if (totalEstimatedGas < 100000) {
+            totalEstimatedGas = 100000; // Minimum safe gas limit
+        }
+        
+        return totalEstimatedGas;
     }
     
     /**
@@ -909,5 +972,14 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
      */
     function getRoundWinners(uint256 roundId) external view returns (WinnerAssignment[] memory) {
         return roundWinners[roundId];
+    }
+    
+    /**
+     * @notice Estimate gas for VRF callback (public function for testing/monitoring)
+     * @param roundId The round to estimate gas for
+     * @return estimatedGas The estimated gas required for the callback
+     */
+    function estimateVRFCallbackGas(uint256 roundId) external view returns (uint32) {
+        return _estimateCallbackGas(roundId);
     }
 }

@@ -32,8 +32,6 @@ Get-Content .env | ForEach-Object {
 ### Check Contract State (Read-Only)
 ```powershell
 .\contracts\scripts\cli\interact.ps1 check
-# or
-.\contracts\scripts\cli\interact.ps1 status
 ```
 **Shows formatted output with:**
 - Current round ID

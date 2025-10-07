@@ -189,7 +189,7 @@ async function init() {
   // Set up event listeners
   setupEventListeners();
   
-  // Check if wallet is already connected
+  // Check if wallet is already connected (with conflict protection)
   if (window.ethereum) {
     try {
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -198,6 +198,10 @@ async function init() {
       }
     } catch (error) {
       console.log('No wallet auto-connection:', error);
+      // Handle wallet extension conflicts gracefully
+      if (error.message && error.message.includes('ethereum')) {
+        console.log('Wallet extension conflict detected - user should disable conflicting extensions');
+      }
     }
   }
   
@@ -568,6 +572,15 @@ function setupContractEventListeners() {
       // Update UI if it's the current user
       if (eventData.user === userAddress?.toLowerCase()) {
         showTransactionStatus(`✅ Puzzle proof confirmed! Weight bonus applied.`, 'success');
+        
+        // Update proof status element
+        const proofStatus = document.getElementById('proof-status');
+        if (proofStatus) {
+          proofStatus.textContent = '✅ Puzzle proof confirmed! Weight bonus applied.';
+          proofStatus.className = 'success';
+          proofStatus.style.display = 'block';
+        }
+        
         updateUserStats(contract, userAddress);
         updateButtonStates(); // Proof button should now be disabled
       } else {
@@ -575,6 +588,37 @@ function setupContractEventListeners() {
       }
       
       // Update leaderboard
+      updateLeaderboard(contract);
+    });
+    
+    contract.on('ProofRejected', (user, roundId, proofHash, event) => {
+      const eventData = {
+        roundId: roundId.toString(),
+        user: user.toLowerCase(),
+        proofHash: proofHash,
+        blockNumber: event.blockNumber,
+        transactionHash: event.transactionHash
+      };
+      console.log('❌ Proof rejected:', eventData);
+      logEvent('ProofRejected', eventData);
+      
+      // Update UI if it's the current user
+      if (eventData.user === userAddress?.toLowerCase()) {
+        showTransactionStatus(`❌ Puzzle proof incorrect. No weight bonus applied.`, 'warning');
+        
+        // Update proof status element
+        const proofStatus = document.getElementById('proof-status');
+        if (proofStatus) {
+          proofStatus.textContent = '❌ Puzzle proof incorrect. No weight bonus applied.';
+          proofStatus.className = 'error';
+          proofStatus.style.display = 'block';
+        }
+        
+        updateUserStats(contract, userAddress);
+        updateButtonStates(); // Proof button should now be disabled
+      }
+      
+      // Update leaderboard (even for rejected proofs, user stats may change)
       updateLeaderboard(contract);
     });
     
@@ -962,16 +1006,16 @@ async function submitProof() {
       // Wait for transaction confirmation
       const receipt = await tx.wait();
       
-      console.log('Proof submitted successfully:', receipt);
-      showTransactionStatus('✅ Puzzle proof submitted successfully! +40% weight bonus applied.', 'success');
+      console.log('Proof transaction confirmed:', receipt);
+      showTransactionStatus('Proof submitted, validating...', 'info');
       
-      // Clear input and show success status
+      // Clear input
       proofInput.value = '';
+      
+      // Clear any existing proof status - we'll wait for contract events
       const proofStatus = document.getElementById('proof-status');
       if (proofStatus) {
-        proofStatus.textContent = '✅ Proof submitted successfully! +40% weight bonus applied.';
-        proofStatus.className = 'success';
-        proofStatus.style.display = 'block';
+        proofStatus.style.display = 'none';
       }
       
       // Update user stats and security status

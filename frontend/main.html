@@ -4,16 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PEPEDAWN - Lottery Interface</title>
+    <title>PEPEDAWN</title>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <div id="app">
       <header>
-        <h1>PEPEDAWN Lottery</h1>
+        <h1>PEPEDAWN</h1>
         <nav>
           <a href="/">Home</a>
-          <a href="/main.html" class="active">Bet</a>
+          <a href="/main.html" class="active">Ticket Office</a>
           <a href="/rules.html">Rules</a>
         </nav>
       </header>
@@ -30,7 +30,7 @@
         </section>
 
         <section id="round-status">
-          <h2>Current Round</h2>
+          <h2>Current Round<span id="round-number"></span></h2>
           <div id="round-info">
             <p>Status: <span id="round-status-text">Loading...</span></p>
             <p>Time Remaining: <span id="time-remaining">--</span></p>
@@ -56,7 +56,7 @@
               <p>Tickets: <span id="selected-tickets">0</span></p>
               <p>Amount: <span id="selected-amount">0</span> ETH</p>
               <p>Your Cap Remaining: <span id="cap-remaining">1.0</span> ETH</p>
-              <button id="place-bet">Place Bet</button>
+              <button id="place-bet">Ticket Office</button>
             </div>
           </div>
         </section>
@@ -76,8 +76,8 @@
           <div class="progress-container">
             <div class="progress-bar">
               <div class="progress-fill" id="ticket-progress"></div>
+              <p id="progress-text" class="progress-text">Loading...</p>
             </div>
-            <p id="progress-text" class="progress-text">Loading...</p>
             <p id="progress-warning" class="warning" style="display:none;">
               ⚠️ Round needs 10 tickets to distribute prizes. Otherwise, full refunds will be issued.
             </p>
@@ -97,7 +97,7 @@
             <p>Your Tickets: <span id="user-tickets">0</span></p>
             <p>Your Weight: <span id="user-weight">0</span></p>
             <p>Proof Submitted: <span id="user-proof-status">No</span></p>
-            <p>Expected Fake Packs: <span id="user-fake-odds">0%</span></p>
+            <p>Winning Odds: <span id="user-fake-odds">0%</span></p>
           </div>
         </section>
       </main>

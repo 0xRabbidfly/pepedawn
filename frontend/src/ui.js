@@ -121,6 +121,10 @@ export async function updateRoundStatus(contract) {
     
     if (currentRoundId.toString() === '0') {
       // No rounds created yet
+      const roundNumber = document.getElementById('round-number');
+      if (roundNumber) {
+        roundNumber.textContent = '';
+      }
       const roundStatusText = document.getElementById('round-status-text');
       if (roundStatusText) roundStatusText.textContent = 'No Active Round';
       return;
@@ -128,6 +132,12 @@ export async function updateRoundStatus(contract) {
     
     // Get round data (Remix version returns tuple)
     const roundData = await contract.getRound(currentRoundId);
+    
+    // Update round number
+    const roundNumber = document.getElementById('round-number');
+    if (roundNumber) {
+      roundNumber.textContent = `: ${currentRoundId}`;
+    }
     
     // Update status text
     const roundStatusText = document.getElementById('round-status-text');
@@ -200,7 +210,11 @@ export async function updateProgressIndicator(contract) {
     
     // Update text
     if (progressText) {
-      progressText.textContent = `${totalTickets} / 10 tickets needed for distribution`;
+      if (totalTickets >= 10) {
+        progressText.textContent = 'PEPEDAWN Packs will be distributed this round !!';
+      } else {
+        progressText.textContent = `${totalTickets}/10 tickets are required for distribution when round closes`;
+      }
     }
     
     // Show/hide warning
@@ -226,9 +240,9 @@ export async function updateLeaderboard(contract) {
     if (!contract) {
       // Show mock data when contract not available
       const mockLeaderboard = [
-        { address: '0x1234...5678', tickets: 50, weight: 70, fakeOdds: '12.5%' },
-        { address: '0xabcd...efgh', tickets: 35, weight: 35, fakeOdds: '8.7%' },
-        { address: '0x9876...4321', tickets: 25, weight: 35, fakeOdds: '8.7%' }
+        { address: '0x1234...5678', tickets: 50, weight: 70, fakeOdds: '12.5%', hasVerifiedProof: true },
+        { address: '0xabcd...efgh', tickets: 35, weight: 35, fakeOdds: '8.7%', hasVerifiedProof: false },
+        { address: '0x9876...4321', tickets: 25, weight: 35, fakeOdds: '8.7%', hasVerifiedProof: true }
       ];
       
       const leaderboardHTML = `
@@ -237,12 +251,12 @@ export async function updateLeaderboard(contract) {
           <span>Address</span>
           <span>Tickets</span>
           <span>Weight</span>
-          <span>Fake Pack Odds</span>
+          <span>Winning Odds</span>
         </div>
         ${mockLeaderboard.map((entry, index) => `
           <div class="leaderboard-entry">
             <span class="rank">#${index + 1}</span>
-            <span class="address">${entry.address} (Mock)</span>
+            <span class="address">${entry.address} (Mock)${entry.hasVerifiedProof ? ' 🧩' : ''}</span>
             <span class="tickets">${entry.tickets}</span>
             <span class="weight">${entry.weight}</span>
             <span class="odds">${entry.fakeOdds}</span>
@@ -284,12 +298,24 @@ export async function updateLeaderboard(contract) {
             ? ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1)
             : '0.0';
           
+          // Check if user has a verified proof (correct proof)
+          let hasVerifiedProof = false;
+          if (stats.hasProof) {
+            try {
+              const proofData = await contract.userProofInRound(currentRoundId, participant);
+              hasVerifiedProof = proofData.verified;
+            } catch (proofError) {
+              // If we can't get proof data, default to false
+              hasVerifiedProof = false;
+            }
+          }
+          
           leaderboardData.push({
             address: participant,
             tickets: Number(stats.tickets),
             weight: Number(stats.weight),
             fakeOdds: fakeOdds + '%',
-            hasProof: stats.hasProof
+            hasVerifiedProof: hasVerifiedProof
           });
         } catch (error) {
           // Skip participant if stats can't be retrieved
@@ -313,12 +339,12 @@ export async function updateLeaderboard(contract) {
         <span>Address</span>
         <span>Tickets</span>
         <span>Weight</span>
-        <span>Fake Pack Odds</span>
+        <span>Winning Odds</span>
       </div>
       ${leaderboardData.map((entry, index) => `
         <div class="leaderboard-entry">
           <span class="rank">#${index + 1}</span>
-          <span class="address">${formatAddress(entry.address)}${entry.hasProof ? ' 🧩' : ''}</span>
+          <span class="address">${formatAddress(entry.address)}${entry.hasVerifiedProof ? ' 🧩' : ''}</span>
           <span class="tickets">${entry.tickets}</span>
           <span class="weight">${entry.weight}</span>
           <span class="odds">${entry.fakeOdds}</span>
@@ -416,9 +442,24 @@ export async function updateUserStats(contract, userAddress) {
     // Update proof status
     if (userProofStatus) {
       if (stats.hasProof) {
-        userProofStatus.textContent = 'Yes (+40%)';
+        // Check if proof was verified (correct) or just submitted (failed)
+        try {
+          const proofData = await contract.userProofInRound(currentRoundId, userAddress);
+          
+          if (proofData.verified) {
+            userProofStatus.textContent = 'Yes (+40%)';
+            userProofStatus.className = 'proof-success';
+          } else {
+            userProofStatus.innerHTML = 'Yes (<span style="color: red;">failed</span>)';
+            userProofStatus.className = 'proof-failed';
+          }
+        } catch (error) {
+          // Fallback if we can't get proof data
+          userProofStatus.textContent = 'Yes';
+        }
       } else {
         userProofStatus.textContent = 'No';
+        userProofStatus.className = '';
       }
     }
     

@@ -167,7 +167,7 @@ main {
   margin-bottom: calc(var(--spacing-md) * 0.5);
   text-shadow: 
     2px 2px 0px var(--primary-color),
-    4px 4px 0px var(--secondary-color),
+    4px 4px 0px #2E7D32,
     6px 6px 10px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -230,7 +230,7 @@ main {
 /* Buttons */
 .btn {
   display: inline-block;
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-sm) var(--spacing-lg);
   border: none;
   border-radius: var(--border-radius);
   font-size: var(--font-size-base);
@@ -370,7 +370,7 @@ section h2 {
 }
 
 .ticket-btn {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   background-color: var(--background-color);
   border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
@@ -456,17 +456,19 @@ section h2 {
 }
 
 .progress-container {
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
+  position: relative;
 }
 
 .progress-bar {
   width: 100%;
-  height: 30px;
+  height: 40px;
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   overflow: hidden;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   border: 1px solid var(--border-color);
+  position: relative;
 }
 
 .progress-fill {
@@ -481,11 +483,17 @@ section h2 {
 }
 
 .progress-text {
-  text-align: center;
-  font-size: var(--font-size-lg);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--text-color);
-  margin-bottom: var(--spacing-sm);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  z-index: 10;
+  white-space: nowrap;
+  margin: 0;
 }
 
 .progress-warning {
@@ -601,9 +609,9 @@ section h2 {
 }
 
 .tx-status.success {
-  background-color: rgba(76, 175, 80, 0.1);
+  background-color: #90EE90;
   border: 1px solid var(--success-color);
-  color: var(--success-color);
+  color: #2E7D32;
 }
 
 .tx-status.error {
@@ -699,6 +707,11 @@ section h2 {
   button {
     min-height: 44px; /* Touch-friendly size */
     font-size: var(--font-size-base);
+  }
+  
+  /* Mobile progress text adjustments */
+  .progress-text {
+    font-size: var(--font-size-sm);
   }
   
   /* Mobile-friendly form inputs */

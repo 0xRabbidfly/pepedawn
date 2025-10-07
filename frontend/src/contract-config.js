@@ -24,6 +24,7 @@ export const CONTRACT_CONFIG = {
     "function creatorsAddress() external view returns (address)",
     "function emblemVaultAddress() external view returns (address)",
     "function vrfConfig() external view returns (tuple(address coordinator, uint64 subscriptionId, bytes32 keyHash, uint32 callbackGasLimit, uint16 requestConfirmations))",
+    "function userProofInRound(uint256, address) external view returns (tuple(address wallet, uint256 roundId, bytes32 proofHash, bool verified, uint64 submittedAt))",
     
     // Security view functions
     "function paused() external view returns (bool)",
@@ -37,6 +38,7 @@ export const CONTRACT_CONFIG = {
     "function closeRound(uint256 roundId) external",
     "function snapshotRound(uint256 roundId) external",
     "function requestVRF(uint256 roundId) external",
+    "function setValidProof(uint256 roundId, bytes32 proofHash) external",
     
     // Security management functions (owner only)
     "function setDenylistStatus(address user, bool status) external",
@@ -64,7 +66,9 @@ export const CONTRACT_CONFIG = {
     "event RoundClosed(uint256 indexed roundId)",
     "event RoundSnapshot(uint256 indexed roundId, uint256 totalTickets, uint256 totalWeight)",
     "event BetPlaced(uint256 indexed roundId, address indexed user, uint256 amount, uint256 tickets, uint256 weight)",
-    "event ProofSubmitted(uint256 indexed roundId, address indexed user, uint256 weight)",
+    "event ProofSubmitted(address indexed wallet, uint256 indexed roundId, bytes32 proofHash, uint256 newWeight)",
+    "event ProofRejected(address indexed wallet, uint256 indexed roundId, bytes32 proofHash)",
+    "event ValidProofSet(uint256 indexed roundId, bytes32 validProofHash)",
     "event VRFRequested(uint256 indexed roundId, uint256 indexed requestId)",
     "event PrizesDistributed(uint256 indexed roundId, uint256[] randomWords)",
     "event EmblemVaultPrizeAssigned(uint256 indexed roundId, address indexed winner, uint256 indexed assetId, uint256 timestamp)",

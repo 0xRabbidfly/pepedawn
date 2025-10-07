@@ -87,19 +87,29 @@ class ConfigurationUpdater {
     if (fs.existsSync(this.frontendConfigPath)) {
       let content = fs.readFileSync(this.frontendConfigPath, 'utf8');
       
-      // Find and replace ABI
-      const abiRegex = /const\s+CONTRACT_ABI\s*=\s*\[[\s\S]*?\];/;
-      const newAbi = `const CONTRACT_ABI = ${JSON.stringify(abi, null, 2)};`;
+      // Convert ABI array to string format for the frontend config
+      // The ABI from forge is an array of objects, but frontend expects strings
+      const abiStrings = abi.map(item => {
+        if (typeof item === 'string') {
+          return `    "${item}"`;
+        } else if (typeof item === 'object' && item !== null) {
+          // Convert ABI object to string format
+          return `    "${JSON.stringify(item).replace(/"/g, '\\"')}"`;
+        }
+        return `    "${String(item)}"`;
+      }).join(',\n');
+      const newAbi = `  abi: [\n${abiStrings}\n  ]`;
+      
+      // Find and replace the ABI array in CONTRACT_CONFIG
+      const abiRegex = /abi:\s*\[[\s\S]*?\]/;
       
       if (abiRegex.test(content)) {
         content = content.replace(abiRegex, newAbi);
+        fs.writeFileSync(this.frontendConfigPath, content);
+        console.log('✅ Frontend ABI updated');
       } else {
-        // Add ABI if not found
-        content = content.replace(/(const\s+CONTRACT_ADDRESS)/, `${newAbi}\n\n$1`);
+        console.warn('⚠️  Could not find ABI array in CONTRACT_CONFIG, skipping ABI update');
       }
-      
-      fs.writeFileSync(this.frontendConfigPath, content);
-      console.log('✅ Frontend ABI updated');
     }
 
     // Update deployment artifacts

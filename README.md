@@ -184,6 +184,7 @@ This workflow outlines the steps for deploying a new contract version and ensuri
 
 3. **Update Source-of-Truth Addresses File**:
    - Manually edit `deploy/artifacts/addresses.json` with the new contract address under the correct `chainId` (e.g., `11155111` for Sepolia).
+   - MANUALLY UPDATE 'contracts/.env'
    - Example structure:
      ```json
      {
@@ -200,6 +201,7 @@ This workflow outlines the steps for deploying a new contract version and ensuri
      npm run update-configs
      npm run update-docs
      ```
+   - manually update .env file if not done above
 
 5. **Commit Changes (Triggers Post-Commit Validation)**:
    - Stage the updated files:

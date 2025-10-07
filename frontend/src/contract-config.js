@@ -3,7 +3,7 @@
 
 export const CONTRACT_CONFIG = {
   // Your deployed contract address (update after deployment)
-  address: "0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc", // Deployed on Sepolia testnet
+  address: "0x6b4700Fb6556B7fDE446e31AD194da665a439ebF", // Deployed on Sepolia testnet
   
   // Sepolia testnet configuration
   network: 'sepolia',

@@ -60,7 +60,13 @@ export async function updateWalletInfo(address, provider) {
   try {
     const walletInfo = document.getElementById('wallet-info');
     const walletBalance = document.getElementById('wallet-balance');
+    const walletAddressDisplay = document.getElementById('wallet-address-display');
     const connectBtn = document.getElementById('connect-wallet');
+    
+    // Update address display
+    if (walletAddressDisplay) {
+      walletAddressDisplay.textContent = formatAddress(address);
+    }
     
     // Update balance
     if (provider && walletBalance) {
@@ -80,15 +86,13 @@ export async function updateWalletInfo(address, provider) {
       }
     }
     
-    // Show wallet info section
+    // Show wallet info section and hide connect button
     if (walletInfo) {
       walletInfo.style.display = 'block';
     }
     
-    // Update button to show connected address
     if (connectBtn) {
-      connectBtn.textContent = formatAddress(address);
-      connectBtn.disabled = true;
+      connectBtn.style.display = 'none';
     }
     
   } catch (error) {

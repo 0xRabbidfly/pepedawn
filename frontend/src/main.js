@@ -329,6 +329,7 @@ function handleAccountChange(accounts) {
     if (connectBtn) {
       connectBtn.textContent = 'Connect Wallet';
       connectBtn.disabled = false;
+      connectBtn.style.display = 'inline-block';
     }
     
     showTransactionStatus('Wallet disconnected', 'info');

@@ -67,6 +67,9 @@ class PostCommitChecker {
       // 1. Detect contract changes
       await this.detectContractChanges();
       
+      // 1a. Auto-sync configs and docs before validation
+      await this.runAutoSync();
+      
       // 2. Validate documentation consistency
       await this.validateDocumentation();
       
@@ -271,6 +274,24 @@ class PostCommitChecker {
     }
     
     console.log('\n' + '=' .repeat(50));
+  }
+
+  /**
+   * Run auto-sync scripts to ensure configs and docs are up-to-date
+   */
+  async runAutoSync() {
+    console.log('🔁 Auto-syncing configs and docs...');
+    try {
+      if (fs.existsSync('scripts/update-configs.js')) {
+        execSync('node scripts/update-configs.js', { stdio: 'inherit' });
+      }
+      if (fs.existsSync('scripts/update-docs.js')) {
+        execSync('node scripts/update-docs.js', { stdio: 'inherit' });
+      }
+      console.log('✅ Auto-sync complete');
+    } catch (err) {
+      console.warn('⚠️  Auto-sync encountered an issue but continuing:', err.message);
+    }
   }
 
   /**

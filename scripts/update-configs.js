@@ -125,31 +125,31 @@ class ConfigurationUpdater {
       return;
     }
 
-    const addresses = JSON.parse(fs.readFileSync(this.addressesPath, 'utf8'));
+    const addressesJson = JSON.parse(fs.readFileSync(this.addressesPath, 'utf8'));
+    // Resolve latest PepedawnRaffle address (prefer Sepolia 11155111 if present)
+    const sepolia = addressesJson['11155111'] || {};
+    const mainnet = addressesJson['1'] || {};
+    const latestAddress = sepolia.PepedawnRaffle || mainnet.PepedawnRaffle || null;
     
     // Update frontend addresses
     if (fs.existsSync(this.frontendAddressesPath)) {
-      fs.writeFileSync(this.frontendAddressesPath, JSON.stringify(addresses, null, 2));
+      fs.writeFileSync(this.frontendAddressesPath, JSON.stringify(addressesJson, null, 2));
       console.log('✅ Frontend addresses updated');
     }
 
     // Update frontend config with latest address
-    if (fs.existsSync(this.frontendConfigPath)) {
+    if (fs.existsSync(this.frontendConfigPath) && latestAddress) {
       let content = fs.readFileSync(this.frontendConfigPath, 'utf8');
-      
-      // Find and replace contract address
-      const addressRegex = /const\s+CONTRACT_ADDRESS\s*=\s*["'][^"']*["']/;
-      const newAddress = `const CONTRACT_ADDRESS = "${addresses.PepedawnRaffle || '0x0000000000000000000000000000000000000000'}";`;
-      
-      if (addressRegex.test(content)) {
-        content = content.replace(addressRegex, newAddress);
+      // Replace pattern: address: "0x..."
+      const cfgAddrRegex = /address:\s*"0x[a-fA-F0-9]{40}"/;
+      const newCfgAddr = `address: "${latestAddress}"`;
+      if (cfgAddrRegex.test(content)) {
+        content = content.replace(cfgAddrRegex, newCfgAddr);
+        fs.writeFileSync(this.frontendConfigPath, content);
+        console.log('✅ Frontend contract-config address updated');
       } else {
-        // Add address if not found
-        content = content.replace(/(const\s+CONTRACT_ABI)/, `${newAddress}\n\n$1`);
+        console.warn('⚠️  Could not find address field in frontend contract-config.js');
       }
-      
-      fs.writeFileSync(this.frontendConfigPath, content);
-      console.log('✅ Frontend contract address updated');
     }
   }
 

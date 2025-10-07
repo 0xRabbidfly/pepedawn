@@ -365,6 +365,10 @@ async function loadContract() {
       contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, signer);
     } else if (provider) {
       contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, provider);
+    } else {
+      // No provider available yet - wallet not connected
+      console.log('⏳ Waiting for wallet connection to load contract');
+      return;
     }
     
     console.log('✅ Contract loaded:', CONTRACT_CONFIG.address);

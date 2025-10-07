@@ -245,10 +245,83 @@ export async function updateProgressIndicator(contract) {
   }
 }
 
+// Get winners data for a distributed round
+async function getWinnersData(contract, roundId) {
+  try {
+    // This would need to be implemented in the contract
+    // For now, we'll simulate the winners based on sorted participants
+    const participants = await contract.getRoundParticipants(roundId);
+    const roundData = await contract.getRound(roundId);
+    
+    // Sort participants by weight (descending) to determine winners
+    const participantsWithStats = [];
+    for (let i = 0; i < participants.length; i++) {
+      const participant = participants[i];
+      try {
+        const stats = await contract.getUserStats(roundId, participant);
+        participantsWithStats.push({
+          address: participant,
+          weight: Number(stats.weight)
+        });
+      } catch (error) {
+        console.warn(`Could not get stats for participant ${participant}:`, error.message);
+      }
+    }
+    
+    participantsWithStats.sort((a, b) => b.weight - a.weight);
+    
+    return {
+      fakePackWinner: participantsWithStats[0]?.address || null,
+      kekPackWinner: participantsWithStats[1]?.address || null,
+      pepePackWinners: participantsWithStats.slice(2, 10).map(p => p.address) // 8 winners
+    };
+  } catch (error) {
+    console.error('Error getting winners data:', error);
+    return null;
+  }
+}
+
+// Populate round selector dropdown
+export async function populateRoundSelector(contract) {
+  try {
+    const roundSelect = document.getElementById('round-select');
+    if (!roundSelect || !contract) return;
+    
+    // Get current round ID
+    const currentRoundId = await contract.currentRoundId();
+    const currentRoundNum = Number(currentRoundId);
+    
+    // Clear existing options
+    roundSelect.innerHTML = '';
+    
+    // Add options for previous rounds (if any)
+    for (let i = Math.max(1, currentRoundNum - 5); i <= currentRoundNum; i++) {
+      const option = document.createElement('option');
+      option.value = i.toString();
+      option.textContent = `Round ${i}`;
+      if (i === currentRoundNum) {
+        option.textContent += ' (Current)';
+        option.selected = true;
+      }
+      roundSelect.appendChild(option);
+    }
+    
+    // Add future round option
+    const futureOption = document.createElement('option');
+    futureOption.value = (currentRoundNum + 1).toString();
+    futureOption.textContent = `Round ${currentRoundNum + 1} (Future)`;
+    roundSelect.appendChild(futureOption);
+    
+  } catch (error) {
+    console.error('Error populating round selector:', error);
+  }
+}
+
 // Update leaderboard display
-export async function updateLeaderboard(contract) {
+export async function updateLeaderboard(contract, selectedRoundId = null) {
   try {
     const leaderboardList = document.getElementById('leaderboard-list');
+    const leaderboardTitle = document.getElementById('leaderboard-title');
     if (!leaderboardList) return;
     
     // Only update leaderboard if we're on the leaderboard page
@@ -285,32 +358,95 @@ export async function updateLeaderboard(contract) {
       return;
     }
     
-    // Get current round ID
-    const currentRoundId = await contract.currentRoundId();
+    // Determine which round to display
+    let displayRoundId;
+    let isCurrentRound = false;
     
-    if (currentRoundId.toString() === '0') {
+    if (selectedRoundId) {
+      // User selected a specific round
+      displayRoundId = selectedRoundId;
+      isCurrentRound = false;
+    } else {
+      // Default to current round
+      displayRoundId = await contract.currentRoundId();
+      isCurrentRound = true;
+    }
+    
+    // Update title
+    if (leaderboardTitle) {
+      leaderboardTitle.textContent = `Leaderboard Round: ${displayRoundId}`;
+    }
+    
+    if (displayRoundId.toString() === '0') {
       leaderboardList.innerHTML = '<p>No active round</p>';
       return;
     }
     
+    // Check if this is a future round
+    const currentRoundId = await contract.currentRoundId();
+    if (Number(displayRoundId) > Number(currentRoundId)) {
+      leaderboardList.innerHTML = `
+        <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-secondary);">
+          <h3>🚀 Future Round</h3>
+          <p>Round ${displayRoundId} hasn't started yet.</p>
+          <p>This round will begin after Round ${currentRoundId} ends.</p>
+        </div>
+      `;
+      return;
+    }
+    
     // Get round data
-    const roundData = await contract.getRound(currentRoundId);
+    const roundData = await contract.getRound(displayRoundId);
     
     if (roundData.totalTickets.toString() === '0') {
       leaderboardList.innerHTML = '<p>No participants yet</p>';
       return;
     }
     
+    // Check if round is distributed (status 5)
+    const isDistributed = Number(roundData.status) === 5;
+    
+    let winnersHTML = '';
+    if (isDistributed) {
+      const winners = await getWinnersData(contract, displayRoundId);
+      if (winners) {
+        winnersHTML = `
+          <div class="winners-section">
+            <div class="winners-title">🎉 Round ${displayRoundId} Winners 🎉</div>
+            
+            <div class="winner-tier">
+              <div class="winner-tier-title fake-pack">🥇 Fake Pack Winner (3x PEPEDAWN)</div>
+              <div class="winner-address">${winners.fakePackWinner ? formatAddress(winners.fakePackWinner) : 'No Winner'}</div>
+            </div>
+            
+            <div class="winner-tier">
+              <div class="winner-tier-title kek-pack">🥈 Kek Pack Winner (2x PEPEDAWN)</div>
+              <div class="winner-address">${winners.kekPackWinner ? formatAddress(winners.kekPackWinner) : 'No Winner'}</div>
+            </div>
+            
+            <div class="winner-tier">
+              <div class="winner-tier-title pepe-pack">🥉 Pepe Pack Winners (1x PEPEDAWN)</div>
+              <div class="pepe-winners-grid">
+                ${winners.pepePackWinners.map(address => 
+                  `<div class="winner-address">${formatAddress(address)}</div>`
+                ).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
     // Get ALL participants (fixed: was only showing current user)
     const leaderboardData = [];
     try {
-      const participants = await contract.getRoundParticipants(currentRoundId);
+      const participants = await contract.getRoundParticipants(displayRoundId);
       
       // Get stats for each participant
       for (let i = 0; i < participants.length; i++) {
         const participant = participants[i];
         try {
-          const stats = await contract.getUserStats(currentRoundId, participant);
+          const stats = await contract.getUserStats(displayRoundId, participant);
           const fakeOdds = roundData.totalWeight > 0 
             ? ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1)
             : '0.0';
@@ -319,7 +455,7 @@ export async function updateLeaderboard(contract) {
           let hasVerifiedProof = false;
           if (stats.hasProof) {
             try {
-              const proofData = await contract.userProofInRound(currentRoundId, participant);
+              const proofData = await contract.userProofInRound(displayRoundId, participant);
               hasVerifiedProof = proofData.verified;
             } catch (proofError) {
               // If we can't get proof data, default to false
@@ -351,6 +487,7 @@ export async function updateLeaderboard(contract) {
     
     // Generate leaderboard HTML
     const leaderboardHTML = `
+      ${winnersHTML}
       <div class="leaderboard-header">
         <span>Rank</span>
         <span>Address</span>

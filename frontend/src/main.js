@@ -10,7 +10,8 @@ import {
   showTransactionStatus,
   showSecurityStatus,
   validateTransactionParams,
-  handleTransactionError
+  handleTransactionError,
+  populateRoundSelector
 } from './ui.js';
 import { 
   CONTRACT_CONFIG, 
@@ -203,6 +204,11 @@ async function init() {
   // Set up event listeners
   setupEventListeners();
   
+  // Set up leaderboard round selector if on leaderboard page
+  if (window.location.pathname.includes('leaderboard.html')) {
+    setupLeaderboardRoundSelector();
+  }
+  
   // Check if wallet is already connected (with conflict protection)
   if (window.ethereum) {
     try {
@@ -246,6 +252,21 @@ function setupEventListeners() {
   const submitProofBtn = document.getElementById('submit-proof');
   if (submitProofBtn) {
     submitProofBtn.addEventListener('click', submitProof);
+  }
+}
+
+// Set up leaderboard round selector
+function setupLeaderboardRoundSelector() {
+  const roundSelect = document.getElementById('round-select');
+  if (roundSelect) {
+    roundSelect.addEventListener('change', async function() {
+      const selectedValue = this.value;
+      
+      // Update leaderboard with selected round
+      if (contract) {
+        await updateLeaderboard(contract, selectedValue);
+      }
+    });
   }
 }
 
@@ -319,6 +340,11 @@ async function setupWalletConnection(showSuccessToast = true) {
     await updateUserStats(contract, userAddress);
     showSecurityStatus(contract, userAddress);
     await updateButtonStates(); // Update button states after connecting
+    
+    // Populate round selector if on leaderboard page
+    if (window.location.pathname.includes('leaderboard.html')) {
+      await populateRoundSelector(contract);
+    }
   }
   
   if (showSuccessToast) {

@@ -21,7 +21,15 @@
 
       <main>
         <section id="leaderboard">
-          <h2>Live Leaderboard</h2>
+          <div class="leaderboard-header-section">
+            <h2 id="leaderboard-title">Live Leaderboard</h2>
+            <div class="round-selector">
+              <label for="round-select">Round:</label>
+              <select id="round-select">
+                <option value="">Loading...</option>
+              </select>
+            </div>
+          </div>
           <div id="leaderboard-list">
             <p>Loading leaderboard...</p>
           </div>

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "forge-std/Test.sol";
-import "../src/PepedawnRaffle.sol";
+import {Test} from "forge-std/Test.sol";
+import {PepedawnRaffle} from "../src/PepedawnRaffle.sol";
 
 /**
  * @title Deployed Contract Test

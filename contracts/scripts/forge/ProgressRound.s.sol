@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../src/PepedawnRaffle.sol";
+import "../../src/PepedawnRaffle.sol";
 
 contract ProgressRoundScript is Script {
     PepedawnRaffle public raffle;

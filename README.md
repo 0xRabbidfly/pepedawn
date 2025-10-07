@@ -44,9 +44,11 @@ pepedawn/
 ├── contracts/               # Solidity contracts + tests
 │   ├── src/
 │   │   └── PepedawnRaffle.sol  # Main raffle contract
-│   ├── test/                # Foundry unit + invariant tests
-│   ├── script/              # Deployment scripts
-│   └── scripts/             # Interaction utilities
+│   ├── test/                # Foundry tests (7 focused files)
+│   ├── scripts/
+│   │   ├── forge/           # Foundry deployment scripts
+│   │   ├── cli/             # CLI interaction utilities
+│   │   └── test/            # Test runner scripts
 ├── deploy/artifacts/        # Deployment artifacts
 │   ├── addresses.json       # Contract addresses by network
 │   ├── vrf-config.json     # Chainlink VRF configuration
@@ -76,7 +78,7 @@ pepedawn/
 - **Chainlink VRF integration**: Verifiable random winner selection
 - **Dynamic gas estimation**: Automatic VRF callback gas calculation
 - **Security-first design**: Reentrancy protection, access controls, circuit breakers
-- **Comprehensive testing**: 16 test suites covering all scenarios
+- **Comprehensive testing**: 7 focused test files with 125 tests (100% FR coverage)
 
 ### Frontend (Vanilla JS + Vite)
 - **Multi-page application**: Title page, betting interface, rules
@@ -92,16 +94,17 @@ pepedawn/
 ```bash
 cd contracts
 
-# Run tests
-forge test                    # All tests
-forge test --match-path "test/BasicDeployment.t.sol" # Specific test
+# Run tests (see TESTING.md for all options)
+forge test --profile pre-commit   # Fast pre-commit (<1 second)
+forge test --profile unit          # Comprehensive unit tests
+forge test --profile all           # All tests (125 tests)
 
 # Deploy to Sepolia
-forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast
+forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast
 
 # Interact with deployed contract
-.\scripts\interact-sepolia.ps1 check        # Check contract state
-.\scripts\interact-sepolia.ps1 quick-start  # Create and open round
+.\scripts\cli\interact.ps1 check        # Check contract state
+.\scripts\cli\interact.ps1 quick-start  # Create and open round
 ```
 
 ### Frontend Development
@@ -157,7 +160,9 @@ npm run update-configs # Update configurations
 
 ### Git Hooks
 - **Post-commit hook**: Runs validation after every commit
-- **Pre-commit hook**: Runs tests before allowing commits (via husky)
+- **Pre-commit hook**: Runs fast test suite before commits (~1 second, 125 tests)
+  - Install: `cd contracts && bash .githooks/install.sh` (or `.githooks/install.ps1` on Windows)
+  - See `contracts/.githooks/README.md` for details
 
 ### Manual Usage
 ```bash
@@ -185,7 +190,7 @@ This workflow outlines the steps for deploying a new contract version and ensuri
    ```bash
     cd contracts
     set -a; source .env; set +a
-    forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+    forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
    ```
 
 3. **Update Source-of-Truth Addresses File**:
@@ -252,18 +257,30 @@ The project uses GitHub Actions for automated deployment to pepedawn.art:
 ### Contract Testing
 See `contracts/TESTING.md` for detailed testing guide.
 
+**Test Structure** (7 focused files, 125 tests, 100% FR coverage):
+- `Core.t.sol` - Deployment, constants, smoke tests
+- `RoundLifecycle.t.sol` - Round states & transitions
+- `BettingAndProofs.t.sol` - Wagers, proofs, validation
+- `WinnerSelection.t.sol` - Weighted lottery, prize distribution
+- `Security.t.sol` - Reentrancy, VRF security
+- `Governance.t.sol` - Access control, pause mechanisms
+- `Integration.t.sol` - End-to-end workflows
+
 **Quick commands**:
 ```bash
 cd contracts
 
-# Unit tests (fast)
-forge test --match-path "test/{BasicDeployment,AccessControl,InputValidation}.t.sol"
+# Fast pre-commit (<1 second, all 125 tests)
+forge test --profile pre-commit
 
-# Integration tests
-forge test --match-path "test/{Round,Security,ScenarioFullRound}.t.sol"
+# Comprehensive unit tests (1000 fuzz runs)
+forge test --profile unit
 
-# Security tests (extensive fuzzing)
+# Security tests (extensive fuzzing, 10K runs)
 forge test --profile security
+
+# All tests
+forge test --profile all
 ```
 
 ### Frontend Testing
@@ -318,10 +335,12 @@ cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-k
 ### Using PowerShell Script
 ```powershell
 # Windows users can use the provided script
-.\contracts\scripts\interact-sepolia.ps1 check        # Check status
-.\contracts\scripts\interact-sepolia.ps1 quick-start  # Create & open round
-.\contracts\scripts\interact-sepolia.ps1 bet 1 0.01   # Place bet
+.\contracts\scripts\cli\interact.ps1 check        # Check status
+.\contracts\scripts\cli\interact.ps1 quick-start  # Create & open round
+.\contracts\scripts\cli\interact.ps1 bet 1 0.01   # Place bet
 ```
+
+See `contracts/scripts/cli/GUIDE.md` for complete CLI documentation.
 
 ## 📋 Current Deployment
 

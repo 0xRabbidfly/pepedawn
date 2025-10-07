@@ -1,0 +1,17 @@
+#!/bin/bash
+# Pre-commit hook for PepedawnRaffle
+# Runs fast test suite before allowing commit
+
+set -e
+
+echo "🧪 Running pre-commit tests..."
+echo ""
+
+cd contracts 2>/dev/null || cd .
+
+# Run fast pre-commit test suite
+FOUNDRY_PROFILE=pre-commit forge test
+
+echo ""
+echo "✅ Pre-commit tests passed!"
+

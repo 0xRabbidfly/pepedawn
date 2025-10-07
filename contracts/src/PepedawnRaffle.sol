@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/vrf/dev/libraries/VRFV2PlusClient.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title PepedawnRaffle
@@ -96,7 +96,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         uint256 blockNumber;
     }
     
-    struct VRFConfig {
+    struct VrfConfig {
         IVRFCoordinatorV2Plus coordinator;
         uint256 subscriptionId;
         bytes32 keyHash;
@@ -114,13 +114,13 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     uint256 public currentRoundId;
     uint256 public nextRoundFunds;
     
-    VRFConfig public vrfConfig;
+    VrfConfig public vrfConfig;
     
     // Security state variables
     mapping(address => bool) public denylisted; // Denylist for blocked addresses
     mapping(uint256 => mapping(address => bool)) private _winnerSelected; // Prevent duplicate winners
     bool public emergencyPaused; // Additional emergency pause state
-    uint256 public lastVRFRequestTime; // Track VRF request timing
+    uint256 public lastVrfRequestTime; // Track VRF request timing
     
     // Mappings
     mapping(uint256 => Round) public rounds;
@@ -238,7 +238,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         _;
     }
     
-    modifier onlyVRFCoordinator() {
+    modifier onlyVrfCoordinator() {
         require(msg.sender == address(vrfConfig.coordinator), "Only VRF coordinator");
         _;
     }
@@ -287,7 +287,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         creatorsAddress = _creatorsAddress;
         emblemVaultAddress = _emblemVaultAddress;
         
-        vrfConfig = VRFConfig({
+        vrfConfig = VrfConfig({
             coordinator: IVRFCoordinatorV2Plus(_vrfCoordinator),
             subscriptionId: _subscriptionId,
             keyHash: _keyHash,
@@ -297,7 +297,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         
         // Initialize security state
         emergencyPaused = false;
-        lastVRFRequestTime = 0;
+        lastVrfRequestTime = 0;
     }
     
     // =============================================================================
@@ -347,7 +347,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
      * @param _subscriptionId New subscription ID
      * @param _keyHash New key hash
      */
-    function updateVRFConfig(
+    function updateVrfConfig(
         address _coordinator,
         uint256 _subscriptionId,
         bytes32 _keyHash
@@ -364,8 +364,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
      * @notice Reset VRF timing for testing purposes
      * @dev Only available for testing - should be removed in production
      */
-    function resetVRFTiming() external onlyOwner {
-        lastVRFRequestTime = 0;
+    function resetVrfTiming() external onlyOwner {
+        lastVrfRequestTime = 0;
     }
     
     /**
@@ -726,7 +726,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
      * @notice Request VRF randomness for winner selection with dynamic gas estimation
      * @param roundId The round to request VRF for
      */
-    function requestVRF(uint256 roundId) 
+    function requestVrf(uint256 roundId) 
         external 
         onlyOwner 
         whenNotPaused 
@@ -738,9 +738,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         require(rounds[roundId].totalTickets > 0, "No participants in round");
         
         // Security check: Prevent too frequent VRF requests
-        // Allow immediate requests if lastVRFRequestTime is 0 (for testing)
+        // Allow immediate requests if lastVrfRequestTime is 0 (for testing)
         require(
-            lastVRFRequestTime == 0 || block.timestamp >= lastVRFRequestTime + 1 minutes,
+            lastVrfRequestTime == 0 || block.timestamp >= lastVrfRequestTime + 1 minutes,
             "VRF request too frequent"
         );
         
@@ -765,7 +765,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         // Effects: Update round status and timing
         rounds[roundId].status = RoundStatus.VRFRequested;
         rounds[roundId].vrfRequestedAt = uint64(block.timestamp);
-        lastVRFRequestTime = block.timestamp;
+        lastVrfRequestTime = block.timestamp;
         
         // Interactions: Request randomness from Chainlink VRF v2.5
         uint256 requestId = vrfConfig.coordinator.requestRandomWords(
@@ -1120,7 +1120,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
      * @param roundId The round to estimate gas for
      * @return estimatedGas The estimated gas required for the callback
      */
-    function estimateVRFCallbackGas(uint256 roundId) external view returns (uint32) {
+    function estimateVrfCallbackGas(uint256 roundId) external view returns (uint32) {
         return _estimateCallbackGas(roundId);
     }
 }

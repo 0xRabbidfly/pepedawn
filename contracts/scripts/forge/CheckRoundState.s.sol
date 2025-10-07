@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../src/PepedawnRaffle.sol";
+import "../../src/PepedawnRaffle.sol";
 import "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 
 contract CheckRoundStateScript is Script {

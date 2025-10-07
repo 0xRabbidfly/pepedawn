@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/PepedawnRaffle.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Test} from "forge-std/Test.sol";
+import {PepedawnRaffle} from "../src/PepedawnRaffle.sol";
 import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
-import "./mocks/MockVRFCoordinatorV2Plus.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {MockVRFCoordinatorV2Plus} from "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
  * @title GovernanceTest
- * @notice Contract upgrade and ownership transfer tests
- * @dev Tests governance mechanisms and administrative controls
+ * @notice Tests for access control, ownership, emergency controls, and configuration
+ * @dev Consolidated from AccessControl.t.sol, EmergencyControls.t.sol, and Governance.t.sol
+ * 
+ * Spec Alignment:
+ * - FR-016: Disclaimers and compliance
+ * - FR-018: Eligibility (denylist)
  */
 contract GovernanceTest is Test {
     PepedawnRaffle public raffle;
-    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVrfCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -27,11 +30,17 @@ contract GovernanceTest is Test {
     address public malicious = makeAddr("malicious");
     address public newCreators = makeAddr("newCreators");
     address public newEmblemVault = makeAddr("newEmblemVault");
-    address public newVRFCoordinator = makeAddr("newVRFCoordinator");
+    address public newVrfCoordinator = makeAddr("newVrfCoordinator");
     
     // VRF configuration
     uint256 public constant SUBSCRIPTION_ID = 1;
     bytes32 public constant KEY_HASH = keccak256("test");
+    
+    // Events
+    event OwnershipTransferRequested(address indexed from, address indexed to);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event AddressDenylisted(address indexed wallet, bool denylisted);
+    event EmergencyPauseToggled(bool paused);
     
     function setUp() public {
         owner = address(this);
@@ -39,11 +48,11 @@ contract GovernanceTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
+        mockVrfCoordinator = new MockVRFCoordinatorV2Plus();
         
-        // Deploy contract with mock VRF coordinator
+        // Deploy contract
         raffle = new PepedawnRaffle(
-            address(mockVRFCoordinator),
+            address(mockVrfCoordinator),
             SUBSCRIPTION_ID,
             KEY_HASH,
             creatorsAddress,
@@ -53,197 +62,291 @@ contract GovernanceTest is Test {
         // Fund test accounts
         vm.deal(alice, 10 ether);
         vm.deal(bob, 10 ether);
+        vm.deal(malicious, 10 ether);
         vm.deal(newOwner, 10 ether);
         
-        // Reset VRF timing for all tests
-        raffle.resetVRFTiming();
+        // Reset VRF timing for tests
+        raffle.resetVrfTiming();
     }
     
+    // ============================================
+    // Ownership Transfer Tests (ConfirmedOwner)
+    // ============================================
+    
     /**
-     * @notice Test two-step ownership transfer process
-     * @dev Verify Ownable2Step implementation prevents accidental transfers
+     * @notice Test two-step ownership transfer
+     * @dev Uses ConfirmedOwner pattern for security
      */
-    function testTwoStepOwnershipTransfer() public {
-        vm.skip(true); // TODO: Fix round completion state issue
-        // Initial state
-        assertEq(raffle.owner(), owner);
-        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
+    function testSecureOwnershipTransfer() public {
+        // Verify initial owner
+        assertEq(raffle.owner(), owner, "Initial owner should be deployer");
         
-        // Step 1: Initiate transfer
+        // Step 1: Transfer ownership (sets pending owner)
+        vm.expectEmit(true, true, false, false);
+        emit OwnershipTransferRequested(owner, newOwner);
         raffle.transferOwnership(newOwner);
         
-        // Ownership should not change immediately
-        assertEq(raffle.owner(), owner);
-        // assertEq(raffle.pendingOwner(), newOwner); // Removed: Using ConfirmedOwner instead of Ownable2Step
+        // Verify owner hasn't changed yet
+        assertEq(raffle.owner(), owner, "Owner should not change until accepted");
         
-        // Original owner should still have control
-        raffle.createRound();
-        
-        // New owner cannot use owner functions yet
-        vm.prank(newOwner);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.createRound();
-        
-        // Step 2: Accept ownership
+        // Step 2: Accept ownership from new owner
+        vm.expectEmit(true, true, false, false);
+        emit OwnershipTransferred(owner, newOwner);
         vm.prank(newOwner);
         raffle.acceptOwnership();
         
-        // Now ownership should be transferred
-        assertEq(raffle.owner(), newOwner);
-        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
+        // Verify ownership transferred
+        assertEq(raffle.owner(), newOwner, "Ownership should be transferred");
+    }
+    
+    /**
+     * @notice Test non-pending owner cannot accept ownership
+     * @dev Security test for ownership transfer
+     */
+    function testCannotAcceptOwnershipIfNotPending() public {
+        raffle.transferOwnership(newOwner);
         
-        // New owner should have control
-        vm.prank(newOwner);
-        raffle.createRound();
+        // Malicious user tries to accept
+        vm.prank(malicious);
+        vm.expectRevert("Must be proposed owner");
+        raffle.acceptOwnership();
         
-        // Old owner should lose control
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.createRound();
+        // Verify owner unchanged
+        assertEq(raffle.owner(), owner, "Owner should not change");
     }
     
     /**
      * @notice Test ownership transfer cancellation
-     * @dev Verify pending ownership can be cancelled
+     * @dev Owner can cancel pending transfer
      */
     function testOwnershipTransferCancellation() public {
         // Initiate transfer
         raffle.transferOwnership(newOwner);
-        // assertEq(raffle.pendingOwner(), newOwner); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Cancel by transferring to zero address
         raffle.transferOwnership(address(0));
-        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
-        // Original owner should still have control
-        assertEq(raffle.owner(), owner);
+        // Original owner still has control
+        assertEq(raffle.owner(), owner, "Owner should remain unchanged");
         raffle.createRound();
         
-        // New owner should not be able to accept
+        // New owner cannot accept
         vm.prank(newOwner);
         vm.expectRevert("Must be proposed owner");
         raffle.acceptOwnership();
     }
     
     /**
-     * @notice Test unauthorized ownership acceptance
-     * @dev Verify only pending owner can accept ownership
+     * @notice Test multiple ownership transfers
+     * @dev Verify chain of ownership transfers works
      */
-    function testUnauthorizedOwnershipAcceptance() public {
-        vm.skip(true); // TODO: Fix address expectation mismatch
-        // Initiate transfer to newOwner
-        raffle.transferOwnership(newOwner);
+    function testMultipleOwnershipTransfers() public {
+        address secondOwner = makeAddr("secondOwner");
+        address thirdOwner = makeAddr("thirdOwner");
         
-        // Malicious user tries to accept
+        // First transfer: owner → newOwner
+        raffle.transferOwnership(newOwner);
+        vm.prank(newOwner);
+        raffle.acceptOwnership();
+        assertEq(raffle.owner(), newOwner, "First transfer failed");
+        
+        // Second transfer: newOwner → secondOwner
+        vm.prank(newOwner);
+        raffle.transferOwnership(secondOwner);
+        vm.prank(secondOwner);
+        raffle.acceptOwnership();
+        assertEq(raffle.owner(), secondOwner, "Second transfer failed");
+        
+        // Third transfer: secondOwner → thirdOwner
+        vm.prank(secondOwner);
+        raffle.transferOwnership(thirdOwner);
+        vm.prank(thirdOwner);
+        raffle.acceptOwnership();
+        assertEq(raffle.owner(), thirdOwner, "Third transfer failed");
+        
+        // Only current owner has control
+        vm.prank(thirdOwner);
+        raffle.createRound();
+    }
+    
+    // ============================================
+    // Access Control Tests
+    // ============================================
+    
+    /**
+     * @notice Test owner-only functions are protected
+     * @dev All administrative functions require owner
+     */
+    function testOwnerOnlyFunctions() public {
+        // Test createRound
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.acceptOwnership();
+        vm.expectRevert("Only callable by owner");
+        raffle.createRound();
         
-        // Original owner tries to accept (should fail)
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.acceptOwnership();
+        // Create round as owner
+        raffle.createRound();
         
-        // Random user tries to accept
+        // Test openRound
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.openRound(1);
+        
+        // Open round as owner
+        raffle.openRound(1);
+        
+        // Add participants for further tests
         vm.prank(alice);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-        raffle.acceptOwnership();
+        raffle.placeBet{value: 0.04 ether}(10);
         
-        // Only newOwner should be able to accept
-        vm.prank(newOwner);
-        raffle.acceptOwnership();
+        // Test closeRound
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.closeRound(1);
         
-        assertEq(raffle.owner(), newOwner);
+        // Close as owner
+        raffle.closeRound(1);
+        
+        // Test snapshotRound
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.snapshotRound(1);
+        
+        // Snapshot as owner
+        raffle.snapshotRound(1);
+        
+        // Test requestVrf
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.requestVrf(1);
     }
     
     /**
-     * @notice Test administrative function access control
-     * @dev Verify all admin functions require proper ownership
+     * @notice Test security management functions are owner-only
+     * @dev Verify security controls are protected
      */
-    function testAdministrativeFunctionAccess() public {
-        vm.skip(true); // TODO: Fix address expectation mismatch
-        // Transfer ownership
+    function testSecurityManagementAccess() public {
+        // Test setDenylistStatus
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.setDenylistStatus(alice, true);
+        
+        // Test setEmergencyPause
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.setEmergencyPause(true);
+        
+        // Test pause
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.pause();
+        
+        // Test unpause
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.unpause();
+        
+        // Test updateVrfConfig
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.updateVrfConfig(address(mockVrfCoordinator), SUBSCRIPTION_ID, KEY_HASH);
+        
+        // Test updateCreatorsAddress
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.updateCreatorsAddress(alice);
+        
+        // Test updateEmblemVaultAddress
+        vm.prank(malicious);
+        vm.expectRevert("Only callable by owner");
+        raffle.updateEmblemVaultAddress(alice);
+    }
+    
+    /**
+     * @notice Test governance during active rounds
+     * @dev Ownership changes don't disrupt active rounds
+     */
+    function testGovernanceDuringActiveRounds() public {
+        // Create and populate active round
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        // Transfer ownership during active round
         raffle.transferOwnership(newOwner);
         vm.prank(newOwner);
         raffle.acceptOwnership();
         
-        // Old owner should lose access to all admin functions
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
-        raffle.createRound();
+        // New owner can manage the round
+        vm.prank(newOwner);
+        raffle.closeRound(1);
         
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
-        raffle.setDenylistStatus(alice, true);
+        vm.prank(newOwner);
+        raffle.snapshotRound(1);
         
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
-        raffle.setEmergencyPause(true);
+        vm.prank(newOwner);
+        raffle.requestVrf(1);
         
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.pause();
+        // Round state preserved
+        PepedawnRaffle.Round memory round = raffle.getRound(1);
+        assertEq(uint256(round.status), 4, "Status should be VRFRequested");
         
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID, KEY_HASH);
-        
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.updateCreatorsAddress(newCreators);
-        
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.updateEmblemVaultAddress(newEmblemVault);
-        
-        // New owner should have access to all admin functions
-        vm.startPrank(newOwner);
-        raffle.createRound();
-        raffle.setDenylistStatus(alice, true);
-        raffle.setEmergencyPause(true);
-        raffle.setEmergencyPause(false);
-        raffle.pause();
-        raffle.unpause();
-        raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID + 1, keccak256("newKey"));
-        raffle.updateCreatorsAddress(newCreators);
-        raffle.updateEmblemVaultAddress(newEmblemVault);
-        vm.stopPrank();
+        // User data preserved
+        (uint256 wagered, uint256 tickets,,) = raffle.getUserStats(1, alice);
+        assertEq(wagered, 0.04 ether, "Wagered amount preserved");
+        assertEq(tickets, 10, "Tickets preserved");
     }
     
+    // ============================================
+    // Configuration Management Tests
+    // ============================================
+    
     /**
-     * @notice Test configuration updates by owner
-     * @dev Verify owner can update all configurable parameters
+     * @notice Test VRF configuration updates
+     * @dev Owner can update VRF parameters
      */
-    function testConfigurationUpdates() public {
-        // Test VRF configuration update
-        raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID + 1, keccak256("newKey"));
+    function testVRFConfigurationUpdates() public {
+        raffle.updateVrfConfig(newVrfCoordinator, SUBSCRIPTION_ID + 1, keccak256("newKey"));
         
         (IVRFCoordinatorV2Plus coordinator, uint256 subId, bytes32 keyHash,,) = raffle.vrfConfig();
-        assertEq(address(coordinator), newVRFCoordinator);
-        assertEq(subId, SUBSCRIPTION_ID + 1);
-        assertEq(keyHash, keccak256("newKey"));
-        
-        // Test creators address update
-        raffle.updateCreatorsAddress(newCreators);
-        assertEq(raffle.creatorsAddress(), newCreators);
-        
-        // Test emblem vault address update
-        raffle.updateEmblemVaultAddress(newEmblemVault);
-        assertEq(raffle.emblemVaultAddress(), newEmblemVault);
-        
-        // Test denylist management
-        assertFalse(raffle.denylisted(alice));
-        raffle.setDenylistStatus(alice, true);
-        assertTrue(raffle.denylisted(alice));
-        raffle.setDenylistStatus(alice, false);
-        assertFalse(raffle.denylisted(alice));
+        assertEq(address(coordinator), newVrfCoordinator, "Coordinator not updated");
+        assertEq(subId, SUBSCRIPTION_ID + 1, "Subscription ID not updated");
+        assertEq(keyHash, keccak256("newKey"), "Key hash not updated");
     }
     
     /**
-     * @notice Test configuration update validation
-     * @dev Verify configuration updates have proper validation
+     * @notice Test creators address updates
+     * @dev Owner can update creators address
      */
-    function testConfigurationUpdateValidation() public {
+    function testCreatorsAddressUpdate() public {
+        raffle.updateCreatorsAddress(newCreators);
+        assertEq(raffle.creatorsAddress(), newCreators, "Creators address not updated");
+    }
+    
+    /**
+     * @notice Test emblem vault address updates
+     * @dev Owner can update emblem vault address
+     */
+    function testEmblemVaultAddressUpdate() public {
+        raffle.updateEmblemVaultAddress(newEmblemVault);
+        assertEq(raffle.emblemVaultAddress(), newEmblemVault, "Emblem vault address not updated");
+    }
+    
+    /**
+     * @notice Test configuration validation
+     * @dev All configuration updates validate inputs
+     */
+    function testConfigurationValidation() public {
         // VRF configuration validation
         vm.expectRevert("Invalid address: zero address");
-        raffle.updateVRFConfig(address(0), SUBSCRIPTION_ID, KEY_HASH);
+        raffle.updateVrfConfig(address(0), SUBSCRIPTION_ID, KEY_HASH);
         
         vm.expectRevert("Invalid VRF subscription ID");
-        raffle.updateVRFConfig(newVRFCoordinator, 0, KEY_HASH);
+        raffle.updateVrfConfig(newVrfCoordinator, 0, KEY_HASH);
         
         vm.expectRevert("Invalid VRF key hash");
-        raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID, bytes32(0));
+        raffle.updateVrfConfig(newVrfCoordinator, SUBSCRIPTION_ID, bytes32(0));
         
         // Creators address validation
         vm.expectRevert("Invalid address: zero address");
@@ -258,94 +361,16 @@ contract GovernanceTest is Test {
         
         vm.expectRevert("Invalid address: contract address");
         raffle.updateEmblemVaultAddress(address(raffle));
-        
-        // Denylist validation
-        vm.expectRevert("Invalid address: zero address");
-        raffle.setDenylistStatus(address(0), true);
-        
-        vm.expectRevert("Invalid address: contract address");
-        raffle.setDenylistStatus(address(raffle), true);
-    }
-    
-    /**
-     * @notice Test emergency controls governance
-     * @dev Verify emergency controls are properly governed
-     */
-    function testEmergencyControlsGovernance() public {
-        vm.skip(true); // TODO: Fix address expectation mismatch
-        // Only owner can control emergency pause
-        vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.setEmergencyPause(true);
-        
-        // Owner can control emergency pause
-        raffle.setEmergencyPause(true);
-        assertTrue(raffle.emergencyPaused());
-        
-        raffle.setEmergencyPause(false);
-        assertFalse(raffle.emergencyPaused());
-        
-        // Only owner can control regular pause
-        vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.pause();
-        
-        // Owner can control regular pause
-        raffle.pause();
-        assertTrue(raffle.paused());
-        
-        raffle.unpause();
-        assertFalse(raffle.paused());
-    }
-    
-    /**
-     * @notice Test governance during active rounds
-     * @dev Verify governance changes don't disrupt active rounds
-     */
-    function testGovernanceDuringActiveRounds() public {
-        // Create and populate active round
-        raffle.createRound();
-        raffle.openRound(1);
-        
-        // Alice buys 10 tickets to meet minimum threshold
-        vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
-        
-        // Transfer ownership during active round
-        raffle.transferOwnership(newOwner);
-        vm.prank(newOwner);
-        raffle.acceptOwnership();
-        
-        // New owner should be able to manage the round
-        vm.prank(newOwner);
-        raffle.closeRound(1);
-        
-        vm.prank(newOwner);
-        raffle.snapshotRound(1);
-        
-        vm.prank(newOwner);
-        raffle.requestVRF(1);
-        
-        // Round state should be preserved
-        PepedawnRaffle.Round memory round = raffle.getRound(1);
-        assertEq(uint256(round.status), 4); // VRFRequested
-        
-        // User data should be preserved
-        (uint256 wagered, uint256 tickets,,) = raffle.getUserStats(1, alice);
-        assertEq(wagered, 0.04 ether);
-        assertEq(tickets, 10);
     }
     
     /**
      * @notice Test configuration changes during active rounds
-     * @dev Verify configuration changes don't affect ongoing rounds
+     * @dev Config changes don't break ongoing rounds
      */
     function testConfigurationChangesDuringActiveRounds() public {
-        // Create active round
         raffle.createRound();
         raffle.openRound(1);
         
-        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
         raffle.placeBet{value: 0.04 ether}(10);
         
@@ -353,119 +378,238 @@ contract GovernanceTest is Test {
         address originalCreators = raffle.creatorsAddress();
         raffle.updateCreatorsAddress(newCreators);
         
-        // Complete the round
+        // Complete round
         raffle.closeRound(1);
         raffle.snapshotRound(1);
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
-        // The round should complete with new creators address
-        assertEq(raffle.creatorsAddress(), newCreators);
-        assertNotEq(raffle.creatorsAddress(), originalCreators);
-        
-        // Change VRF coordinator
-        raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID, KEY_HASH);
-        
-        (IVRFCoordinatorV2Plus coordinator,,,,) = raffle.vrfConfig();
-        assertEq(address(coordinator), newVRFCoordinator);
+        // Config updated
+        assertEq(raffle.creatorsAddress(), newCreators, "Config should be updated");
+        assertNotEq(raffle.creatorsAddress(), originalCreators, "Config should have changed");
     }
     
+    // ============================================
+    // Denylist Tests (FR-018)
+    // ============================================
+    
     /**
-     * @notice Test governance event emissions
-     * @dev Verify governance actions emit proper events
+     * @notice Test denylist functionality
+     * @dev FR-018: Denylisted addresses cannot participate
      */
-    function testGovernanceEventEmissions() public {
-        // Ownership transfer events (from ConfirmedOwner)
-        vm.expectEmit(true, true, false, false);
-        emit OwnershipTransferRequested(owner, newOwner);
-        raffle.transferOwnership(newOwner);
-        
-        vm.expectEmit(true, true, false, false);
-        emit OwnershipTransferred(owner, newOwner);
-        vm.prank(newOwner);
-        raffle.acceptOwnership();
-        
-        // Denylist events
+    function testDenylistFunctionality() public {
+        // Denylist alice
         vm.expectEmit(true, false, false, true);
         emit AddressDenylisted(alice, true);
-        vm.prank(newOwner);
         raffle.setDenylistStatus(alice, true);
         
-        // Emergency pause events
-        vm.expectEmit(false, false, false, true);
-        emit EmergencyPauseToggled(true);
-        vm.prank(newOwner);
-        raffle.setEmergencyPause(true);
+        assertTrue(raffle.denylisted(alice), "Alice should be denylisted");
+        
+        // Create and open round
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        // Alice cannot bet
+        vm.prank(alice);
+        vm.expectRevert("Address is denylisted");
+        raffle.placeBet{value: 0.005 ether}(1);
+        
+        // Alice cannot submit proof
+        vm.prank(alice);
+        vm.expectRevert("Address is denylisted");
+        raffle.submitProof(keccak256("proof"));
+        
+        // Remove from denylist
+        vm.expectEmit(true, false, false, true);
+        emit AddressDenylisted(alice, false);
+        raffle.setDenylistStatus(alice, false);
+        
+        assertFalse(raffle.denylisted(alice), "Alice should not be denylisted");
+        
+        // Alice can now participate
+        vm.prank(alice);
+        raffle.placeBet{value: 0.005 ether}(1);
     }
     
     /**
-     * @notice Test governance access after contract deployment
-     * @dev Verify initial governance state is correct
+     * @notice Test denylist validation
+     * @dev Cannot denylist zero or contract address
+     */
+    function testDenylistValidation() public {
+        vm.expectRevert("Invalid address: zero address");
+        raffle.setDenylistStatus(address(0), true);
+        
+        vm.expectRevert("Invalid address: contract address");
+        raffle.setDenylistStatus(address(raffle), true);
+    }
+    
+    // ============================================
+    // Emergency Controls Tests
+    // ============================================
+    
+    /**
+     * @notice Test emergency pause functionality
+     * @dev Emergency pause stops all admin operations
+     */
+    function testEmergencyPause() public {
+        assertFalse(raffle.emergencyPaused(), "Should not be emergency paused initially");
+        
+        // Activate emergency pause
+        vm.expectEmit(false, false, false, true);
+        emit EmergencyPauseToggled(true);
+        raffle.setEmergencyPause(true);
+        
+        assertTrue(raffle.emergencyPaused(), "Should be emergency paused");
+        
+        // Cannot create rounds when emergency paused
+        vm.expectRevert("Emergency pause is active");
+        raffle.createRound();
+        
+        // Deactivate emergency pause
+        vm.expectEmit(false, false, false, true);
+        emit EmergencyPauseToggled(false);
+        raffle.setEmergencyPause(false);
+        
+        assertFalse(raffle.emergencyPaused(), "Should not be emergency paused");
+        
+        // Operations work again
+        raffle.createRound();
+    }
+    
+    /**
+     * @notice Test regular pause functionality
+     * @dev Regular pause uses OpenZeppelin Pausable
+     */
+    function testRegularPause() public {
+        assertFalse(raffle.paused(), "Should not be paused initially");
+        
+        // Create and open round
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        // Activate regular pause
+        raffle.pause();
+        assertTrue(raffle.paused(), "Should be paused");
+        
+        // User operations blocked
+        vm.prank(alice);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        raffle.placeBet{value: 0.005 ether}(1);
+        
+        vm.prank(alice);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        raffle.submitProof(keccak256("proof"));
+        
+        // Unpause
+        raffle.unpause();
+        assertFalse(raffle.paused(), "Should not be paused");
+        
+        // Operations work again
+        vm.prank(alice);
+        raffle.placeBet{value: 0.005 ether}(1);
+    }
+    
+    /**
+     * @notice Test view functions work during pause
+     * @dev Read operations not affected by pause
+     */
+    function testViewFunctionsWorkDuringPause() public {
+        // Create round with data
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.005 ether}(1);
+        
+        // Activate both pause mechanisms
+        raffle.pause();
+        raffle.setEmergencyPause(true);
+        
+        // View functions still work
+        PepedawnRaffle.Round memory round = raffle.getRound(1);
+        assertEq(round.totalTickets, 1, "View should work");
+        
+        (uint256 wagered,,,) = raffle.getUserStats(1, alice);
+        assertEq(wagered, 0.005 ether, "View should work");
+        
+        address[] memory participants = raffle.getRoundParticipants(1);
+        assertEq(participants.length, 1, "View should work");
+        
+        uint256 currentRound = raffle.currentRoundId();
+        assertEq(currentRound, 1, "View should work");
+    }
+    
+    /**
+     * @notice Test combined pause states
+     * @dev Both pause mechanisms work independently
+     */
+    function testCombinedPauseStates() public {
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        // Add enough tickets to meet minimum before testing pauses
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        // Emergency pause blocks BOTH admin and user operations
+        raffle.setEmergencyPause(true);
+        
+        // Admin operations blocked by emergency pause
+        vm.expectRevert("Emergency pause is active");
+        raffle.closeRound(1);
+        
+        // User operations also blocked by emergency pause
+        vm.prank(bob);
+        vm.expectRevert("Emergency pause is active");
+        raffle.placeBet{value: 0.005 ether}(1);
+        
+        // Remove emergency pause
+        raffle.setEmergencyPause(false);
+        
+        // Now test regular pause (blocks all state changes)
+        raffle.pause();
+        
+        // Admin operations blocked by regular pause
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        raffle.closeRound(1);
+        
+        // User operations also blocked by regular pause
+        vm.prank(bob);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        raffle.placeBet{value: 0.005 ether}(1);
+        
+        // Remove regular pause
+        raffle.unpause();
+        
+        // Everything works now
+        vm.prank(bob);
+        raffle.placeBet{value: 0.005 ether}(1);
+        
+        raffle.closeRound(1);
+    }
+    
+    // ============================================
+    // Initial State Tests
+    // ============================================
+    
+    /**
+     * @notice Test initial governance state
+     * @dev Verify correct initial configuration
      */
     function testInitialGovernanceState() public {
         // Verify initial owner
-        assertEq(raffle.owner(), owner);
-        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
+        assertEq(raffle.owner(), owner, "Initial owner mismatch");
         
         // Verify initial configuration
-        assertEq(raffle.creatorsAddress(), creatorsAddress);
-        assertEq(raffle.emblemVaultAddress(), emblemVaultAddress);
+        assertEq(raffle.creatorsAddress(), creatorsAddress, "Initial creators mismatch");
+        assertEq(raffle.emblemVaultAddress(), emblemVaultAddress, "Initial emblem vault mismatch");
         
         (IVRFCoordinatorV2Plus coordinator, uint256 subId, bytes32 keyHash,,) = raffle.vrfConfig();
-        assertEq(address(coordinator), address(mockVRFCoordinator));
-        assertEq(subId, SUBSCRIPTION_ID);
-        assertEq(keyHash, KEY_HASH);
+        assertEq(address(coordinator), address(mockVrfCoordinator), "Initial VRF coordinator mismatch");
+        assertEq(subId, SUBSCRIPTION_ID, "Initial subscription ID mismatch");
+        assertEq(keyHash, KEY_HASH, "Initial key hash mismatch");
         
         // Verify initial security state
-        assertFalse(raffle.paused());
-        assertFalse(raffle.emergencyPaused());
-        assertEq(raffle.lastVRFRequestTime(), 0);
+        assertFalse(raffle.paused(), "Should not be paused initially");
+        assertFalse(raffle.emergencyPaused(), "Should not be emergency paused initially");
     }
-    
-    /**
-     * @notice Test multiple ownership transfers
-     * @dev Verify ownership can be transferred multiple times
-     */
-    function testMultipleOwnershipTransfers() public {
-        vm.skip(true); // TODO: Fix address expectation mismatch
-        address secondOwner = makeAddr("secondOwner");
-        address thirdOwner = makeAddr("thirdOwner");
-        
-        // First transfer: owner -> newOwner
-        raffle.transferOwnership(newOwner);
-        vm.prank(newOwner);
-        raffle.acceptOwnership();
-        assertEq(raffle.owner(), newOwner);
-        
-        // Second transfer: newOwner -> secondOwner
-        vm.prank(newOwner);
-        raffle.transferOwnership(secondOwner);
-        vm.prank(secondOwner);
-        raffle.acceptOwnership();
-        assertEq(raffle.owner(), secondOwner);
-        
-        // Third transfer: secondOwner -> thirdOwner
-        vm.prank(secondOwner);
-        raffle.transferOwnership(thirdOwner);
-        vm.prank(thirdOwner);
-        raffle.acceptOwnership();
-        assertEq(raffle.owner(), thirdOwner);
-        
-        // Verify only current owner has control
-        vm.prank(thirdOwner);
-        raffle.createRound();
-        
-        vm.prank(newOwner);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.createRound();
-        
-        vm.prank(secondOwner);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
-        raffle.createRound();
-    }
-    
-    // Event declarations for testing
-    event OwnershipTransferRequested(address indexed from, address indexed to);
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event AddressDenylisted(address indexed wallet, bool denylisted);
-    event EmergencyPauseToggled(bool paused);
 }

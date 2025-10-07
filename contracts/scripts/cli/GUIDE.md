@@ -1,5 +1,8 @@
 # PepedawnRaffle Interaction Guide
 
+> **Note**: This guide has been updated for the new script directory structure.  
+> Scripts are now organized in `contracts/scripts/cli/` for better organization.
+
 ## Setup (One-time)
 
 ### Configure Environment Variables
@@ -29,9 +32,9 @@ cd Z:\Projects\pepedawn
 
 ### Check Contract State (Read-Only)
 ```powershell
-.\contracts\scripts\interact-sepolia.ps1 check
+.\contracts\scripts\cli\interact.ps1 check
 # or
-.\contracts\scripts\interact-sepolia.ps1 status
+.\contracts\scripts\cli\interact.ps1 status
 ```
 **Shows formatted output with:**
 - Current round ID
@@ -45,7 +48,7 @@ cd Z:\Projects\pepedawn
 
 ### Create New Round (Owner Only)
 ```powershell
-.\contracts\scripts\interact-sepolia.ps1 create
+.\contracts\scripts\cli\interact.ps1 create
 ```
 **Requirements:**
 - Must be contract owner
@@ -59,7 +62,7 @@ cd Z:\Projects\pepedawn
 
 ### Open Round for Betting (Owner Only)
 ```powershell
-.\contracts\scripts\interact-sepolia.ps1 open 1
+.\contracts\scripts\cli\interact.ps1 open 1
 ```
 **Requirements:**
 - Must be contract owner
@@ -73,13 +76,13 @@ cd Z:\Projects\pepedawn
 ### Place a Bet (Any User)
 ```powershell
 # 1 ticket = 0.005 ETH
-.\contracts\scripts\interact-sepolia.ps1 bet 1 0.005
+.\contracts\scripts\cli\interact.ps1 bet 1 0.005
 
 # 5 tickets = 0.0225 ETH (10% discount)
-.\contracts\scripts\interact-sepolia.ps1 bet 5 0.0225
+.\contracts\scripts\cli\interact.ps1 bet 5 0.0225
 
 # 10 tickets = 0.04 ETH (20% discount)
-.\contracts\scripts\interact-sepolia.ps1 bet 10 0.04
+.\contracts\scripts\cli\interact.ps1 bet 10 0.04
 ```
 **Requirements:**
 - Round must be `Open` (status = 1)
@@ -94,7 +97,7 @@ cd Z:\Projects\pepedawn
 
 ### Quick Start (Create + Open)
 ```powershell
-.\contracts\scripts\interact-sepolia.ps1 quick-start
+.\contracts\scripts\cli\interact.ps1 quick-start
 ```
 **Does:**
 1. Shows current state
@@ -144,10 +147,10 @@ When you call `check` and see the round details, the status field shows:
 
 ```powershell
 # 1. Check if a round exists
-.\contracts\scripts\interact-sepolia.ps1 check
+.\contracts\scripts\cli\interact.ps1 check
 
 # 2. Create new round (if needed)
-.\contracts\scripts\interact-sepolia.ps1 create
+.\contracts\scripts\cli\interact.ps1 create
 
 # 3. Set valid proof hash for the round (REQUIRED for proof validation)
 ``` BASH COMMANDS
@@ -157,7 +160,7 @@ cast send $CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 0x... --private-k
 ```
 
 # 4. Open round for betting
-.\contracts\scripts\interact-sepolia.ps1 open 1
+.\contracts\scripts\cli\interact.ps1 open 1
 
 # Users place bets and submit proofs via frontend or CLI...
 # NOTE: If user submits incorrect proof, they get immediate feedback and attempt is consumed
@@ -183,10 +186,10 @@ After VRF fulfillment and prize distribution, view the winners:
 
 ```powershell
 # Get all winners for round 1
-.\contracts\scripts\interact-sepolia.ps1 winners 1
+.\contracts\scripts\cli\interact.ps1 winners 1
 
 # Or use the check command to see general contract state
-.\contracts\scripts\interact-sepolia.ps1 check
+.\contracts\scripts\cli\interact.ps1 check
 ```
 
 **Note**: The `winners` command shows raw winner data. To get organized pack tier display, you can parse the output or use the contract directly:
@@ -244,4 +247,34 @@ cast call 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "currentRoundId()" --rpc-ur
 **Current Deployment**: `0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A` (VRF v2.5)
 
 View on Etherscan: https://sepolia.etherscan.io/address/0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A
+
+---
+
+## Script Directory Organization
+
+The scripts are now organized into subdirectories for better maintainability:
+
+### CLI Scripts (`scripts/cli/`)
+- **interact.ps1** - Main CLI script for contract interaction (this guide)
+- **GUIDE.md** - This interaction guide
+
+### Foundry Scripts (`scripts/forge/`)
+- **Deploy.s.sol** - Deploy the contract
+- **CheckRoundState.s.sol** - Read-only state inspection
+- **CheckAndOpenRound.s.sol** - Automated round creation/opening
+- **ProgressRound.s.sol** - Progress round through states
+- **DEPRECATED/UpdateVRFConfig.s.sol** - Deprecated (VRF config set in constructor)
+
+### Test Scripts (`scripts/test/`)
+- **test.ps1** - PowerShell test runner
+- **test.sh** - Bash test runner
+
+**Running Foundry Scripts:**
+```bash
+# From contracts/ directory
+forge script scripts/forge/CheckRoundState.s.sol --rpc-url $SEPOLIA_RPC_URL
+
+# Deploy script
+forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+```
 

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/PepedawnRaffle.sol";
-import "./mocks/MockVRFCoordinatorV2Plus.sol";
+import {Test} from "forge-std/Test.sol";
+import {PepedawnRaffle} from "../src/PepedawnRaffle.sol";
+import {MockVRFCoordinatorV2Plus} from "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
  * @title WinnerSelectionTest
@@ -12,7 +12,7 @@ import "./mocks/MockVRFCoordinatorV2Plus.sol";
  */
 contract WinnerSelectionTest is Test {
     PepedawnRaffle public raffle;
-    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVrfCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -39,11 +39,11 @@ contract WinnerSelectionTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
+        mockVrfCoordinator = new MockVRFCoordinatorV2Plus();
         
         // Deploy contract with mock VRF coordinator
         raffle = new PepedawnRaffle(
-            address(mockVRFCoordinator),
+            address(mockVrfCoordinator),
             SUBSCRIPTION_ID,
             KEY_HASH,
             creatorsAddress,
@@ -57,7 +57,7 @@ contract WinnerSelectionTest is Test {
         }
         
         // Reset VRF timing for all tests
-        raffle.resetVRFTiming();
+        raffle.resetVrfTiming();
     }
     
     /**
@@ -104,14 +104,14 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
         // Mock VRF fulfillment
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 12345;
         
         // Simulate VRF callback (this would normally be called by VRF coordinator)
-        vm.prank(address(mockVRFCoordinator));
+        vm.prank(address(mockVrfCoordinator));
         // Note: We can't directly call fulfillRandomWords as it's internal
         // In a real test, we'd use a mock VRF coordinator or test the logic indirectly
         
@@ -158,7 +158,7 @@ contract WinnerSelectionTest is Test {
         
         // The actual winner selection happens in fulfillRandomWords
         // which is called by VRF coordinator
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
     }
     
     /**
@@ -223,7 +223,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
         // The weighted lottery system uses _selectWeightedWinner for each prize independently
         // This allows the same participant to win multiple prizes based on their weight
@@ -261,7 +261,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
         // Verify we have enough participants for all prizes
         address[] memory roundParticipants = raffle.getRoundParticipants(1);
@@ -286,7 +286,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
         // With 2 participants but 10+ tickets, all 10 prizes can be awarded
         // The algorithm should handle this gracefully
@@ -352,7 +352,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
         // Winner assignments are stored in roundWinners mapping
         // and accessed via getRoundWinners function
@@ -393,7 +393,7 @@ contract WinnerSelectionTest is Test {
         (,, uint256 aliceWeight,) = raffle.getUserStats(1, alice);
         assertTrue(aliceWeight > 0);
         
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
     }
     
     /**
@@ -416,7 +416,7 @@ contract WinnerSelectionTest is Test {
         PepedawnRaffle.Round memory roundBefore = raffle.getRound(1);
         assertEq(uint256(roundBefore.status), 3); // Snapshot = 3
 
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
 
         // After VRF request
         PepedawnRaffle.Round memory roundAfter = raffle.getRound(1);

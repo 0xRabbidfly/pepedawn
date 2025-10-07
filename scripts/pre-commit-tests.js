@@ -5,19 +5,16 @@ const path = require('path');
 
 console.log('🔍 Running pre-commit checks...');
 
-// Test files to run (matching GitHub Actions)
+// Test files to run (matching current test structure)
 const testFiles = [
-    'test/BasicDeployment.t.sol',
-    'test/AccessControl.t.sol',
-    'test/InputValidation.t.sol',
-    'test/Wager.t.sol',
-    'test/WinnerSelection.t.sol',
-    'test/Distribution.t.sol',
-    'test/EmergencyControls.t.sol',
+    'test/BettingAndProofs.t.sol',
+    'test/Core.t.sol',
+    'test/DeployedContractTest.t.sol',
     'test/Governance.t.sol',
-    'test/Round.t.sol',
+    'test/Integration.t.sol',
+    'test/RoundLifecycle.t.sol',
     'test/Security.t.sol',
-    'test/ScenarioFullRound.t.sol'
+    'test/WinnerSelection.t.sol'
 ];
 
 try {

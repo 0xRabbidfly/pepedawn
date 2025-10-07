@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../src/PepedawnRaffle.sol";
-import "./mocks/MockVRFCoordinatorV2Plus.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Test} from "forge-std/Test.sol";
+import {PepedawnRaffle} from "../src/PepedawnRaffle.sol";
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+import {MockVRFCoordinatorV2Plus} from "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
  * @title SecurityTest
- * @notice Comprehensive security tests for reentrancy protection
- * @dev These tests MUST FAIL before security implementation is complete
+ * @notice Comprehensive security tests for reentrancy protection and VRF security
+ * @dev Tests reentrancy, circuit breakers, VRF manipulation resistance
+ * 
+ * Spec Alignment:
+ * - FR-009: VRF randomness security
+ * - FR-011: Event emissions
  */
 contract SecurityTest is Test {
     PepedawnRaffle public raffle;
-    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVrfCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -41,11 +45,11 @@ contract SecurityTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
+        mockVrfCoordinator = new MockVRFCoordinatorV2Plus();
         
         // Deploy contract with mock VRF coordinator
         raffle = new PepedawnRaffle(
-            address(mockVRFCoordinator),
+            address(mockVrfCoordinator),
             SUBSCRIPTION_ID,
             KEY_HASH,
             creatorsAddress,
@@ -58,7 +62,7 @@ contract SecurityTest is Test {
         vm.deal(attacker, 10 ether);
         
         // Reset VRF timing for all tests
-        raffle.resetVRFTiming();
+        raffle.resetVrfTiming();
     }
     
     /**
@@ -136,14 +140,14 @@ contract SecurityTest is Test {
         raffle.snapshotRound(1);
         
         // Request VRF
-        raffle.requestVRF(1);
+        raffle.requestVrf(1);
         
         // Mock VRF fulfillment
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 12345;
         
         // Simulate VRF callback
-        vm.prank(address(mockVRFCoordinator));
+        vm.prank(address(mockVrfCoordinator));
         // This should work without reentrancy issues
         // The actual VRF fulfillment is internal, so we test the pattern indirectly
         assertTrue(true); // Placeholder - actual test would verify state consistency
@@ -197,6 +201,198 @@ contract SecurityTest is Test {
         // snapshotRound() should fail because round is in Refunded status, not Closed
         vm.expectRevert("Round not in required status");
         raffle.snapshotRound(1);
+    }
+    
+    // ============================================
+    // VRF Security Tests (FR-009)
+    // ============================================
+    
+    /**
+     * @notice Test VRF coordinator validation
+     * @dev FR-009: Only authorized VRF coordinator can fulfill
+     */
+    function testVRFCoordinatorValidation() public {
+        // Setup round for VRF
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.requestVrf(1);
+        
+        // Verify VRF coordinator is correctly set
+        (IVRFCoordinatorV2Plus coordinator,,,,) = raffle.vrfConfig();
+        assertEq(address(coordinator), address(mockVrfCoordinator), "VRF coordinator mismatch");
+        
+        // Cannot set zero coordinator
+        vm.expectRevert("Invalid address: zero address");
+        raffle.updateVrfConfig(address(0), SUBSCRIPTION_ID, KEY_HASH);
+    }
+    
+    /**
+     * @notice Test VRF configuration security
+     * @dev Verify all VRF config updates are validated
+     */
+    function testVRFConfigurationSecurity() public {
+        // Invalid coordinator address
+        vm.expectRevert("Invalid address: zero address");
+        raffle.updateVrfConfig(address(0), SUBSCRIPTION_ID, KEY_HASH);
+        
+        // Contract address as coordinator
+        vm.expectRevert("Invalid address: contract address");
+        raffle.updateVrfConfig(address(raffle), SUBSCRIPTION_ID, KEY_HASH);
+        
+        // Invalid subscription ID
+        vm.expectRevert("Invalid VRF subscription ID");
+        raffle.updateVrfConfig(address(mockVrfCoordinator), 0, KEY_HASH);
+        
+        // Invalid key hash
+        vm.expectRevert("Invalid VRF key hash");
+        raffle.updateVrfConfig(address(mockVrfCoordinator), SUBSCRIPTION_ID, bytes32(0));
+        
+        // Valid update should work
+        address newCoordinator = makeAddr("newCoordinator");
+        raffle.updateVrfConfig(newCoordinator, SUBSCRIPTION_ID + 1, keccak256("newKey"));
+        
+        (IVRFCoordinatorV2Plus coordinator, uint256 subId, bytes32 keyHash,,) = raffle.vrfConfig();
+        assertEq(address(coordinator), newCoordinator, "Coordinator not updated");
+        assertEq(subId, SUBSCRIPTION_ID + 1, "Subscription ID not updated");
+        assertEq(keyHash, keccak256("newKey"), "Key hash not updated");
+    }
+    
+    /**
+     * @notice Test VRF timeout protection
+     * @dev Verify VRF requests have timeout
+     */
+    function testVRFTimeoutProtection() public {
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.requestVrf(1);
+        
+        // Timeout protection exists
+        uint256 timeout = raffle.VRF_REQUEST_TIMEOUT();
+        assertEq(timeout, 1 hours, "VRF timeout should be 1 hour");
+        
+        // VRF request timing tracked
+        uint256 lastRequestTime = raffle.lastVrfRequestTime();
+        assertTrue(lastRequestTime > 0, "VRF request time should be tracked");
+        
+        // Round has VRF timestamp
+        PepedawnRaffle.Round memory round = raffle.getRound(1);
+        assertTrue(round.vrfRequestedAt > 0, "Round should track VRF request time");
+    }
+    
+    /**
+     * @notice Test VRF frequency protection
+     * @dev Cannot request VRF too frequently
+     */
+    function testVRFFrequencyProtection() public {
+        // First round
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.requestVrf(1);
+        
+        // Complete first round
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 12345;
+        mockVrfCoordinator.fulfillRandomWords(1, randomWords);
+        
+        // Second round immediately
+        raffle.createRound();
+        raffle.openRound(2);
+        
+        vm.prank(bob);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        raffle.closeRound(2);
+        raffle.snapshotRound(2);
+        
+        // Should fail - too soon
+        vm.expectRevert("VRF request too frequent");
+        raffle.requestVrf(2);
+        
+        // Wait 61 seconds
+        vm.warp(block.timestamp + 61);
+        
+        // Should work now
+        raffle.requestVrf(2);
+    }
+    
+    /**
+     * @notice Test VRF manipulation resistance
+     * @dev Verify request ID and state validation
+     */
+    function testVRFManipulationResistance() public {
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.requestVrf(1);
+        
+        // Request ID stored
+        PepedawnRaffle.Round memory round = raffle.getRound(1);
+        assertTrue(round.vrfRequestId > 0, "Request ID should be stored");
+        
+        // Coordinator validation
+        (IVRFCoordinatorV2Plus coordinator,,,,) = raffle.vrfConfig();
+        assertEq(address(coordinator), address(mockVrfCoordinator), "Coordinator should match");
+        
+        // State validation
+        assertEq(uint256(round.status), 4, "Status should be VRFRequested");
+    }
+    
+    /**
+     * @notice Test VRF state consistency
+     * @dev Verify VRF operations maintain consistent state
+     */
+    function testVRFStateConsistency() public {
+        // Initial state
+        assertEq(raffle.lastVrfRequestTime(), 0, "Initial VRF time should be 0");
+        
+        // Setup round
+        raffle.createRound();
+        raffle.openRound(1);
+        
+        vm.prank(alice);
+        raffle.placeBet{value: 0.04 ether}(10);
+        
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        
+        // Before VRF request
+        PepedawnRaffle.Round memory roundBefore = raffle.getRound(1);
+        assertEq(roundBefore.vrfRequestId, 0, "VRF request ID should be 0");
+        assertEq(roundBefore.vrfRequestedAt, 0, "VRF request time should be 0");
+        
+        // After VRF request
+        raffle.requestVrf(1);
+        
+        PepedawnRaffle.Round memory roundAfter = raffle.getRound(1);
+        assertTrue(roundAfter.vrfRequestId > 0, "VRF request ID should be set");
+        assertTrue(roundAfter.vrfRequestedAt > 0, "VRF request time should be set");
+        assertTrue(raffle.lastVrfRequestTime() > 0, "Last VRF request time should be set");
+        
+        // State should be VRFRequested
+        assertEq(uint256(roundAfter.status), 4, "Status should be VRFRequested");
     }
 }
 

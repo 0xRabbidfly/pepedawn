@@ -166,7 +166,7 @@ contract MockVRFCoordinatorV2Plus is IVRFCoordinatorV2Plus {
     /**
      * @notice Get request commitment (mock implementation)  
      */
-    function s_requestCommitments(uint256) external pure returns (bytes32) {
+    function sRequestCommitments(uint256) external pure returns (bytes32) {
         return bytes32(0);
     }
 

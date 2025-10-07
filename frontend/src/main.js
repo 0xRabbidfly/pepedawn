@@ -9,8 +9,6 @@ import {
   showTransactionStatus,
   showSecurityStatus,
   validateTransactionParams,
-  monitorTransaction,
-  updateTransactionStatus,
   handleTransactionError
 } from './ui.js';
 import { 
@@ -143,7 +141,7 @@ async function updateButtonStates() {
             proofDisabled = false;
             proofTooltip = '';
           }
-        } catch (error) {
+        } catch {
           // If we can't get user stats, default to basic round check
           proofDisabled = !isRoundOpen;
           proofTooltip = isRoundOpen ? '' : 'Round is not open for proof submission';

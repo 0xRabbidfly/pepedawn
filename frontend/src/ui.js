@@ -74,7 +74,7 @@ export async function updateWalletInfo(address, provider) {
       try {
         const network = await provider.getNetwork();
         validateNetwork(network.chainId);
-      } catch (networkError) {
+      } catch {
         // Show network switch prompt if on wrong network
         showNetworkSwitchPrompt();
       }

@@ -264,8 +264,26 @@ main {
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  background-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  transform: none !important;
+  filter: grayscale(50%);
+}
+
+button:disabled:hover {
+  transform: none !important;
+  background-color: var(--border-color) !important;
+}
+
+/* Disabled input/textarea styling */
+textarea:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 /* Sections */

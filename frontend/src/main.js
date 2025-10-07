@@ -28,6 +28,7 @@ let provider = null;
 let signer = null;
 let contract = null;
 let userAddress = null;
+let currentRoundStatus = null; // Track current round status for UI updates
 
 // Simple event logging for small-scale site
 function logEvent(eventType, eventData) {
@@ -38,6 +39,143 @@ function logEvent(eventType, eventData) {
 function formatAddress(address) {
   if (!address) return '';
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+// Update button states based on round status and user state
+async function updateButtonStates() {
+  const submitProofBtn = document.getElementById('submit-proof');
+  const placeBetBtn = document.getElementById('place-bet');
+  const ticketBtns = document.querySelectorAll('.ticket-btn');
+  const proofInput = document.getElementById('proof-input');
+  
+  // If contract not available, disable all interactive buttons
+  if (!contract) {
+    if (submitProofBtn) {
+      submitProofBtn.disabled = true;
+      submitProofBtn.title = 'Contract not available';
+    }
+    if (placeBetBtn) {
+      placeBetBtn.disabled = true;
+      placeBetBtn.title = 'Contract not available';
+    }
+    ticketBtns.forEach(btn => {
+      btn.disabled = true;
+      btn.title = 'Contract not available';
+    });
+    return;
+  }
+  
+  try {
+    // Get current round info
+    const currentRoundId = await contract.currentRoundId();
+    
+    if (currentRoundId.toString() === '0') {
+      // No active round - disable everything
+      currentRoundStatus = null;
+      if (submitProofBtn) {
+        submitProofBtn.disabled = true;
+        submitProofBtn.title = 'No active round';
+      }
+      if (placeBetBtn) {
+        placeBetBtn.disabled = true;
+        placeBetBtn.title = 'No active round';
+      }
+      ticketBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.title = 'No active round';
+      });
+      return;
+    }
+    
+    // Get round data
+    const roundData = await contract.getRound(currentRoundId);
+    currentRoundStatus = Number(roundData.status);
+    
+    // Check if round is open (status = 1)
+    const isRoundOpen = currentRoundStatus === 1;
+    
+    // Update betting buttons
+    if (placeBetBtn) {
+      placeBetBtn.disabled = !isRoundOpen || !userAddress;
+      if (!userAddress) {
+        placeBetBtn.title = 'Connect wallet to place bets';
+      } else if (!isRoundOpen) {
+        placeBetBtn.title = 'Round is not open for betting';
+      } else {
+        placeBetBtn.title = '';
+      }
+    }
+    
+    ticketBtns.forEach(btn => {
+      btn.disabled = !isRoundOpen || !userAddress;
+      if (!userAddress) {
+        btn.title = 'Connect wallet to place bets';
+      } else if (!isRoundOpen) {
+        btn.title = 'Round is not open for betting';
+      } else {
+        btn.title = '';
+      }
+    });
+    
+    // Update proof submission button - more complex logic
+    if (submitProofBtn && proofInput) {
+      let proofDisabled = true;
+      let proofTooltip = '';
+      
+      if (!userAddress) {
+        proofDisabled = true;
+        proofTooltip = 'Connect wallet to submit proof';
+      } else if (!isRoundOpen) {
+        proofDisabled = true;
+        proofTooltip = 'Round is not open for proof submission';
+      } else {
+        // Check user stats
+        try {
+          const userStats = await contract.getUserStats(currentRoundId, userAddress);
+          
+          if (userStats.tickets.toString() === '0') {
+            proofDisabled = true;
+            proofTooltip = 'Place a bet before submitting proof';
+          } else if (userStats.hasProof) {
+            proofDisabled = true;
+            proofTooltip = 'Proof already submitted for this round';
+          } else {
+            proofDisabled = false;
+            proofTooltip = '';
+          }
+        } catch (error) {
+          // If we can't get user stats, default to basic round check
+          proofDisabled = !isRoundOpen;
+          proofTooltip = isRoundOpen ? '' : 'Round is not open for proof submission';
+        }
+      }
+      
+      submitProofBtn.disabled = proofDisabled;
+      submitProofBtn.title = proofTooltip;
+      proofInput.disabled = proofDisabled;
+      if (proofDisabled && proofTooltip) {
+        proofInput.placeholder = proofTooltip;
+      } else {
+        proofInput.placeholder = 'Paste your puzzle proof here...';
+      }
+    }
+    
+  } catch (error) {
+    // On error, disable buttons for safety
+    console.error('Error updating button states:', error);
+    if (submitProofBtn) {
+      submitProofBtn.disabled = true;
+      submitProofBtn.title = 'Error checking round status';
+    }
+    if (placeBetBtn) {
+      placeBetBtn.disabled = true;
+      placeBetBtn.title = 'Error checking round status';
+    }
+    ticketBtns.forEach(btn => {
+      btn.disabled = true;
+      btn.title = 'Error checking round status';
+    });
+  }
 }
 
 // Initialize the application
@@ -138,6 +276,7 @@ async function connectWallet() {
     if (contract) {
       await updateUserStats(contract, userAddress);
       showSecurityStatus(contract, userAddress);
+      await updateButtonStates(); // Update button states after connecting
     }
     
     showTransactionStatus('Wallet connected successfully', 'success');
@@ -163,6 +302,7 @@ function handleNetworkChange(chainId) {
         if (contract) {
           updateUserStats(contract, userAddress);
           showSecurityStatus(contract, userAddress);
+          updateButtonStates();
         }
       }
     });
@@ -279,6 +419,7 @@ function setupContractEventListeners() {
       
       showTransactionStatus(`New round #${eventData.roundId} created!`, 'success');
       updateRoundStatus(contract);
+      updateButtonStates();
     });
     
     contract.on('RoundOpened', (...args) => {
@@ -295,6 +436,7 @@ function setupContractEventListeners() {
       
       showTransactionStatus(`Round #${eventData.roundId} is now open for betting!`, 'success');
       updateRoundStatus(contract);
+      updateButtonStates();
     });
     
     contract.on('RoundClosed', (...args) => {
@@ -311,6 +453,7 @@ function setupContractEventListeners() {
       
       showTransactionStatus(`Round #${eventData.roundId} closed. No more bets accepted.`, 'info');
       updateRoundStatus(contract);
+      updateButtonStates();
     });
     
     contract.on('RoundSnapshot', (...args) => {
@@ -352,6 +495,7 @@ function setupContractEventListeners() {
       if (eventData.user === userAddress?.toLowerCase()) {
         showTransactionStatus(`✅ Your bet confirmed! ${eventData.tickets} tickets for ${eventData.amount} ETH`, 'success');
         updateUserStats(contract, userAddress);
+        updateButtonStates(); // User can now submit proof
       } else {
         showTransactionStatus(`New bet: ${eventData.tickets} tickets by ${formatAddress(eventData.user)}`, 'info');
       }
@@ -376,6 +520,7 @@ function setupContractEventListeners() {
       if (eventData.user === userAddress?.toLowerCase()) {
         showTransactionStatus(`✅ Puzzle proof confirmed! Weight bonus applied.`, 'success');
         updateUserStats(contract, userAddress);
+        updateButtonStates(); // Proof button should now be disabled
       } else {
         showTransactionStatus(`Puzzle solved by ${formatAddress(eventData.user)}!`, 'info');
       }
@@ -552,8 +697,8 @@ function selectTickets(event) {
   const amount = parseFloat(btn.dataset.amount);
   
   // Update UI
-  document.getElementById('selected-tickets').textContent = tickets;
-  document.getElementById('selected-amount').textContent = amount;
+  document.getElementById('selected-tickets').textContent = String(tickets);
+  document.getElementById('selected-amount').textContent = String(amount);
   
   // Show bet summary
   document.getElementById('bet-summary').style.display = 'block';
@@ -645,6 +790,7 @@ async function placeBet() {
       // Update user stats and security status
       await updateUserStats(contract, userAddress);
       showSecurityStatus(contract, userAddress);
+      await updateButtonStates(); // Update button states after placing bet
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
@@ -666,6 +812,7 @@ async function submitProof() {
     }
     
     const proofInput = document.getElementById('proof-input');
+    if (!proofInput) return;
     const proof = proofInput.value.trim();
     
     if (!proof) {
@@ -756,6 +903,7 @@ async function submitProof() {
       // Update user stats and security status
       await updateUserStats(contract, userAddress);
       showSecurityStatus(contract, userAddress);
+      await updateButtonStates(); // Update button states after submitting proof
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
@@ -788,6 +936,8 @@ function startPeriodicUpdates() {
         if (userAddress) {
           await updateUserStats(contract, userAddress);
         }
+        
+        await updateButtonStates(); // Update button states periodically
       } catch (error) {
         // Completely silence expected contract errors to prevent console spam
         const isExpectedError = error.message.includes('execution reverted') || 
@@ -829,6 +979,8 @@ function startPeriodicUpdates() {
     if (userAddress) {
       showSecurityStatus(contract, userAddress);
     }
+    
+    updateButtonStates(); // Initial button state update
   }
 }
 

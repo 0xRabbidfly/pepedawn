@@ -59,45 +59,35 @@ function resetForms() {
 export async function updateWalletInfo(address, provider) {
   try {
     const walletInfo = document.getElementById('wallet-info');
-    const walletAddress = document.getElementById('wallet-address');
     const walletBalance = document.getElementById('wallet-balance');
     const connectBtn = document.getElementById('connect-wallet');
-    const networkStatus = document.getElementById('network-status');
     
-    if (walletAddress) {
-      walletAddress.textContent = formatAddress(address);
-    }
-    
+    // Update balance
     if (provider && walletBalance) {
       const balance = await provider.getBalance(address);
       const balanceEth = ethers.formatEther(balance);
       walletBalance.textContent = parseFloat(balanceEth).toFixed(4);
     }
     
-    // Validate and display network status
-    if (provider && networkStatus) {
+    // Validate network (show error if wrong network)
+    if (provider) {
       try {
         const network = await provider.getNetwork();
         validateNetwork(network.chainId);
-        
-        const networkName = SECURITY_CONFIG.NETWORK_NAMES[Number(network.chainId)] || `Chain ${network.chainId}`;
-        networkStatus.textContent = `✅ ${networkName}`;
-        networkStatus.className = 'network-status valid';
       } catch (networkError) {
-        networkStatus.textContent = `❌ ${networkError.message}`;
-        networkStatus.className = 'network-status invalid';
-        
-        // Show network switch prompt
+        // Show network switch prompt if on wrong network
         showNetworkSwitchPrompt();
       }
     }
     
+    // Show wallet info section
     if (walletInfo) {
       walletInfo.style.display = 'block';
     }
     
+    // Update button to show connected address
     if (connectBtn) {
-      connectBtn.textContent = 'Connected';
+      connectBtn.textContent = formatAddress(address);
       connectBtn.disabled = true;
     }
     

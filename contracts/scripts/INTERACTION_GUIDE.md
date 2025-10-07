@@ -114,6 +114,31 @@ When you call `check` and see the round details, the status field shows:
 - `3` = Snapshot (participants frozen)
 - `4` = VRFRequested (waiting for random number)
 - `5` = Distributed (winners selected, prizes sent)
+- `6` = Refunded (round closed with < 10 tickets, all participants refunded)
+
+## Prize Distribution Logic
+
+**Minimum Ticket Requirement**: Each round needs at least **10 total tickets** to distribute prizes.
+
+- **If round closes with 10+ tickets**:
+  - VRF draw proceeds normally
+  - 10 winners selected using **weighted lottery** (same wallet can win multiple times)
+  - Prize tiers: 1st=Fake Pack, 2nd=Kek Pack, 3rd-10th=Pepe Packs
+  
+- **If round closes with < 10 tickets**:
+  - `closeRound()` automatically refunds ALL participants
+  - No VRF request is made
+  - Round status set to `Refunded`
+  - All wagers returned to participants' wallets
+
+## Proof Validation System
+
+**Owner must set valid proof before opening round**:
+- Call `setValidProof(roundId, proofHash)` with keccak256 hash of correct solution
+- Users submit their proof attempt (only ONE attempt per wallet per round)
+- If proof matches: +40% weight bonus applied, `ProofSubmitted` event emitted
+- If proof doesn't match: NO bonus, `ProofRejected` event emitted, attempt consumed
+- Frontend shows immediate success/failure feedback
 
 ## Complete Round Workflow (Owner Operations)
 
@@ -124,21 +149,30 @@ When you call `check` and see the round details, the status field shows:
 # 2. Create new round (if needed)
 .\contracts\scripts\interact-sepolia.ps1 create
 
-# 3. Open round for betting
+# 3. Set valid proof hash for the round (REQUIRED for proof validation)
+``` BASH COMMANDS
+set -a; source contracts/.env; set +a
+# Replace 0x... with the keccak256 hash of the correct proof solution
+cast send $CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 0x... --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+```
+
+# 4. Open round for betting
 .\contracts\scripts\interact-sepolia.ps1 open 1
 
-# Users place bets via frontend or CLI...
+# Users place bets and submit proofs via frontend or CLI...
+# NOTE: If user submits incorrect proof, they get immediate feedback and attempt is consumed
 
-# 4. Close round when ready (future feature - add to script) BASH
+# 5. Close round when ready
+# IMPORTANT: If round has < 10 tickets, closeRound() automatically refunds all participants
 ``` BASH COMMANDS
 set -a; source contracts/.env; set +a
 cast send $CONTRACT_ADDRESS "closeRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
-# 5. Snapshot participants
+# 6. If round has 10+ tickets, continue with snapshot
 set -a; source contracts/.env; set +a
 cast send $CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
-# 6. Request VRF for winner selection
+# 7. Request VRF for winner selection
 set -a; source contracts/.env; set +a
 cast send $CONTRACT_ADDRESS "requestVRF(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
@@ -168,6 +202,14 @@ cast call $env:CONTRACT_ADDRESS "getRoundWinners(uint256)" 1 --rpc-url $env:SEPO
   - Prize tier (1=FAKE pack, 2=KEK pack, 3=PEPE pack)
   - VRF request ID
   - Block number
+
+**Important Notes on Winner Selection:**
+- **Weighted Lottery System**: Winners are selected based on their effective weight
+  - More tickets = higher odds
+  - Proof bonus (+40%) = even higher odds
+- **Same wallet can win multiple prizes** (e.g., could win both Fake and Kek)
+- Each prize is drawn independently with replacement
+- Total: 10 winners, 10 packs distributed (1 Fake, 1 Kek, 8 Pepe)
 
 **View on Etherscan:**
 ```

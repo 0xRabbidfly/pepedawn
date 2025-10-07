@@ -307,8 +307,9 @@ contract GovernanceTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         // Transfer ownership during active round
         raffle.transferOwnership(newOwner);
@@ -331,8 +332,8 @@ contract GovernanceTest is Test {
         
         // User data should be preserved
         (uint256 wagered, uint256 tickets,,) = raffle.getUserStats(1, alice);
-        assertEq(wagered, 0.005 ether);
-        assertEq(tickets, 1);
+        assertEq(wagered, 0.04 ether);
+        assertEq(tickets, 10);
     }
     
     /**
@@ -344,8 +345,9 @@ contract GovernanceTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         // Change creators address during active round
         address originalCreators = raffle.creatorsAddress();

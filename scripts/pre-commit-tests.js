@@ -24,6 +24,18 @@ try {
     // Change to contracts directory
     process.chdir(path.join(__dirname, '..', 'contracts'));
     
+    console.log('🔨 Building contracts first...');
+    try {
+        execSync('forge build', { 
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
+        console.log('✅ Contract build completed!');
+    } catch (error) {
+        console.error('❌ Contract build failed!');
+        process.exit(1);
+    }
+    
     console.log('🧪 Running smart contract tests...');
     
     // Run each test file

@@ -158,6 +158,65 @@ export async function updateRoundStatus(contract) {
   }
 }
 
+// Update progress indicator showing ticket count toward 10-ticket minimum
+export async function updateProgressIndicator(contract) {
+  try {
+    const progressFill = document.getElementById('ticket-progress');
+    const progressText = document.getElementById('progress-text');
+    const progressWarning = document.getElementById('progress-warning');
+    
+    if (!contract) {
+      if (progressText) progressText.textContent = 'No contract loaded';
+      return;
+    }
+    
+    // Get current round ID
+    const currentRoundId = await contract.currentRoundId();
+    
+    if (currentRoundId.toString() === '0') {
+      if (progressText) progressText.textContent = 'No active round';
+      if (progressWarning) progressWarning.style.display = 'none';
+      if (progressFill) progressFill.style.width = '0%';
+      return;
+    }
+    
+    // Get round data
+    const roundData = await contract.getRound(currentRoundId);
+    const totalTickets = Number(roundData.totalTickets);
+    
+    // Update progress bar
+    const progressPercent = Math.min((totalTickets / 10) * 100, 100);
+    if (progressFill) {
+      progressFill.style.width = progressPercent + '%';
+      // Color coding: red < 50%, yellow 50-99%, green >= 100%
+      if (progressPercent < 50) {
+        progressFill.style.backgroundColor = '#ef4444'; // red
+      } else if (progressPercent < 100) {
+        progressFill.style.backgroundColor = '#f59e0b'; // yellow
+      } else {
+        progressFill.style.backgroundColor = '#10b981'; // green
+      }
+    }
+    
+    // Update text
+    if (progressText) {
+      progressText.textContent = `${totalTickets} / 10 tickets needed for distribution`;
+    }
+    
+    // Show/hide warning
+    if (progressWarning) {
+      if (totalTickets < 10) {
+        progressWarning.style.display = 'block';
+      } else {
+        progressWarning.style.display = 'none';
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error updating progress indicator:', error);
+  }
+}
+
 // Update leaderboard display
 export async function updateLeaderboard(contract) {
   try {
@@ -206,37 +265,41 @@ export async function updateLeaderboard(contract) {
     // Get round data
     const roundData = await contract.getRound(currentRoundId);
     
-    // Note: Remix version doesn't have getRoundParticipants function
-    // For now, we'll show a simplified leaderboard
     if (roundData.totalTickets.toString() === '0') {
       leaderboardList.innerHTML = '<p>No participants yet</p>';
       return;
     }
     
-    // Show current user stats if available
+    // Get ALL participants (fixed: was only showing current user)
     const leaderboardData = [];
-    if (window.pepedawn && window.pepedawn.userAddress && currentRoundId > 0) {
-      try {
-        // Check if round is properly initialized before getting user stats
-        if (roundData && roundData.status !== undefined) {
-          const stats = await contract.getUserStats(currentRoundId, window.pepedawn.userAddress);
+    try {
+      const participants = await contract.getRoundParticipants(currentRoundId);
+      
+      // Get stats for each participant
+      for (let i = 0; i < participants.length; i++) {
+        const participant = participants[i];
+        try {
+          const stats = await contract.getUserStats(currentRoundId, participant);
           const fakeOdds = roundData.totalWeight > 0 
             ? ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1)
             : '0.0';
           
           leaderboardData.push({
-            address: window.pepedawn.userAddress,
+            address: participant,
             tickets: Number(stats.tickets),
             weight: Number(stats.weight),
             fakeOdds: fakeOdds + '%',
             hasProof: stats.hasProof
           });
+        } catch (error) {
+          // Skip participant if stats can't be retrieved
+          console.warn(`Could not get stats for participant ${participant}:`, error.message);
         }
-      } catch (error) {
-        // Silently handle expected errors when no round exists
-        if (!error.message.includes('execution reverted') && !error.message.includes('Round not initialized')) {
-          console.warn('Error fetching user stats for leaderboard:', error);
-        }
+      }
+    } catch (error) {
+      // Silently handle expected errors when no round exists
+      if (!error.message.includes('execution reverted') && !error.message.includes('Round not initialized')) {
+        console.warn('Error fetching participants for leaderboard:', error);
       }
     }
     

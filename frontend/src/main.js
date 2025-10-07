@@ -5,6 +5,7 @@ import {
   updateWalletInfo, 
   updateRoundStatus, 
   updateLeaderboard, 
+  updateProgressIndicator,
   updateUserStats, 
   showTransactionStatus,
   showSecurityStatus,
@@ -547,8 +548,9 @@ function setupContractEventListeners() {
         showTransactionStatus(`New bet: ${eventData.tickets} tickets by ${formatAddress(eventData.user)}`, 'info');
       }
       
-      // Update leaderboard and round status
+      // Update leaderboard, progress, and round status
       updateRoundStatus(contract);
+      updateProgressIndicator(contract);
       updateLeaderboard(contract);
     });
     
@@ -1003,6 +1005,7 @@ function startPeriodicUpdates() {
     if (contract) {
       try {
         await updateRoundStatus(contract);
+        await updateProgressIndicator(contract);
         await updateLeaderboard(contract);
         
         if (userAddress) {
@@ -1046,6 +1049,7 @@ function startPeriodicUpdates() {
   // Initial update
   if (contract) {
     updateRoundStatus(contract);
+    updateProgressIndicator(contract);
     updateLeaderboard(contract);
     
     if (userAddress) {

@@ -26,6 +26,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     uint256 public constant CREATORS_FEE_PCT = 80;
     uint256 public constant NEXT_ROUND_FEE_PCT = 20;
     uint256 public constant ROUND_DURATION = 2 weeks;
+    uint256 public constant MIN_TICKETS_FOR_DISTRIBUTION = 10; // Minimum tickets required for prize distribution
     
     // Prize tier constants
     uint8 public constant FAKE_PACK_TIER = 1;
@@ -47,7 +48,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         Closed,     // Round closed, no more bets/proofs
         Snapshot,   // Snapshot taken, ready for VRF
         VRFRequested, // VRF requested, waiting for fulfillment
-        Distributed // Prizes distributed, round complete
+        Distributed, // Prizes distributed, round complete
+        Refunded    // Round refunded due to insufficient tickets
     }
     
     // =============================================================================
@@ -66,6 +68,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         uint64 vrfRequestedAt; // Timestamp when VRF was requested
         bool feesDistributed;
         uint256 participantCount; // Track number of participants for circuit breaker
+        bytes32 validProofHash; // Valid proof hash set by owner for this round
     }
     
     struct Wager {
@@ -159,6 +162,15 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         bytes32 proofHash,
         uint256 newWeight
     );
+    event ProofRejected(
+        address indexed wallet,
+        uint256 indexed roundId,
+        bytes32 proofHash
+    );
+    event ValidProofSet(
+        uint256 indexed roundId,
+        bytes32 validProofHash
+    );
     
     // VRF events
     event VRFRequested(uint256 indexed roundId, uint256 indexed requestId);
@@ -178,6 +190,18 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         address indexed creators,
         uint256 creatorsAmount,
         uint256 nextRoundAmount
+    );
+    
+    // Refund events
+    event ParticipantRefunded(
+        uint256 indexed roundId,
+        address indexed participant,
+        uint256 amount
+    );
+    event RoundRefunded(
+        uint256 indexed roundId,
+        uint256 participantCount,
+        uint256 totalRefunded
     );
     
     // Emblem Vault integration events
@@ -402,11 +426,27 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
             vrfRequestId: 0,
             vrfRequestedAt: 0,
             feesDistributed: false,
-            participantCount: 0
+            participantCount: 0,
+            validProofHash: bytes32(0)
         });
         
         // Interactions: Emit event
         emit RoundCreated(currentRoundId, startTime, endTime);
+    }
+    
+    /**
+     * @notice Set valid proof hash for a round
+     * @param roundId The round to set proof for
+     * @param proofHash The valid proof hash
+     */
+    function setValidProof(uint256 roundId, bytes32 proofHash) 
+        external 
+        onlyOwner 
+        roundExists(roundId) 
+    {
+        require(proofHash != bytes32(0), "Invalid proof hash");
+        rounds[roundId].validProofHash = proofHash;
+        emit ValidProofSet(roundId, proofHash);
     }
     
     /**
@@ -427,6 +467,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     
     /**
      * @notice Close a round (no more bets/proofs)
+     * @dev If round has fewer than MIN_TICKETS_FOR_DISTRIBUTION, automatically refunds all participants
      * @param roundId The round to close
      */
     function closeRound(uint256 roundId) 
@@ -436,10 +477,58 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         whenNotEmergencyPaused
         roundExists(roundId) 
         roundInStatus(roundId, RoundStatus.Open) 
+        nonReentrant
     {
         Round storage round = rounds[roundId];
-        round.status = RoundStatus.Closed;
-        emit RoundClosed(roundId);
+        
+        // Check if minimum tickets met
+        if (round.totalTickets < MIN_TICKETS_FOR_DISTRIBUTION) {
+            // Insufficient tickets - refund all participants
+            _refundParticipants(roundId);
+            round.status = RoundStatus.Refunded;
+        } else {
+            // Sufficient tickets - proceed normally
+            round.status = RoundStatus.Closed;
+            emit RoundClosed(roundId);
+        }
+    }
+    
+    /**
+     * @notice Refund all participants of a round
+     * @dev Internal function called when round doesn't meet minimum ticket threshold
+     * @param roundId The round to refund
+     */
+    function _refundParticipants(uint256 roundId) internal {
+        Round storage round = rounds[roundId];
+        address[] memory participants = roundParticipants[roundId];
+        
+        uint256 totalRefunded = 0;
+        
+        for (uint256 i = 0; i < participants.length; i++) {
+            address participant = participants[i];
+            uint256 refundAmount = userWageredInRound[roundId][participant];
+            
+            if (refundAmount > 0) {
+                // Reset user's round data
+                userWageredInRound[roundId][participant] = 0;
+                userTicketsInRound[roundId][participant] = 0;
+                userWeightInRound[roundId][participant] = 0;
+                
+                // Transfer refund
+                (bool success, ) = participant.call{value: refundAmount}("");
+                require(success, "Refund transfer failed");
+                
+                totalRefunded += refundAmount;
+                emit ParticipantRefunded(roundId, participant, refundAmount);
+            }
+        }
+        
+        // Reset round totals
+        round.totalTickets = 0;
+        round.totalWeight = 0;
+        round.totalWagered = 0;
+        
+        emit RoundRefunded(roundId, participants.length, totalRefunded);
     }
     
     /**
@@ -588,34 +677,49 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
             "Invalid proof: trivial hash"
         );
         
-        // Effects: Store proof
+        // Checks: Validate against round's valid proof (if set)
+        bytes32 validProof = round.validProofHash;
+        bool isCorrect = (validProof != bytes32(0) && proofHash == validProof);
+        
+        // Effects: Store proof with verification status
         userProofInRound[currentRoundId][msg.sender] = PuzzleProof({
             wallet: msg.sender,
             roundId: currentRoundId,
             proofHash: proofHash,
-            verified: true, // Basic validation - could be enhanced
+            verified: isCorrect,
             submittedAt: uint64(block.timestamp)
         });
         
+        // Mark proof as submitted (regardless of correctness)
         userHasProofInRound[currentRoundId][msg.sender] = true;
         
-        // Effects: Recalculate user's effective weight with +40% multiplier
-        uint256 userTickets = userTicketsInRound[currentRoundId][msg.sender];
-        uint256 oldWeight = userWeightInRound[currentRoundId][msg.sender];
-        uint256 newWeight = (userTickets * PROOF_MULTIPLIER) / 1000;
-        
-        userWeightInRound[currentRoundId][msg.sender] = newWeight;
-        
-        // Effects: Update round total weight
-        round.totalWeight = round.totalWeight - oldWeight + newWeight;
-        
-        // Interactions: Emit event
-        emit ProofSubmitted(
-            msg.sender,
-            currentRoundId,
-            proofHash,
-            newWeight
-        );
+        // Effects: Only apply weight bonus if proof is correct
+        if (isCorrect) {
+            // Recalculate user's effective weight with +40% multiplier
+            uint256 userTickets = userTicketsInRound[currentRoundId][msg.sender];
+            uint256 oldWeight = userWeightInRound[currentRoundId][msg.sender];
+            uint256 newWeight = (userTickets * PROOF_MULTIPLIER) / 1000;
+            
+            userWeightInRound[currentRoundId][msg.sender] = newWeight;
+            
+            // Update round total weight
+            round.totalWeight = round.totalWeight - oldWeight + newWeight;
+            
+            // Interactions: Emit success event
+            emit ProofSubmitted(
+                msg.sender,
+                currentRoundId,
+                proofHash,
+                newWeight
+            );
+        } else {
+            // Interactions: Emit rejection event
+            emit ProofRejected(
+                msg.sender,
+                currentRoundId,
+                proofHash
+            );
+        }
     }
     
     /**
@@ -773,7 +877,44 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     }
     
     /**
-     * @notice Assign winners based on VRF randomness and distribute prizes
+     * @notice Select a weighted winner from participants
+     * @param randomSeed The random seed from VRF
+     * @param nonce Additional nonce for uniqueness
+     * @param totalWeight Total weight of all participants
+     * @param participants Array of participant addresses
+     * @param roundId The round ID for weight lookup
+     * @return winner The selected winner address
+     */
+    function _selectWeightedWinner(
+        uint256 randomSeed,
+        uint256 nonce,
+        uint256 totalWeight,
+        address[] memory participants,
+        uint256 roundId
+    ) internal view returns (address) {
+        // Generate random number in range [0, totalWeight)
+        uint256 randomWeight = uint256(keccak256(abi.encode(randomSeed, nonce))) % totalWeight;
+        
+        // Walk through participants until cumulative weight >= randomWeight
+        uint256 cumulativeWeight = 0;
+        for (uint256 i = 0; i < participants.length; i++) {
+            address participant = participants[i];
+            uint256 participantWeight = userWeightInRound[roundId][participant];
+            cumulativeWeight += participantWeight;
+            
+            if (cumulativeWeight > randomWeight) {
+                return participant;
+            }
+        }
+        
+        // Fallback (should never reach if totalWeight is correct)
+        return participants[0];
+    }
+    
+    /**
+     * @notice Assign winners based on VRF randomness and distribute prizes using weighted lottery
+     * @dev 1st place: Fake Pack, 2nd place: Kek Pack, 3rd-10th place: Pepe Packs
+     * @dev Same wallet can win multiple prizes (weighted lottery, not raffle)
      * @param roundId The round to process
      * @param randomSeed The random seed from VRF
      */
@@ -781,27 +922,27 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         Round storage round = rounds[roundId];
         address[] memory participants = roundParticipants[roundId];
         
-        // Simplified winner selection to avoid stack too deep
         uint256 totalWeight = round.totalWeight;
+        require(totalWeight > 0, "No weight in round");
         
-        // Select winners (simplified approach)
+        // Select 10 winners with weighted randomization
         address[] memory winners = new address[](10);
         uint8[] memory prizeTiers = new uint8[](10);
         uint256 winnerCount = 0;
         
-        // Select 10 winners with different prize tiers
-        for (uint256 i = 0; i < 10 && i < participants.length; i++) {
-            uint256 randomValue = uint256(keccak256(abi.encode(randomSeed, i, block.timestamp))) % participants.length;
-            address winner = participants[randomValue];
+        // Select 10 winners: 1st=Fake, 2nd=Kek, 3rd-10th=Pepe
+        for (uint256 i = 0; i < 10 && totalWeight > 0; i++) {
+            // Use weighted selection
+            address winner = _selectWeightedWinner(randomSeed, i, totalWeight, participants, roundId);
             
             // Assign prize tier based on position
             uint8 prizeTier;
             if (i == 0) {
-                prizeTier = FAKE_PACK_TIER;
+                prizeTier = FAKE_PACK_TIER;  // 1st place: Fake Pack
             } else if (i == 1) {
-                prizeTier = KEK_PACK_TIER;
+                prizeTier = KEK_PACK_TIER;   // 2nd place: Kek Pack
             } else {
-                prizeTier = PEPE_PACK_TIER;
+                prizeTier = PEPE_PACK_TIER;  // 3rd-10th place: Pepe Packs
             }
             
             winners[winnerCount] = winner;

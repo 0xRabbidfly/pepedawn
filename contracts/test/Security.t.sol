@@ -127,8 +127,9 @@ contract SecurityTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         // Close and snapshot round
         raffle.closeRound(1);
@@ -190,12 +191,12 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         // Test with zero participants (edge case)
+        // closeRound() should set status to Refunded when no participants
         raffle.closeRound(1);
-        raffle.snapshotRound(1);
         
-        // Should revert when requesting VRF with no participants
-        vm.expectRevert("No participants in round");
-        raffle.requestVRF(1);
+        // snapshotRound() should fail because round is in Refunded status, not Closed
+        vm.expectRevert("Round not in required status");
+        raffle.snapshotRound(1);
     }
 }
 

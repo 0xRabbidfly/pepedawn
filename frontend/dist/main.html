@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PEPEDAWN - Raffle Interface</title>
-    <script type="module" crossorigin src="/assets/main-moQ1lz6B.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/main-mDfGOJAY.css">
+    <title>PEPEDAWN - Lottery Interface</title>
+    <script type="module" crossorigin src="/assets/main-Ci7KU1Ud.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-DEaZXIXT.css">
   </head>
   <body>
     <div id="app">
       <header>
-        <h1>PEPEDAWN Raffle</h1>
+        <h1>PEPEDAWN Lottery</h1>
         <nav>
           <a href="/">Home</a>
           <a href="/main.html" class="active">Bet</a>
@@ -69,6 +69,19 @@
             <textarea id="proof-input" placeholder="Paste your puzzle proof here..."></textarea>
             <button id="submit-proof">Submit Proof</button>
             <div id="proof-status"></div>
+          </div>
+        </section>
+
+        <section id="progress-section">
+          <h2>Round Progress</h2>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" id="ticket-progress"></div>
+            </div>
+            <p id="progress-text" class="progress-text">Loading...</p>
+            <p id="progress-warning" class="warning" style="display:none;">
+              ⚠️ Round needs 10 tickets to distribute prizes. Otherwise, full refunds will be issued.
+            </p>
           </div>
         </section>
 

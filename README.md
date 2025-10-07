@@ -1,8 +1,8 @@
 # PEPEDAWN
 
-**Skill-Weighted Decentralized Raffle with Chainlink VRF and Emblem Vault Prizes**
+**Skill-Weighted Decentralized Lottery with Chainlink VRF and Emblem Vault Prizes**
 
-A minimal, fast web experience for placing on-chain wagers in 2-week rounds, submitting puzzle proofs for bonus odds, and winning Emblem Vault prizes through verifiable Chainlink VRF draws.
+A minimal, fast web experience for placing on-chain wagers in 2-week rounds, submitting puzzle proofs for bonus odds, and winning Emblem Vault prizes through verifiable Chainlink VRF draws. Lottery system with weighted randomization - the same wallet can win multiple prizes based on their ticket weight.
 
 ## 🚀 Quick Start
 
@@ -68,7 +68,11 @@ pepedawn/
 ## 🎯 Core Features
 
 ### Smart Contract (Solidity + Foundry)
-- **Skill-weighted betting**: Puzzle proofs multiply your odds by 1.4x (+40%)
+- **Skill-weighted lottery**: Puzzle proofs multiply your odds by 1.4x (+40%)
+- **Minimum ticket threshold**: Rounds need 10+ tickets or all participants get refunded
+- **Weighted lottery system**: Same wallet can win multiple prizes based on effective weight
+- **Prize tiers**: 1st=Fake Pack, 2nd=Kek Pack, 3rd-10th=Pepe Packs (10 winners total)
+- **Proof validation**: Owner sets valid proof per round; incorrect submissions consume attempt
 - **Chainlink VRF integration**: Verifiable random winner selection
 - **Dynamic gas estimation**: Automatic VRF callback gas calculation
 - **Security-first design**: Reentrancy protection, access controls, circuit breakers
@@ -77,8 +81,10 @@ pepedawn/
 ### Frontend (Vanilla JS + Vite)
 - **Multi-page application**: Title page, betting interface, rules
 - **Web3 wallet integration**: MetaMask support with network validation
-- **Real-time updates**: Live round status and leaderboard
+- **Real-time updates**: Live round status, progress indicator, and full participant leaderboard
+- **Progress tracking**: Visual progress bar showing tickets toward 10-ticket minimum
 - **Security features**: Input validation, rate limiting, error handling
+- **Proof feedback**: Immediate success/failure notification for puzzle submissions
 
 ## 🔧 Development Workflow
 

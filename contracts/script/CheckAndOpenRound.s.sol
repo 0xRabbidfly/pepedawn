@@ -31,29 +31,17 @@ contract CheckAndOpenRoundScript is Script {
         }
         
         // Check current round status
-        (
-            uint256 id,
-            uint64 startTime,
-            uint64 endTime,
-            PepedawnRaffle.RoundStatus status,
-            uint256 totalTickets,
-            uint256 totalWeight,
-            uint256 totalWagered,
-            uint256 vrfRequestId,
-            uint64 vrfRequestedAt,
-            bool feesDistributed,
-            uint256 participantCount
-        ) = raffle.rounds(currentRoundId);
+        PepedawnRaffle.Round memory round = raffle.getRound(currentRoundId);
         
         console.log("=== Round", currentRoundId, "Status ===");
-        console.log("Status:", uint8(status)); // 0=Created, 1=Open, 2=Closed, etc.
-        console.log("Start Time:", startTime);
-        console.log("End Time:", endTime);
-        console.log("Total Tickets:", totalTickets);
-        console.log("Participants:", participantCount);
+        console.log("Status:", uint8(round.status)); // 0=Created, 1=Open, 2=Closed, etc.
+        console.log("Start Time:", round.startTime);
+        console.log("End Time:", round.endTime);
+        console.log("Total Tickets:", round.totalTickets);
+        console.log("Participants:", round.participantCount);
         
         // If round is Created (status 0), open it
-        if (status == PepedawnRaffle.RoundStatus.Created) {
+        if (round.status == PepedawnRaffle.RoundStatus.Created) {
             console.log("Round is in Created status. Opening round...");
             
             vm.startBroadcast(deployerPrivateKey);
@@ -61,11 +49,11 @@ contract CheckAndOpenRoundScript is Script {
             vm.stopBroadcast();
             
             console.log("Round", currentRoundId, "is now OPEN for betting!");
-        } else if (status == PepedawnRaffle.RoundStatus.Open) {
+        } else if (round.status == PepedawnRaffle.RoundStatus.Open) {
             console.log("Round", currentRoundId, "is already OPEN for betting!");
         } else {
-            console.log("Round", currentRoundId, "is in status:", uint8(status));
-            console.log("Status meanings: 0=Created, 1=Open, 2=Closed, 3=Snapshot, 4=VRFRequested, 5=Distributed");
+            console.log("Round", currentRoundId, "is in status:", uint8(round.status));
+            console.log("Status meanings: 0=Created, 1=Open, 2=Closed, 3=Snapshot, 4=VRFRequested, 5=Distributed, 6=Refunded");
         }
         
         console.log("=== Frontend Integration ===");

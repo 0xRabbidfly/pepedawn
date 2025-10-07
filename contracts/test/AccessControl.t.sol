@@ -116,12 +116,21 @@ contract AccessControlTest is Test {
         // Open round as owner for further tests
         raffle.openRound(1);
         
+        // Add enough participants to meet minimum ticket threshold (10 tickets)
+        // Alice buys 5 tickets
+        vm.prank(alice);
+        raffle.placeBet{value: 0.0225 ether}(5);
+        
+        // Bob buys 5 tickets
+        vm.prank(bob);
+        raffle.placeBet{value: 0.0225 ether}(5);
+        
         // Test closeRound
         vm.prank(malicious);
         vm.expectRevert("Only callable by owner");
         raffle.closeRound(1);
         
-        // Close round as owner for further tests
+        // Close round as owner for further tests (now has 10+ tickets, so status will be Closed)
         raffle.closeRound(1);
         
         // Test snapshotRound
@@ -194,10 +203,16 @@ contract AccessControlTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
-        // Add participant
+        // Add enough participants to meet minimum ticket threshold (10 tickets)
+        // Alice buys 5 tickets
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.0225 ether}(5);
         
+        // Bob buys 5 tickets
+        vm.prank(bob);
+        raffle.placeBet{value: 0.0225 ether}(5);
+        
+        // Now we have 10 tickets total, so closeRound will set status to Closed (not Refunded)
         raffle.closeRound(1);
         raffle.snapshotRound(1);
         raffle.requestVRF(1);

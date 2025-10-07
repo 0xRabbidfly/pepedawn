@@ -56,55 +56,79 @@ When creating this spec from a user prompt:
 
 ### Primary User Story
 As a wallet holder, I want to connect my Ethereum wallet, place a wager in an
-active 2‑week round, optionally submit a valid puzzle proof to increase my odds,
-see my wallet appear on the leaderboard with my current percentage chance of
-winning the Fake Pack, and—after the round closes—have winners selected via
-verifiable on‑chain randomness and receive my prize via Emblem Vault transfer if
-I win.
+active 2‑week round, optionally submit a valid puzzle proof to increase my odds
+by 40%, see my wallet appear on the leaderboard with my current percentage
+chance of winning, track progress toward the 10-ticket minimum required for
+distribution, and—after the round closes—either receive my prize via Emblem
+Vault transfer if I win and the round met the minimum, or receive a full refund
+if the round had fewer than 10 tickets, with all outcomes verifiable through
+on‑chain randomness and events.
 
 ### Acceptance Scenarios
 1. **Given** an open round, **When** a user connects a wallet and places a bet,
-   **Then** the bet is recorded on-chain and the wallet appears on the
-   leaderboard with its percentage chance of the Fake Pack displayed.
-2. **Given** a wallet that has already wagered, **When** the user submits a
-   valid puzzle proof, **Then** the wallet’s effective weight increases by the
-   documented multiplier (capped), and the leaderboard percentage updates.
-3. **Given** a round has closed, **When** any wallet attempts to bet, **Then**
-   the bet is rejected and an explanation is shown.
-4. **Given** a snapshot has been taken, **When** the system requests VRF and
-   receives fulfillment, **Then** winners are deterministically reproducible
-   from on-chain data and are emitted via events.
-5. **Given** winners are assigned, **When** prizes are distributed, **Then** the
-   Emblem Vault tokens are transferred to winners’ ETH addresses (or escrowed)
-   and the mapping is emitted via events.
-6. **Given** the public read endpoints, **When** observers query round status,
-   ticket counts, weights, and expected prize counts, **Then** values match
+   **Then** the bet is recorded on-chain, the wallet appears on the leaderboard
+   with its percentage chance displayed, and the progress bar updates showing
+   tickets toward the 10-ticket minimum.
+2. **Given** the owner has set a valid proof hash for a round and a wallet has
+   wagered, **When** the user submits a matching proof, **Then** the wallet's
+   effective weight increases by 40%, the leaderboard updates, and success
+   feedback is shown.
+3. **Given** a wallet that has already wagered, **When** the user submits an
+   INCORRECT proof hash, **Then** the proof is rejected, no weight bonus is
+   applied, the attempt is consumed, and failure feedback is shown.
+4. **Given** a round has closed with 10+ tickets, **When** VRF is requested and
+   fulfilled, **Then** 10 winners are selected (1st place gets Fake pack, 2nd
+   place gets Kek pack, 3rd-10th place each get Pepe pack), and winners are
+   reproducible from on-chain data.
+5. **Given** a round has closed with fewer than 10 tickets, **When** the round
+   is processed, **Then** ALL participants are refunded their full wager
+   amount, no fees are collected, and refund events are emitted.
+6. **Given** a round with 10+ tickets and weighted distribution, **When**
+   winners are selected, **Then** wallets with higher weight have
+   proportionally higher odds, and the same wallet CAN appear as multiple
+   winners.
+7. **Given** winners are assigned, **When** prizes are distributed, **Then**
+   the 1st place winner receives Fake pack, 2nd place receives Kek pack,
+   3rd-10th place winners each receive one Pepe pack, and Emblem Vault
+   assignment events are emitted.
+8. **Given** the public read endpoints, **When** observers query round status,
+   ticket counts, weights, and progress toward minimum, **Then** values match
    on-chain state.
-7. **Given** a denylisted wallet, **When** it attempts to bet, **Then** the
+9. **Given** a denylisted wallet, **When** it attempts to bet, **Then** the
    system blocks the action per eligibility rules and logs an event.
-8. **Given** a wallet that already submitted a proof, **When** it tries again,
-   **Then** the submission is rejected with a clear message.
+10. **Given** a wallet that already submitted a proof attempt (success or
+    fail), **When** it tries again in the same round, **Then** the submission
+    is rejected with a clear message.
 
 ### Edge Cases
 - Bet submitted right as round closes → reject with reason; no partial accepts.
-- Duplicate proof submissions → reject; event emitted.
+- Duplicate proof submissions → reject; event emitted; only one attempt allowed.
 - Proof submission before first wager → reject.
-- Very small “dust” wagers → enforce min stake; show validation error.
-- Leaderboard ties and rounding → deterministic ordering and rounding policy.
+- Incorrect proof submission → reject, consume attempt, show failure message.
+- Very small "dust" wagers → enforce min stake; show validation error.
+- Round closes with exactly 10 tickets → process normally with VRF draw.
+- Round closes with 9 or fewer tickets → refund all participants, no VRF.
+- Leaderboard shows 0% odds if under 10 tickets → warn users of potential refund.
+- VRF request on round under 10 tickets → blocked; must refund first.
+- Same wallet wins multiple prizes → allowed; emit separate events per prize.
+- Wallet wins 1st place → receives Fake pack (highest tier, 3 cards).
+- Refund processing when contract has insufficient ETH → should never happen
+  (escrowed funds); emergency circuit breaker if detected.
 - VRF request failure/timeout → retry policy and incident logging.
 - Emblem Vault transfer failure → escrow and manual claim path with on-chain
   eligibility proof.
-- Prize reserves not pre-committed → round cannot open; operator alerted.
+- Owner forgets to set valid proof before opening round → proofs cannot succeed.
 - Wallet disconnects mid-bet → do not create on-chain transaction; show status.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 - **FR-001**: Users MUST be able to connect an Ethereum wallet to participate.
-- **FR-002**: The site MUST clearly display prize tiers:
-  - 1x Fake Pack (3 PEPEDAWN cards)
-  - 1x Kek Pack (2 PEPEDAWN cards)
-  - 8x Pepe Packs (1 PEPEDAWN card)
+- **FR-002**: The site MUST clearly display prize tiers and distribution:
+  - 1st place: 1x Fake Pack (3 PEPEDAWN cards bundled in one Emblem Vault)
+  - 2nd place: 1x Kek Pack (2 PEPEDAWN cards bundled in one Emblem Vault)
+  - 3rd-10th place: 1x Pepe Pack each (1 PEPEDAWN card per Emblem Vault)
+  - Total: 10 winners per round, 10 prize packs distributed
 - **FR-003**: Users MUST be able to place a wager in an open round; wagers are
   recorded on-chain and escrowed until settlement.
 - **FR-004**: Each round MUST follow a 2‑week timeline; bets only accepted when
@@ -145,9 +169,12 @@ I win.
   - Bets from denylisted wallets MUST be blocked and an event MUST be emitted.
 
 - **FR-019**: Puzzle proof weighting:
-  - Only one puzzle solution per wallet per round is allowed.
+  - The contract owner MUST set a valid proof hash per round before the round opens.
+  - Users submit their proof attempt; it MUST match the valid proof hash exactly.
+  - Only one puzzle solution attempt per wallet per round is allowed (success or fail).
   - An accepted proof increases effective weight by 40% (multiplier = 1.4).
   - A hard cap of +40% additional weight per wallet per round is enforced.
+  - The UI MUST show immediate feedback on proof submission success or failure.
 
 - **FR-020**: Emblem Vault prizes MUST be preloaded into the contract before the
   round opens and automatically distributed at round close once VRF randomness
@@ -171,29 +198,62 @@ I win.
   - Emit events on randomness requested/fulfilled with request id and block data.
 
 - **FR-024**: Fee schedule:
-  - 80% of fees go to the creators’ address(es).
+  - 80% of fees go to the creators' address(es).
   - Remaining 20% stays in the contract as a reward for the next round.
   - Fees are applied upon settlement at round close.
   - Fee parameters and transfers MUST be emitted via events.
+
+- **FR-025**: Minimum ticket threshold and refund mechanism:
+  - A round MUST have at least 10 total tickets purchased to be eligible for distribution.
+  - If a round closes with fewer than 10 tickets, ALL participants MUST be refunded their full wager amount.
+  - Refunds MUST be processed from the contract's ETH balance.
+  - No fees are collected on refunded rounds.
+  - Refund events MUST be emitted for each participant.
+
+- **FR-026**: Winner selection (weighted lottery):
+  - Winners are selected using weighted randomization based on total effective weight.
+  - A wallet with more tickets/weight has proportionally higher odds of winning each prize.
+  - The same wallet address CAN win multiple prizes in a single round.
+  - Each prize is drawn independently; duplicate winners across different prizes are allowed.
+  - Winner selection algorithm MUST be deterministic and reproducible from VRF seed.
+
+- **FR-027**: Leaderboard and progress tracking:
+  - The leaderboard MUST display all participating wallets with their current odds.
+  - A progress indicator MUST show tickets purchased toward the 10-ticket minimum.
+  - Progress bar format: "X / 10 tickets needed for round distribution"
+  - If threshold not met by round end, participants MUST be notified of pending refund.
 
 *Requirements needing clarification:*
 
 ### Key Entities *(include if feature involves data)*
 - **Round**: Identifier, start/end timestamps, parameters (fees, caps, prize
   tiers), status (created/opened/closed/snapshotted/randomness_requested/
-  randomness_fulfilled/winners_assigned/prizes_distributed).
+  randomness_fulfilled/winners_assigned/prizes_distributed/refunded), valid
+  proof hash (set by owner), minimum ticket threshold (10), meets threshold
+  boolean.
 - **Wager**: Wallet address, round id, amount, timestamp, tickets/weight,
-  escrow status.
-- **Wallet**: Address, eligibility status, total effective weight, proof status.
-- **PuzzleProof**: Wallet address, round id, proof reference/data, verification
-  status, weight multiplier applied.
-- **PrizeTier**: Name (Fake/Kek/Pepe), count, description, associated Emblem
-  Vault token ids (pre-committed) or minting plan.
-- **WinnerAssignment**: Round id, wallet address, prize tier, randomness request
-  id/seed/block references; emitted via events.
-- **LeaderboardEntry**: Wallet address, Fake Pack odds percentage, rank.
+  escrow status, refund status.
+- **Wallet**: Address, eligibility status, total effective weight, proof
+  submission status (not_attempted/success/failed).
+- **PuzzleProof**: Wallet address, round id, proof hash submitted, verification
+  status (matched/not_matched), weight multiplier applied (0 or 1.4x), valid
+  proof hash for round (set by owner).
+- **PrizeTier**: 
+  - 1st place: Fake Pack (3 cards bundled in one Emblem Vault)
+  - 2nd place: Kek Pack (2 cards bundled in one Emblem Vault)
+  - 3rd-10th place: Pepe Pack (1 card per Emblem Vault, 8 total packs)
+  - Associated Emblem Vault token ids (pre-committed).
+- **WinnerAssignment**: Round id, wallet address, prize tier, randomness
+  request id/seed/block references; emitted via events. Each winner receives
+  exactly one prize pack.
+- **LeaderboardEntry**: Wallet address, total weight, win percentage, rank,
+  proof status indicator.
+- **ProgressIndicator**: Current total tickets, minimum required (10), progress
+  percentage, warning if under threshold.
+- **RefundRecord**: Round id, wallet address, amount refunded, timestamp;
+  emitted only when round fails to meet minimum tickets.
 - **DeployArtifacts (docs/ops)**: Contract addresses, ABIs, VRF config, event
-  tx hashes for lifecycle, randomness, and prize mapping.
+  tx hashes for lifecycle, randomness, prize mapping, and refunds.
 
 ---
 

@@ -278,8 +278,9 @@ contract EmergencyControlsTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);

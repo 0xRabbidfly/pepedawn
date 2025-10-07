@@ -61,6 +61,25 @@ contract WinnerSelectionTest is Test {
     }
     
     /**
+     * @notice Helper function to add enough participants to meet minimum ticket threshold
+     * @dev Adds exactly 10 tickets to ensure closeRound sets status to Closed (not Refunded)
+     */
+    function _addMinimumParticipants() internal {
+        // Add 10 tickets total to meet MIN_TICKETS_FOR_DISTRIBUTION
+        // Alice buys 5 tickets
+        vm.prank(alice);
+        raffle.placeBet{value: 0.0225 ether}(5);
+        
+        // Bob buys 5 tickets  
+        vm.prank(bob);
+        raffle.placeBet{value: 0.0225 ether}(5);
+        
+        // Verify we have exactly 10 tickets
+        PepedawnRaffle.Round memory round = raffle.getRound(1);
+        assertEq(round.totalTickets, 10);
+    }
+    
+    /**
      * @notice Test prize tier constants
      * @dev Verify prize tier constants are correctly set
      */
@@ -75,12 +94,13 @@ contract WinnerSelectionTest is Test {
      * @dev Verify single participant wins all available prizes
      */
     function testSingleParticipantWinnerSelection() public {
-        // Setup round with single participant
+        // Setup round with single participant (but enough tickets to meet minimum)
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -101,8 +121,8 @@ contract WinnerSelectionTest is Test {
         assertEq(participants[0], alice);
         
         (uint256 wagered, uint256 tickets, uint256 weight, bool hasProof) = raffle.getUserStats(1, alice);
-        assertEq(tickets, 1);
-        assertEq(weight, 1);
+        assertEq(tickets, 10);
+        assertEq(weight, 10);
     }
     
     /**
@@ -114,10 +134,13 @@ contract WinnerSelectionTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
-        // Add 5 participants with equal weights
-        address[5] memory participants = [alice, bob, charlie, david, eve];
-        for (uint i = 0; i < participants.length; i++) {
-            vm.prank(participants[i]);
+        // Add minimum participants to meet 10-ticket threshold
+        _addMinimumParticipants();
+        
+        // Add 3 more participants for variety (total 13 tickets)
+        address[3] memory additionalParticipants = [charlie, david, eve];
+        for (uint i = 0; i < additionalParticipants.length; i++) {
+            vm.prank(additionalParticipants[i]);
             raffle.placeBet{value: 0.005 ether}(1);
         }
         
@@ -126,12 +149,12 @@ contract WinnerSelectionTest is Test {
         
         // Verify all participants are registered
         address[] memory roundParticipants = raffle.getRoundParticipants(1);
-        assertEq(roundParticipants.length, 5);
+        assertEq(roundParticipants.length, 5); // Alice, Bob, Charlie, David, Eve
         
         // Verify total weight
         PepedawnRaffle.Round memory round = raffle.getRound(1);
-        assertEq(round.totalTickets, 5);
-        assertEq(round.totalWeight, 5);
+        assertEq(round.totalTickets, 13);
+        assertEq(round.totalWeight, 13);
         
         // The actual winner selection happens in fulfillRandomWords
         // which is called by VRF coordinator
@@ -195,12 +218,8 @@ contract WinnerSelectionTest is Test {
         raffle.createRound();
         raffle.openRound(1);
         
-        // Add participants
-        address[3] memory participants = [alice, bob, charlie];
-        for (uint i = 0; i < participants.length; i++) {
-            vm.prank(participants[i]);
-            raffle.placeBet{value: 0.005 ether}(1);
-        }
+        // Add minimum participants to meet 10-ticket threshold
+        _addMinimumParticipants();
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -212,7 +231,7 @@ contract WinnerSelectionTest is Test {
         
         // Verify participants are tracked
         address[] memory roundParticipants = raffle.getRoundParticipants(1);
-        assertEq(roundParticipants.length, 3);
+        assertEq(roundParticipants.length, 2); // Alice and Bob
     }
     
     /**
@@ -254,26 +273,23 @@ contract WinnerSelectionTest is Test {
      * @dev Verify system handles cases with fewer participants than prizes
      */
     function testWinnerSelectionInsufficientParticipants() public {
-        // Setup round with only 2 participants (less than 10 total prizes)
+        // Setup round with enough participants to meet minimum threshold
         raffle.createRound();
         raffle.openRound(1);
         
-        vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
-        
-        vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1);
+        // Add minimum participants to meet 10-ticket threshold
+        _addMinimumParticipants();
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
         raffle.requestVRF(1);
         
-        // With only 2 participants, only 2 prizes can be awarded
+        // With 2 participants but 10+ tickets, all 10 prizes can be awarded
         // The algorithm should handle this gracefully
         address[] memory participants = raffle.getRoundParticipants(1);
         assertEq(participants.length, 2);
         
-        // Each participant can win at most one prize due to duplicate prevention
+        // In the new lottery system, the same participant can win multiple prizes
     }
     
     /**
@@ -286,6 +302,10 @@ contract WinnerSelectionTest is Test {
         // to generate different random values for each prize selection
         
         raffle.createRound();
+        
+        // Set valid proof for the round
+        raffle.setValidProof(1, keccak256("valid_proof"));
+        
         raffle.openRound(1);
         
         // Add participants with different weights
@@ -293,7 +313,7 @@ contract WinnerSelectionTest is Test {
         raffle.placeBet{value: 0.04 ether}(10); // 10 tickets
         
         vm.prank(alice);
-        raffle.submitProof(keccak256("alice_proof")); // +40% weight
+        raffle.submitProof(keccak256("valid_proof")); // +40% weight (correct proof)
         
         vm.prank(bob);
         raffle.placeBet{value: 0.005 ether}(1); // 1 ticket, no proof
@@ -318,12 +338,13 @@ contract WinnerSelectionTest is Test {
      * @dev Verify winner assignments are properly stored
      */
     function testWinnerAssignmentStorage() public {
-        // Setup simple round
+        // Setup simple round with enough tickets
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -376,12 +397,13 @@ contract WinnerSelectionTest is Test {
      * @dev Verify winner selection properly transitions round state
      */
     function testWinnerSelectionStateTransitions() public {
-        // Setup round
+        // Setup round with enough tickets
         raffle.createRound();
         raffle.openRound(1);
         
+        // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.placeBet{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);

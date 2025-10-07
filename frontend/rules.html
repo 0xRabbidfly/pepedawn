@@ -14,26 +14,27 @@
         <nav>
           <a href="/">Home</a>
           <a href="/main.html">Ticket Office</a>
+          <a href="/leaderboard.html">Leaderboard</a>
           <a href="/rules.html" class="active">Rules</a>
         </nav>
       </header>
 
       <main>
         <section id="rules-content">
-          <h2>How PEPEDAWN Works</h2>
+          <h2>How PEPEDAWN Decentralized Lottery Works</h2>
           
           <h3>Timeline</h3>
           <ul>
             <li><strong>Round Duration:</strong> 2 weeks per round</li>
-            <li><strong>Betting Phase:</strong> Open for most of the round</li>
-            <li><strong>Proof Submission:</strong> Available after placing first bet</li>
+            <li><strong>Ticket Office:</strong> Open for most of the round</li>
+            <li><strong>Proof Submission:</strong> Available after purchasing first ticket</li>
             <li><strong>Draw Phase:</strong> Uses Chainlink VRF for verifiable randomness</li>
             <li><strong>Distribution:</strong> Automatic Emblem Vault prize distribution</li>
           </ul>
 
-          <h3>Betting Rules</h3>
+          <h3>Ticket Office Rules</h3>
           <ul>
-            <li><strong>Minimum Bet:</strong> 0.005 ETH (1 ticket)</li>
+            <li><strong>Minimum Purchase:</strong> 0.005 ETH (1 ticket)</li>
             <li><strong>Bundle Discounts:</strong>
               <ul>
                 <li>5 tickets = 0.0225 ETH (10% discount)</li>
@@ -42,6 +43,8 @@
             </li>
             <li><strong>Per-Wallet Cap:</strong> 1.0 ETH maximum per round</li>
             <li><strong>Network:</strong> Ethereum mainnet/testnet only</li>
+            <li><strong>Minimum Distribution:</strong> 10 tickets required for prizes to be distributed</li>
+            <li><strong>Refund Policy:</strong> If fewer than 10 tickets are sold, all participants receive full refunds</li>
           </ul>
 
           <h3>Skill-Weighted Odds</h3>
@@ -62,10 +65,18 @@
 
           <h3>Prize Distribution</h3>
           <ul>
-            <li><strong>Prize Tiers:</strong> Fake Packs, Kek Packs, Pepe Packs</li>
+            <li><strong>Prize Tiers:</strong>
+              <ul>
+                <li>1st Place: 1x Fake Pack (3 PEPEDAWN cards in one Emblem Vault)</li>
+                <li>2nd Place: 1x Kek Pack (2 PEPEDAWN cards in one Emblem Vault)</li>
+                <li>3rd-10th Place: 1x Pepe Pack each (1 PEPEDAWN card per Emblem Vault)</li>
+              </ul>
+            </li>
+            <li><strong>Total Winners:</strong> 10 winners per round, 10 prize packs distributed</li>
             <li><strong>Source:</strong> Emblem Vault preloaded assets</li>
             <li><strong>Distribution:</strong> Automatic post-VRF fulfillment</li>
             <li><strong>Transparency:</strong> All winner assignments recorded on-chain</li>
+            <li><strong>Multiple Wins:</strong> Same wallet can win multiple prizes in one round</li>
           </ul>
 
           <h3>Fee Structure</h3>
@@ -76,13 +87,22 @@
             <li><strong>Events:</strong> All fee distributions logged on-chain</li>
           </ul>
 
-          <h3>Expected Value (EV)</h3>
-          <p>The expected value varies based on:</p>
+          <h3>Winning Odds</h3>
+          <p>Your winning odds depend on:</p>
           <ul>
             <li>Total number of participants</li>
             <li>Your ticket count and weight multiplier</li>
             <li>Prize tier distribution</li>
             <li>Current Emblem Vault asset values</li>
+            <li>Whether the round meets the 10-ticket minimum</li>
+          </ul>
+          
+          <h3>Round Progress Tracking</h3>
+          <ul>
+            <li><strong>Progress Bar:</strong> Shows tickets purchased toward 10-ticket minimum</li>
+            <li><strong>Status Updates:</strong> "X/10 tickets are required for distribution when round closes"</li>
+            <li><strong>Success Message:</strong> "PEPEDAWN Packs will be distributed this round !!" when 10+ tickets reached</li>
+            <li><strong>Refund Warning:</strong> If threshold not met by round end, participants notified of pending refund</li>
           </ul>
 
           <h3>Technical Details</h3>
@@ -91,6 +111,17 @@
             <li><strong>Testing:</strong> Foundry unit and invariant tests</li>
             <li><strong>Frontend:</strong> Minimal vanilla JS with ethers v6</li>
             <li><strong>Performance:</strong> ≤100KB JS bundle for fast loading</li>
+            <li><strong>VRF Provider:</strong> Chainlink VRF v2/v2.5 for verifiable randomness</li>
+            <li><strong>Eligibility:</strong> Configurable denylist enforcement, no allowlist</li>
+          </ul>
+          
+          <h3>Important Disclaimers</h3>
+          <ul>
+            <li><strong>Minimum Threshold:</strong> Rounds with fewer than 10 tickets result in full refunds</li>
+            <li><strong>No Guarantees:</strong> Prize distribution only occurs if minimum threshold is met</li>
+            <li><strong>Weighted Lottery:</strong> Higher weight increases odds but does not guarantee wins</li>
+            <li><strong>One Proof Attempt:</strong> Only one puzzle proof submission allowed per wallet per round</li>
+            <li><strong>Network Only:</strong> Ethereum mainnet/testnet only, no L2 networks</li>
           </ul>
         </section>
       </main>

@@ -251,6 +251,9 @@ export async function updateLeaderboard(contract) {
     const leaderboardList = document.getElementById('leaderboard-list');
     if (!leaderboardList) return;
     
+    // Only update leaderboard if we're on the leaderboard page
+    if (!window.location.pathname.includes('leaderboard.html')) return;
+    
     if (!contract) {
       // Show mock data when contract not available
       const mockLeaderboard = [

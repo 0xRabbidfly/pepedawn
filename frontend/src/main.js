@@ -208,7 +208,7 @@ async function init() {
     try {
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
-        await connectWallet();
+        await connectWalletSilent(); // Silent connection - no toast
       }
     } catch (error) {
       console.log('No wallet auto-connection:', error);
@@ -262,47 +262,67 @@ async function connectWallet() {
     // Request account access
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     
-    // Create provider and signer
-    provider = new ethers.BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
-    userAddress = await signer.getAddress();
-    
-    console.log('Wallet connected:', userAddress);
-    
-    // Validate network
-    try {
-      const network = await provider.getNetwork();
-      validateNetwork(network.chainId);
-      console.log('✅ Network validated:', SECURITY_CONFIG.NETWORK_NAMES[Number(network.chainId)]);
-    } catch (networkError) {
-      console.warn('⚠️ Network validation failed:', networkError.message);
-      showTransactionStatus(networkError.message, 'warning');
-    }
-    
-    // Set up network change listener
-    if (window.ethereum.on) {
-      window.ethereum.on('chainChanged', handleNetworkChange);
-      window.ethereum.on('accountsChanged', handleAccountChange);
-    }
-    
-    // Update UI
-    await updateWalletInfo(userAddress, provider);
-    
-    // Load contract with signer
-    await loadContract();
-    
-    // Update user stats and security status
-    if (contract) {
-      await updateUserStats(contract, userAddress);
-      showSecurityStatus(contract, userAddress);
-      await updateButtonStates(); // Update button states after connecting
-    }
-    
-    showTransactionStatus('Wallet connected successfully', 'success');
+    await setupWalletConnection(true); // true = show success toast
     
   } catch (error) {
     console.error('Error connecting wallet:', error);
     showTransactionStatus('Failed to connect wallet: ' + error.message, 'error');
+  }
+}
+
+// Silent wallet connection for auto-connection on page load
+async function connectWalletSilent() {
+  try {
+    if (!window.ethereum) return;
+    
+    // Create provider and signer without requesting permission
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
+    
+    console.log('Wallet auto-connected:', userAddress);
+    
+    await setupWalletConnection(false); // false = no success toast
+    
+  } catch (error) {
+    console.log('Silent wallet connection failed:', error.message);
+    // Don't show error toast for silent connection failures
+  }
+}
+
+// Common wallet setup logic
+async function setupWalletConnection(showSuccessToast = true) {
+  // Validate network
+  try {
+    const network = await provider.getNetwork();
+    validateNetwork(network.chainId);
+    console.log('✅ Network validated:', SECURITY_CONFIG.NETWORK_NAMES[Number(network.chainId)]);
+  } catch (networkError) {
+    console.warn('⚠️ Network validation failed:', networkError.message);
+    showTransactionStatus(networkError.message, 'warning');
+  }
+  
+  // Set up network change listener
+  if (window.ethereum.on) {
+    window.ethereum.on('chainChanged', handleNetworkChange);
+    window.ethereum.on('accountsChanged', handleAccountChange);
+  }
+  
+  // Update UI
+  await updateWalletInfo(userAddress, provider);
+  
+  // Load contract with signer
+  await loadContract();
+  
+  // Update user stats and security status
+  if (contract) {
+    await updateUserStats(contract, userAddress);
+    showSecurityStatus(contract, userAddress);
+    await updateButtonStates(); // Update button states after connecting
+  }
+  
+  if (showSuccessToast) {
+    showTransactionStatus('Wallet connected successfully', 'success');
   }
 }
 
@@ -361,8 +381,49 @@ function handleAccountChange(accounts) {
     
     showTransactionStatus('Wallet disconnected', 'info');
   } else {
-    // Account switched - reconnect
-    connectWallet();
+    // Account switched - reconnect without requesting permission again
+    reconnectWallet(accounts[0]);
+  }
+}
+
+// Reconnect wallet when account changes
+async function reconnectWallet(newAddress) {
+  try {
+    console.log('Reconnecting wallet for account:', newAddress);
+    showTransactionStatus('Switching wallet...', 'info');
+    
+    // Update global state
+    userAddress = newAddress;
+    
+    // Create new provider and signer
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    
+    // Reset event listeners flag
+    eventListenersSetup = false;
+    processedEvents.clear();
+    
+    // Update UI with new wallet info
+    await updateWalletInfo(userAddress, provider);
+    
+    // Load contract with new signer
+    await loadContract();
+    
+    // Update all UI components
+    if (contract) {
+      await updateUserStats(contract, userAddress);
+      showSecurityStatus(contract, userAddress);
+      await updateButtonStates();
+      await updateRoundStatus(contract);
+      await updateProgressIndicator(contract);
+      await updateLeaderboard(contract);
+    }
+    
+    showTransactionStatus('Wallet switched successfully', 'success');
+    
+  } catch (error) {
+    console.error('Error reconnecting wallet:', error);
+    showTransactionStatus('Failed to switch wallet: ' + error.message, 'error');
   }
 }
 

@@ -5,12 +5,13 @@ import "forge-std/Script.sol";
 import "../src/PepedawnRaffle.sol";
 
 contract CheckAndOpenRoundScript is Script {
-    address constant SEPOLIA_CONTRACT = 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc;
     
     function run() external {
+        // Load contract address and private key from environment
+        address contractAddress = vm.envAddress("CONTRACT_ADDRESS");
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
-        PepedawnRaffle raffle = PepedawnRaffle(SEPOLIA_CONTRACT);
+        PepedawnRaffle raffle = PepedawnRaffle(contractAddress);
         
         console.log("=== Contract State Check ===");
         console.log("Contract Address:", address(raffle));
@@ -68,7 +69,7 @@ contract CheckAndOpenRoundScript is Script {
         }
         
         console.log("=== Frontend Integration ===");
-        console.log("Contract Address for frontend:", SEPOLIA_CONTRACT);
+        console.log("Contract Address for frontend:", contractAddress);
         console.log("Current Round ID:", currentRoundId);
         console.log("Check your frontend is using the correct contract address and network (Sepolia)");
     }

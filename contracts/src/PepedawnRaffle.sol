@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@chainlink/contracts/vrf/interfaces/VRFCoordinatorV2Interface.sol";
-import "@chainlink/contracts/vrf/VRFConsumerBaseV2.sol";
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/vrf/dev/libraries/VRFV2PlusClient.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 /**
  * @title PepedawnRaffle
  * @notice Skill-weighted decentralized raffle with Chainlink VRF and Emblem Vault prizes
  * @dev Implements 2-week rounds with ETH wagers, puzzle proofs for +40% weight, and automatic distribution
+ * @dev VRFConsumerBaseV2Plus provides ownership functionality via ConfirmedOwner
  */
-contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable2Step {
+contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     // =============================================================================
     // CONSTANTS
     // =============================================================================
@@ -93,8 +94,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable
     }
     
     struct VRFConfig {
-        VRFCoordinatorV2Interface coordinator;
-        uint64 subscriptionId;
+        IVRFCoordinatorV2Plus coordinator;
+        uint256 subscriptionId;
         bytes32 keyHash;
         uint32 callbackGasLimit;
         uint16 requestConfirmations;
@@ -244,13 +245,12 @@ contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable
     
     constructor(
         address _vrfCoordinator,
-        uint64 _subscriptionId,
+        uint256 _subscriptionId,
         bytes32 _keyHash,
         address _creatorsAddress,
         address _emblemVaultAddress
     ) 
-        VRFConsumerBaseV2(_vrfCoordinator) 
-        Ownable(msg.sender)
+        VRFConsumerBaseV2Plus(_vrfCoordinator)
         validAddress(_vrfCoordinator)
         validAddress(_creatorsAddress)
         validAddress(_emblemVaultAddress)
@@ -263,7 +263,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable
         emblemVaultAddress = _emblemVaultAddress;
         
         vrfConfig = VRFConfig({
-            coordinator: VRFCoordinatorV2Interface(_vrfCoordinator),
+            coordinator: IVRFCoordinatorV2Plus(_vrfCoordinator),
             subscriptionId: _subscriptionId,
             keyHash: _keyHash,
             callbackGasLimit: 100000,
@@ -324,13 +324,13 @@ contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable
      */
     function updateVRFConfig(
         address _coordinator,
-        uint64 _subscriptionId,
+        uint256 _subscriptionId,
         bytes32 _keyHash
     ) external onlyOwner validAddress(_coordinator) {
         require(_subscriptionId > 0, "Invalid VRF subscription ID");
         require(_keyHash != bytes32(0), "Invalid VRF key hash");
         
-        vrfConfig.coordinator = VRFCoordinatorV2Interface(_coordinator);
+        vrfConfig.coordinator = IVRFCoordinatorV2Plus(_coordinator);
         vrfConfig.subscriptionId = _subscriptionId;
         vrfConfig.keyHash = _keyHash;
     }
@@ -650,13 +650,18 @@ contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable
         rounds[roundId].vrfRequestedAt = uint64(block.timestamp);
         lastVRFRequestTime = block.timestamp;
         
-        // Interactions: Request randomness from Chainlink VRF
+        // Interactions: Request randomness from Chainlink VRF v2.5
         uint256 requestId = vrfConfig.coordinator.requestRandomWords(
-            vrfConfig.keyHash,
-            vrfConfig.subscriptionId,
-            vrfConfig.requestConfirmations,
-            vrfConfig.callbackGasLimit,
-            1 // Number of random words
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: vrfConfig.keyHash,
+                subId: vrfConfig.subscriptionId,
+                requestConfirmations: vrfConfig.requestConfirmations,
+                callbackGasLimit: vrfConfig.callbackGasLimit,
+                numWords: 1,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false}) // Use LINK for payment
+                )
+            })
         );
         
         // Effects: Store request mapping
@@ -672,7 +677,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2, ReentrancyGuard, Pausable, Ownable
      * @param requestId The VRF request ID
      * @param randomWords Array of random words from VRF
      */
-    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
         // Checks: Validate request exists
         uint256 roundId = vrfRequestToRound[requestId];
         require(roundId > 0, "Invalid VRF request");

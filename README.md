@@ -200,7 +200,7 @@ See `SECURITY_VALIDATION_REPORT.md` for detailed security analysis.
 
 ### Using Remix IDE
 1. **Compile contract** in Remix with Solidity 0.8.20+ (project uses 0.8.20)
-2. **Connect to deployed contract** using address: `0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc`
+2. **Connect to deployed contract** using address: `0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A`
 3. **Create and open round**:
    ```solidity
    createRound()    // Create new round
@@ -210,10 +210,10 @@ See `SECURITY_VALIDATION_REPORT.md` for detailed security analysis.
 ### Using Cast (Command Line)
 ```bash
 # Check contract state
-cast call 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc "currentRoundId()" --rpc-url $SEPOLIA_RPC_URL
+cast call 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "currentRoundId()" --rpc-url $SEPOLIA_RPC_URL
 
 # Create round (owner only)
-cast send 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 ### Using PowerShell Script
@@ -227,7 +227,7 @@ cast send 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc "createRound()" --private-k
 ## 📋 Current Deployment
 
 **Sepolia Testnet**:
-- **Contract Address**: `0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc`
+- **Contract Address**: `0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A` (VRF v2.5)
 - **Network**: Sepolia (Chain ID: 11155111)
 - **Frontend**: pepedawn.art (deployment configured via GitHub Actions)
 
@@ -247,7 +247,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🔗 Links
 
 - **Live Application**: pepedawn.art
-- **Contract on Etherscan**: [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc)
+- **Contract on Etherscan**: [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A)
 - **Chainlink VRF**: [Sepolia VRF Coordinator](https://sepolia.etherscan.io/address/0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625)
 
 ---

@@ -6,13 +6,15 @@ import "../src/PepedawnRaffle.sol";
 
 contract ProgressRoundScript is Script {
     PepedawnRaffle public raffle;
-    address constant CONTRACT_ADDRESS = 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc;
     
     function run() external {
+        // Load contract address from environment
+        address contractAddress = vm.envAddress("CONTRACT_ADDRESS");
+        
         // Start broadcasting transactions
         vm.startBroadcast();
         
-        raffle = PepedawnRaffle(CONTRACT_ADDRESS);
+        raffle = PepedawnRaffle(contractAddress);
         
         console.log("=== PROGRESSING ROUND TO COMPLETION ===");
         

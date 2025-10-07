@@ -10,7 +10,7 @@ contract DeployScript is Script {
         
         // Sepolia VRF Configuration
         address vrfCoordinator = vm.envAddress("VRF_COORDINATOR");
-        uint64 subscriptionId = uint64(vm.envUint("VRF_SUBSCRIPTION_ID"));
+        uint256 subscriptionId = vm.envUint("VRF_SUBSCRIPTION_ID");
         bytes32 keyHash = vm.envBytes32("VRF_KEY_HASH");
         address creatorsAddress = vm.envAddress("CREATORS_ADDRESS");
         address emblemVaultAddress = vm.envAddress("EMBLEM_VAULT_ADDRESS");

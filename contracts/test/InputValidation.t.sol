@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/PepedawnRaffle.sol";
-import "./mocks/MockVRFCoordinator.sol";
+import "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
  * @title InputValidationTest
@@ -11,8 +11,10 @@ import "./mocks/MockVRFCoordinator.sol";
  * @dev Tests all external parameter validation
  */
 contract InputValidationTest is Test {
+    // VRFConsumerBaseV2Plus error
+    error ZeroAddress();
     PepedawnRaffle public raffle;
-    MockVRFCoordinator public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -22,7 +24,7 @@ contract InputValidationTest is Test {
     address public bob = makeAddr("bob");
     
     // VRF configuration
-    uint64 public constant SUBSCRIPTION_ID = 1;
+    uint256 public constant SUBSCRIPTION_ID = 1;
     bytes32 public constant KEY_HASH = keccak256("test");
     
     function setUp() public {
@@ -31,7 +33,7 @@ contract InputValidationTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinator();
+        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
         
         // Deploy contract with mock VRF coordinator
         raffle = new PepedawnRaffle(
@@ -55,8 +57,8 @@ contract InputValidationTest is Test {
      * @dev Verify constructor rejects invalid parameters
      */
     function testConstructorValidation() public {
-        // Test zero VRF coordinator
-        vm.expectRevert("Invalid address: zero address");
+        // Test zero VRF coordinator (VRFConsumerBaseV2Plus throws ZeroAddress error)
+        vm.expectRevert(ZeroAddress.selector);
         new PepedawnRaffle(
             address(0),
             SUBSCRIPTION_ID,
@@ -226,6 +228,30 @@ contract InputValidationTest is Test {
         vm.prank(alice);
         vm.expectRevert("Proof already submitted for this round");
         raffle.submitProof(keccak256("another_proof"));
+    }
+    
+    /**
+     * @notice Test that you cannot open a round without creating it first
+     * @dev Verify round must be created before it can be opened
+     */
+    function testCannotOpenNonExistentRound() public {
+        // Attempt to open round 1 without creating it first
+        vm.expectRevert("Round does not exist");
+        raffle.openRound(1);
+        
+        // Attempt to open round with high ID that doesn't exist
+        vm.expectRevert("Round does not exist");
+        raffle.openRound(999);
+        
+        // Create round 1
+        raffle.createRound();
+        
+        // Now opening round 1 should work
+        raffle.openRound(1);
+        
+        // But opening round 2 (not created yet) should still fail
+        vm.expectRevert("Round does not exist");
+        raffle.openRound(2);
     }
     
     /**

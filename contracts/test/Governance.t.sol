@@ -5,8 +5,8 @@ import "forge-std/Test.sol";
 import "../src/PepedawnRaffle.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
-import "@chainlink/contracts/vrf/interfaces/VRFCoordinatorV2Interface.sol";
-import "./mocks/MockVRFCoordinator.sol";
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+import "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
  * @title GovernanceTest
@@ -15,7 +15,7 @@ import "./mocks/MockVRFCoordinator.sol";
  */
 contract GovernanceTest is Test {
     PepedawnRaffle public raffle;
-    MockVRFCoordinator public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -30,7 +30,7 @@ contract GovernanceTest is Test {
     address public newVRFCoordinator = makeAddr("newVRFCoordinator");
     
     // VRF configuration
-    uint64 public constant SUBSCRIPTION_ID = 1;
+    uint256 public constant SUBSCRIPTION_ID = 1;
     bytes32 public constant KEY_HASH = keccak256("test");
     
     function setUp() public {
@@ -39,7 +39,7 @@ contract GovernanceTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinator();
+        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
         
         // Deploy contract with mock VRF coordinator
         raffle = new PepedawnRaffle(
@@ -67,14 +67,14 @@ contract GovernanceTest is Test {
         vm.skip(true); // TODO: Fix round completion state issue
         // Initial state
         assertEq(raffle.owner(), owner);
-        assertEq(raffle.pendingOwner(), address(0));
+        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Step 1: Initiate transfer
         raffle.transferOwnership(newOwner);
         
         // Ownership should not change immediately
         assertEq(raffle.owner(), owner);
-        assertEq(raffle.pendingOwner(), newOwner);
+        // assertEq(raffle.pendingOwner(), newOwner); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Original owner should still have control
         raffle.createRound();
@@ -90,7 +90,7 @@ contract GovernanceTest is Test {
         
         // Now ownership should be transferred
         assertEq(raffle.owner(), newOwner);
-        assertEq(raffle.pendingOwner(), address(0));
+        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // New owner should have control
         vm.prank(newOwner);
@@ -108,11 +108,11 @@ contract GovernanceTest is Test {
     function testOwnershipTransferCancellation() public {
         // Initiate transfer
         raffle.transferOwnership(newOwner);
-        assertEq(raffle.pendingOwner(), newOwner);
+        // assertEq(raffle.pendingOwner(), newOwner); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Cancel by transferring to zero address
         raffle.transferOwnership(address(0));
-        assertEq(raffle.pendingOwner(), address(0));
+        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Original owner should still have control
         assertEq(raffle.owner(), owner);
@@ -120,7 +120,7 @@ contract GovernanceTest is Test {
         
         // New owner should not be able to accept
         vm.prank(newOwner);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, newOwner));
+        vm.expectRevert("Must be proposed owner");
         raffle.acceptOwnership();
     }
     
@@ -209,7 +209,7 @@ contract GovernanceTest is Test {
         // Test VRF configuration update
         raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID + 1, keccak256("newKey"));
         
-        (VRFCoordinatorV2Interface coordinator, uint64 subId, bytes32 keyHash,,) = raffle.vrfConfig();
+        (IVRFCoordinatorV2Plus coordinator, uint256 subId, bytes32 keyHash,,) = raffle.vrfConfig();
         assertEq(address(coordinator), newVRFCoordinator);
         assertEq(subId, SUBSCRIPTION_ID + 1);
         assertEq(keyHash, keccak256("newKey"));
@@ -363,7 +363,7 @@ contract GovernanceTest is Test {
         // Change VRF coordinator
         raffle.updateVRFConfig(newVRFCoordinator, SUBSCRIPTION_ID, KEY_HASH);
         
-        (VRFCoordinatorV2Interface coordinator,,,,) = raffle.vrfConfig();
+        (IVRFCoordinatorV2Plus coordinator,,,,) = raffle.vrfConfig();
         assertEq(address(coordinator), newVRFCoordinator);
     }
     
@@ -372,9 +372,9 @@ contract GovernanceTest is Test {
      * @dev Verify governance actions emit proper events
      */
     function testGovernanceEventEmissions() public {
-        // Ownership transfer events (from Ownable2Step)
+        // Ownership transfer events (from ConfirmedOwner)
         vm.expectEmit(true, true, false, false);
-        emit OwnershipTransferStarted(owner, newOwner);
+        emit OwnershipTransferRequested(owner, newOwner);
         raffle.transferOwnership(newOwner);
         
         vm.expectEmit(true, true, false, false);
@@ -402,13 +402,13 @@ contract GovernanceTest is Test {
     function testInitialGovernanceState() public {
         // Verify initial owner
         assertEq(raffle.owner(), owner);
-        assertEq(raffle.pendingOwner(), address(0));
+        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Verify initial configuration
         assertEq(raffle.creatorsAddress(), creatorsAddress);
         assertEq(raffle.emblemVaultAddress(), emblemVaultAddress);
         
-        (VRFCoordinatorV2Interface coordinator, uint64 subId, bytes32 keyHash,,) = raffle.vrfConfig();
+        (IVRFCoordinatorV2Plus coordinator, uint256 subId, bytes32 keyHash,,) = raffle.vrfConfig();
         assertEq(address(coordinator), address(mockVRFCoordinator));
         assertEq(subId, SUBSCRIPTION_ID);
         assertEq(keyHash, KEY_HASH);
@@ -462,7 +462,7 @@ contract GovernanceTest is Test {
     }
     
     // Event declarations for testing
-    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferRequested(address indexed from, address indexed to);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event AddressDenylisted(address indexed wallet, bool denylisted);
     event EmergencyPauseToggled(bool paused);

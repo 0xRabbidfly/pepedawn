@@ -17,7 +17,7 @@ contract VRFDrawTest is Test {
     address public user3;
     address public vrfCoordinator;
     
-    uint64 public subscriptionId = 123;
+    uint256 public subscriptionId = 123;
     bytes32 public keyHash = 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c;
     uint32 public callbackGasLimit = 100000;
     uint16 public requestConfirmations = 3;

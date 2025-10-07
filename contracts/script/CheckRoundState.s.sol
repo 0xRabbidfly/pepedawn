@@ -8,8 +8,8 @@ contract CheckRoundStateScript is Script {
     PepedawnRaffle public raffle;
     
     function run() external {
-        // Load the deployed contract address
-        address contractAddress = 0xBa8E7795682A6d0A05F805aD45258E3d4641BFFc;
+        // Load the deployed contract address from environment
+        address contractAddress = vm.envAddress("CONTRACT_ADDRESS");
         raffle = PepedawnRaffle(contractAddress);
         
         console.log("=== PEPEDAWN RAFFLE STATE CHECK ===");

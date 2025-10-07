@@ -27,6 +27,8 @@ let signer = null;
 let contract = null;
 let userAddress = null;
 let currentRoundStatus = null; // Track current round status for UI updates
+let eventListenersSetup = false; // Prevent duplicate event listener setup
+const processedEvents = new Set(); // Track processed events to prevent duplicates
 
 // Simple event logging for small-scale site
 function logEvent(eventType, eventData) {
@@ -293,6 +295,10 @@ function handleNetworkChange(chainId) {
     validateNetwork(chainId);
     console.log('✅ Network change validated');
     
+    // Reset event listeners flag on network change
+    eventListenersSetup = false;
+    processedEvents.clear(); // Clear processed events
+    
     // Reload contract and update UI
     loadContract().then(() => {
       if (userAddress) {
@@ -320,6 +326,8 @@ function handleAccountChange(accounts) {
     userAddress = null;
     signer = null;
     contract = null;
+    eventListenersSetup = false; // Reset listener flag
+    processedEvents.clear(); // Clear processed events
     
     // Reset UI
     const walletInfo = document.getElementById('wallet-info');
@@ -342,6 +350,8 @@ function handleAccountChange(accounts) {
 // Load contract from configuration with enhanced security
 async function loadContract() {
   try {
+    console.log('📝 Loading contract...');
+    
     // Validate contract configuration
     if (!validateContractConfig()) {
       console.log('Contract not configured - working in mock mode');
@@ -399,16 +409,33 @@ async function loadContract() {
 function setupContractEventListeners() {
   if (!contract) return;
   
+  // Prevent duplicate listener setup
+  if (eventListenersSetup) {
+    console.log('⏭️ Event listeners already set up, skipping...');
+    return;
+  }
+  
   try {
     console.log('🎧 Setting up enhanced contract event listeners...');
     
     // Remove any existing listeners to prevent duplicates
     contract.removeAllListeners();
     
+    // Mark as set up
+    eventListenersSetup = true;
+    
+    // Note: Using contract.on() only listens to NEW events (from current block forward)
+    // Historical events are not replayed automatically in ethers v6
+    
     // Round lifecycle events
     contract.on('RoundCreated', (...args) => {
       const event = args[args.length - 1]; // Event is always the last parameter
       const [roundId, startTime, endTime] = args;
+      
+      // Deduplicate events
+      const eventId = `RoundCreated-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
       
       const eventData = { 
         roundId: roundId.toString(), 
@@ -429,6 +456,11 @@ function setupContractEventListeners() {
       const event = args[args.length - 1]; // Event is always the last parameter
       const [roundId] = args;
       
+      // Deduplicate events
+      const eventId = `RoundOpened-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = { 
         roundId: roundId.toString(),
         blockNumber: event?.blockNumber,
@@ -446,6 +478,13 @@ function setupContractEventListeners() {
       const event = args[args.length - 1]; // Event is always the last parameter
       const [roundId] = args;
       
+      // Deduplicate events using transaction hash
+      const eventId = `RoundClosed-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) {
+        return; // Already processed this event
+      }
+      processedEvents.add(eventId);
+      
       const eventData = { 
         roundId: roundId.toString(),
         blockNumber: event?.blockNumber,
@@ -462,6 +501,11 @@ function setupContractEventListeners() {
     contract.on('RoundSnapshot', (...args) => {
       const event = args[args.length - 1]; // Event is always the last parameter
       const [roundId, totalTickets, totalWeight] = args;
+      
+      // Deduplicate events
+      const eventId = `RoundSnapshot-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
       
       const eventData = { 
         roundId: roundId.toString(),
@@ -534,6 +578,11 @@ function setupContractEventListeners() {
     
     // VRF and prize distribution events
     contract.on('VRFRequested', (roundId, requestId, event) => {
+      // Deduplicate events
+      const eventId = `VRFRequested-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         requestId: requestId.toString(),
@@ -768,8 +817,10 @@ async function placeBet() {
       
       // Get round status to ensure it's open
       const roundData = await contract.getRound(currentRoundId);
-      if (roundData.status !== 1) { // 1 = Open
-        throw new Error('Round is not currently open for betting');
+      const status = Number(roundData.status);
+      console.log('Round status check:', { status, roundData });
+      if (status !== 1) { // 1 = Open
+        throw new Error(`Round is not currently open for betting (status: ${status})`);
       }
       
       showTransactionStatus('Submitting bet transaction...', 'info');
@@ -862,8 +913,10 @@ async function submitProof() {
       
       // Get round status to ensure it's open
       const roundData = await contract.getRound(currentRoundId);
-      if (roundData.status !== 1) { // 1 = Open
-        throw new Error('Round is not currently open for proof submission');
+      const status = Number(roundData.status);
+      console.log('Round status check (proof):', { status, roundData });
+      if (status !== 1) { // 1 = Open
+        throw new Error(`Round is not currently open for proof submission (status: ${status})`);
       }
       
       // Check if user has placed a bet

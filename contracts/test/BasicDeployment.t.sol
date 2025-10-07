@@ -9,7 +9,7 @@ contract BasicDeploymentTest is Test {
     
     // Mock addresses for testing without VRF
     address constant MOCK_VRF_COORDINATOR = 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625;
-    uint64 constant MOCK_SUBSCRIPTION_ID = 1;
+    uint256 constant MOCK_SUBSCRIPTION_ID = 1;
     bytes32 constant MOCK_KEY_HASH = 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c;
     address constant MOCK_CREATORS = address(0x1234);
     address constant MOCK_EMBLEM_VAULT = address(0x5678);

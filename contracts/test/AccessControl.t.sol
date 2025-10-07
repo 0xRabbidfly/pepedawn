@@ -3,11 +3,11 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/PepedawnRaffle.sol";
-import "@chainlink/contracts/vrf/interfaces/VRFCoordinatorV2Interface.sol";
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "./mocks/MockVRFCoordinator.sol";
+import "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
  * @title AccessControlTest
@@ -16,7 +16,7 @@ import "./mocks/MockVRFCoordinator.sol";
  */
 contract AccessControlTest is Test {
     PepedawnRaffle public raffle;
-    MockVRFCoordinator public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -37,7 +37,7 @@ contract AccessControlTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinator();
+        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
         
         // Deploy contract with mock VRF coordinator
         raffle = new PepedawnRaffle(
@@ -67,7 +67,7 @@ contract AccessControlTest is Test {
         
         // Verify owner hasn't changed yet
         assertEq(raffle.owner(), owner);
-        assertEq(raffle.pendingOwner(), newOwner);
+        // assertEq(raffle.pendingOwner(), newOwner); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Step 2: Accept ownership from new owner
         vm.prank(newOwner);
@@ -75,7 +75,7 @@ contract AccessControlTest is Test {
         
         // Verify ownership has transferred
         assertEq(raffle.owner(), newOwner);
-        assertEq(raffle.pendingOwner(), address(0));
+        // assertEq(raffle.pendingOwner(), address(0)); // Removed: Using ConfirmedOwner instead of Ownable2Step
     }
     
     /**
@@ -88,7 +88,7 @@ contract AccessControlTest is Test {
         
         // Malicious user tries to accept ownership
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Must be proposed owner");
         raffle.acceptOwnership();
         
         // Verify owner hasn't changed
@@ -102,7 +102,7 @@ contract AccessControlTest is Test {
     function testOwnerOnlyFunctions() public {
         // Test createRound
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.createRound();
         
         // Create round as owner for further tests
@@ -110,7 +110,7 @@ contract AccessControlTest is Test {
         
         // Test openRound
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.openRound(1);
         
         // Open round as owner for further tests
@@ -118,7 +118,7 @@ contract AccessControlTest is Test {
         
         // Test closeRound
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.closeRound(1);
         
         // Close round as owner for further tests
@@ -126,7 +126,7 @@ contract AccessControlTest is Test {
         
         // Test snapshotRound
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.snapshotRound(1);
         
         // Snapshot round as owner for further tests
@@ -134,7 +134,7 @@ contract AccessControlTest is Test {
         
         // Test requestVRF
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.requestVRF(1);
     }
     
@@ -145,37 +145,37 @@ contract AccessControlTest is Test {
     function testSecurityManagementAccess() public {
         // Test setDenylistStatus
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.setDenylistStatus(alice, true);
         
         // Test setEmergencyPause
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.setEmergencyPause(true);
         
         // Test pause
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.pause();
         
         // Test unpause
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.unpause();
         
         // Test updateVRFConfig
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.updateVRFConfig(address(mockVRFCoordinator), SUBSCRIPTION_ID, KEY_HASH);
         
         // Test updateCreatorsAddress
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.updateCreatorsAddress(alice);
         
         // Test updateEmblemVaultAddress
         vm.prank(malicious);
-        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, malicious));
+        vm.expectRevert("Only callable by owner");
         raffle.updateEmblemVaultAddress(alice);
     }
     
@@ -207,7 +207,7 @@ contract AccessControlTest is Test {
         // In actual implementation, VRF coordinator validation is in the modifier
         
         // Verify VRF coordinator is set correctly
-        (VRFCoordinatorV2Interface coordinator,,,,) = raffle.vrfConfig();
+        (IVRFCoordinatorV2Plus coordinator,,,,) = raffle.vrfConfig();
         assertEq(address(coordinator), address(mockVRFCoordinator));
     }
     
@@ -312,7 +312,7 @@ contract AccessControlTest is Test {
         
         // Verify we can transfer to a valid address
         raffle.transferOwnership(newOwner);
-        assertEq(raffle.pendingOwner(), newOwner);
+        // assertEq(raffle.pendingOwner(), newOwner); // Removed: Using ConfirmedOwner instead of Ownable2Step
         
         // Verify current owner is still the owner until acceptance
         assertEq(raffle.owner(), owner);

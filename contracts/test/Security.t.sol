@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../src/PepedawnRaffle.sol";
-import "./mocks/MockVRFCoordinator.sol";
+import "./mocks/MockVRFCoordinatorV2Plus.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  */
 contract SecurityTest is Test {
     PepedawnRaffle public raffle;
-    MockVRFCoordinator public mockVRFCoordinator;
+    MockVRFCoordinatorV2Plus public mockVRFCoordinator;
     address public owner;
     address public creatorsAddress;
     address public emblemVaultAddress;
@@ -41,7 +41,7 @@ contract SecurityTest is Test {
         emblemVaultAddress = makeAddr("emblemVault");
         
         // Deploy mock VRF coordinator
-        mockVRFCoordinator = new MockVRFCoordinator();
+        mockVRFCoordinator = new MockVRFCoordinatorV2Plus();
         
         // Deploy contract with mock VRF coordinator
         raffle = new PepedawnRaffle(

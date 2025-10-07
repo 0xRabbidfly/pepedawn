@@ -3,7 +3,7 @@
 
 export const CONTRACT_CONFIG = {
   // Your deployed contract address (update after deployment)
-  address: "0x6b4700Fb6556B7fDE446e31AD194da665a439ebF", // Deployed on Sepolia testnet
+  address: "0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A", // Main contract deployed on Sepolia testnet (VRF v2.5)
   
   // Sepolia testnet configuration
   network: 'sepolia',
@@ -18,7 +18,7 @@ export const CONTRACT_CONFIG = {
     "function getRound(uint256 roundId) external view returns (tuple(uint256 id, uint64 startTime, uint64 endTime, uint8 status, uint256 totalTickets, uint256 totalWeight, uint256 totalWagered, uint256 vrfRequestId, uint64 vrfRequestedAt, bool feesDistributed, uint256 participantCount))",
     "function getUserStats(uint256 roundId, address user) external view returns (uint256 wagered, uint256 tickets, uint256 weight, bool hasProof)",
     "function getRoundParticipants(uint256 roundId) external view returns (address[])",
-    "function getRoundWinners(uint256 roundId) external view returns (address[])",
+    "function getRoundWinners(uint256 roundId) external view returns (tuple(uint256 roundId, address wallet, uint8 prizeTier, uint256 vrfRequestId, uint256 blockNumber)[])",
     "function currentRoundId() external view returns (uint256)",
     "function nextRoundFunds() external view returns (uint256)",
     "function creatorsAddress() external view returns (address)",

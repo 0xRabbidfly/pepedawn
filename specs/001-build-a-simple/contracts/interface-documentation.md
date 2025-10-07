@@ -447,7 +447,54 @@ event SecurityValidationFailed(address indexed user, string reason);
 - Batch multiple read operations
 - Reduce RPC calls, improve performance
 
-### Dynamic Gas Management
+#
+### Dynamic Gas Estimation
+
+The contract now uses dynamic gas estimation for VRF callbacks following Chainlink best practices:
+
+#### `estimateVRFCallbackGas(uint256 roundId) external view returns (uint32)`
+**Purpose**: Estimate gas required for VRF callback based on round complexity  
+**Returns**: Estimated gas limit with safety buffer  
+**Calculation**: Base gas + winner selection + prize distribution + storage operations + complexity multipliers
+
+#### Gas Estimation Formula
+- **Base Gas**: 50,000 (function overhead, events, basic checks)
+- **Winner Selection**: 20,000 (selection algorithm)
+- **Prize Distribution**: 15,000 per winner (max 10 winners)
+- **Fee Distribution**: 25,000 (fee calculation and transfer)
+- **Storage Operations**: 5,000 per participant
+- **Event Emissions**: 10,000 (multiple events)
+- **Complexity Multipliers**: +20% for >100 participants, +10% for >1000 total weight
+- **Safety Buffer**: 30% added to final estimate
+
+#### Benefits
+- Prevents VRF callback failures due to insufficient gas
+- Scales automatically with round complexity
+- Follows Chainlink recommended practices
+- Reduces manual gas configuration overhead
+#### `estimateVRFCallbackGas(uint256 roundId) external view returns (uint32)`
+**Purpose**: Estimate gas required for VRF callback based on round complexity  
+**Returns**: Estimated gas limit with safety buffer  
+**Calculation**: Base gas + winner selection + prize distribution + storage operations + complexity multipliers
+
+#### Gas Estimation Formula
+- **Base Gas**: 50,000 (function overhead, events, basic checks)
+- **Winner Selection**: 20,000 (selection algorithm)
+- **Prize Distribution**: 15,000 per winner (max 10 winners)
+- **Fee Distribution**: 25,000 (fee calculation and transfer)
+- **Storage Operations**: 5,000 per participant
+- **Event Emissions**: 10,000 (multiple events)
+- **Complexity Multipliers**: +20% for >100 participants, +10% for >1000 total weight
+- **Safety Buffer**: 30% added to final estimate
+
+#### Benefits
+- Prevents VRF callback failures due to insufficient gas
+- Scales automatically with round complexity
+- Follows Chainlink recommended practices
+- Reduces manual gas configuration overhead
+
+
+## Dynamic Gas Management
 - Estimate callback gas based on round complexity
 - Add 30% safety buffer to prevent failures
 - Scale gas with participant count and round weight

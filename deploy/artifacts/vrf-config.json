@@ -1,18 +1,9 @@
 {
-  "sepolia": {
-    "vrfCoordinator": "0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B",
-    "subscriptionId": "110985561766688754416530502785486864554223037425689838961930939425219515092980",
-    "keyHash": "0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae",
-    "callbackGasLimit": 100000,
-    "requestConfirmations": 3,
-    "description": "Chainlink VRF v2.5 configuration for Sepolia testnet"
-  },
-  "mainnet": {
-    "vrfCoordinator": "0x271682DEB8C4E0901D1a1550aD2e64D568E69909",
-    "subscriptionId": null,
-    "keyHash": "0x8af398995b04c28e9951adb9721ef74c74f93e6a478f39e7e0777be13527e7ef",
-    "callbackGasLimit": 100000,
-    "requestConfirmations": 3,
-    "description": "Chainlink VRF v2 configuration for Ethereum mainnet"
-  }
+  "coordinator": "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625",
+  "subscriptionId": 1,
+  "keyHash": "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c",
+  "callbackGasLimit": 500000,
+  "requestConfirmations": 5,
+  "lastUpdated": "2025-10-07T13:41:11.637Z",
+  "notes": "Dynamic gas estimation enabled - callbackGasLimit calculated per request"
 }

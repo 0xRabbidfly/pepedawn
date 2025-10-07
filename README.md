@@ -18,7 +18,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
 Visit `http://localhost:5173` to access the application.
 
 ### Contract Development
@@ -50,15 +49,28 @@ pepedawn/
 │   └── scripts/             # Interaction utilities
 ├── deploy/artifacts/        # Deployment artifacts
 │   ├── addresses.json       # Contract addresses by network
-│   └── vrf-config.json      # Chainlink VRF configuration
-└── specs/                   # Project specifications & planning
+│   ├── vrf-config.json     # Chainlink VRF configuration
+│   └── abis/               # Contract ABIs
+├── scripts/                # Automation scripts
+│   ├── post-commit-check.js # Post-commit validation
+│   ├── update-docs.js      # Documentation updater
+│   └── update-configs.js   # Configuration synchronizer
+└── specs/                  # Project specifications & planning
+    └── 001-build-a-simple/
+        ├── spec.md         # Business requirements
+        ├── plan.md         # Technical implementation
+        ├── research.md     # Technology decisions
+        ├── data-model.md   # Entity definitions
+        ├── quickstart.md   # Development setup
+        └── contracts/      # API specifications
 ```
 
 ## 🎯 Core Features
 
 ### Smart Contract (Solidity + Foundry)
-- **Skill-weighted betting**: Puzzle proofs multiply your odds by 2x
+- **Skill-weighted betting**: Puzzle proofs multiply your odds by 1.4x (+40%)
 - **Chainlink VRF integration**: Verifiable random winner selection
+- **Dynamic gas estimation**: Automatic VRF callback gas calculation
 - **Security-first design**: Reentrancy protection, access controls, circuit breakers
 - **Comprehensive testing**: 16 test suites covering all scenarios
 
@@ -100,30 +112,109 @@ npm run lint         # ESLint
 npm run type-check   # TypeScript checking
 ```
 
+## 🤖 Automation System
+
+The project includes automated scripts to ensure consistency across contracts, documentation, and configuration files.
+
+### Available Scripts
+```bash
+# Run all checks
+npm run check-all
+
+# Run individual checks
+npm run post-commit    # Validation checks
+npm run update-docs    # Update documentation
+npm run update-configs # Update configurations
+```
+
+### What Gets Automated
+
+#### Post-Commit Checks
+- **Contract changes detection** using file hashing
+- **Documentation consistency** validation
+- **Configuration synchronization** verification
+- **Spec compliance** checking
+- **Security compliance** validation
+
+#### Documentation Updates
+- **Interface documentation** (`specs/001-build-a-simple/contracts/interface-documentation.md`)
+- **Quickstart guide** (`specs/001-build-a-simple/quickstart.md`)
+- **README.md** updates
+- **Removes deprecated functions** from docs
+- **Adds new features** documentation
+
+#### Configuration Synchronization
+- **Contract ABIs** in frontend and deployment artifacts
+- **Contract addresses** across all config files
+- **VRF configuration** updates
+- **Network settings** synchronization
+
+### Git Hooks
+- **Post-commit hook**: Runs validation after every commit
+- **Pre-commit hook**: Runs tests before allowing commits (via husky)
+
+### Manual Usage
+```bash
+# Run post-commit checks manually
+node scripts/post-commit-check.js
+
+# Update documentation after contract changes
+node scripts/update-docs.js
+
+# Synchronize configurations
+node scripts/update-configs.js
+```
+
 ## 🚀 Deployment
 
-### Contract Deployment
-1. **Set environment variables**:
+### Manual Deploy + Post-commit Sync
+This workflow outlines the steps for deploying a new contract version and ensuring all related configurations and documentation are synchronized.
+
+1. **Build New Contract**:
    ```bash
-   export PRIVATE_KEY="your_private_key"
-   export SEPOLIA_RPC_URL="your_sepolia_rpc_url"
-   export VRF_COORDINATOR="0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625"
-   export VRF_SUBSCRIPTION_ID="your_subscription_id"
-   export VRF_KEY_HASH="0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
-   export CREATORS_ADDRESS="your_creators_address"
-   export EMBLEM_VAULT_ADDRESS="your_emblem_vault_address"
+   forge build
    ```
 
-2. **Deploy contract**:
+2. **Deploy New Contract**:
    ```bash
-   cd contracts
-   forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+    cd contracts
+    set -a; source .env; set +a
+    forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
    ```
 
-3. **Update frontend configuration**:
-   - Copy deployed contract address
-   - Update `frontend/src/contract-config.js` with new address
-   - Update `deploy/artifacts/addresses.json`
+3. **Update Source-of-Truth Addresses File**:
+   - Manually edit `deploy/artifacts/addresses.json` with the new contract address under the correct `chainId` (e.g., `11155111` for Sepolia).
+   - Example structure:
+     ```json
+     {
+       "11155111": {
+         "PepedawnRaffle": "0xNEW_CONTRACT_ADDRESS"
+       }
+     }
+     ```
+
+4. **Synchronize Configurations and Documentation**:
+   - Run the automation script to update all dependent files:
+     ```bash
+     cd ..
+     npm run update-configs
+     npm run update-docs
+     ```
+
+5. **Commit Changes (Triggers Post-Commit Validation)**:
+   - Stage the updated files:
+     ```bash
+     git add deploy/artifacts/addresses.json frontend/public/deploy/artifacts/addresses.json frontend/src/contract-config.js README.md
+     ```
+   - Commit with a descriptive message:
+     ```bash
+     git commit -m "Deploy PepedawnRaffle vX.Y on Sepolia and sync configs/docs"
+     ```
+   - The post-commit hook will then automatically validate:
+     - `deploy/artifacts/addresses.json` is present and contains a non-placeholder address.
+     - `frontend/public/deploy/artifacts/addresses.json` is synchronized.
+     - `frontend/src/contract-config.js` has the correct address and ABI.
+     - Documentation and spec consistency checks pass.
 
 ### Frontend Deployment
 The project uses GitHub Actions for automated deployment to pepedawn.art:
@@ -193,8 +284,7 @@ The project implements comprehensive security measures:
 - **Circuit Breakers**: Emergency pause functionality
 - **Rate Limiting**: Frontend transaction throttling
 - **Network Validation**: Ensures correct blockchain network
-
-See `SECURITY_VALIDATION_REPORT.md` for detailed security analysis.
+- **Dynamic Gas Estimation**: Prevents VRF callback failures
 
 ## 🔗 Contract Interaction
 
@@ -231,6 +321,25 @@ cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-k
 - **Network**: Sepolia (Chain ID: 11155111)
 - **Frontend**: pepedawn.art (deployment configured via GitHub Actions)
 
+## 📚 Project Specifications
+
+The project follows comprehensive specifications in `specs/001-build-a-simple/`:
+
+- **spec.md**: Business requirements and user stories
+- **plan.md**: Technical implementation plan
+- **research.md**: Technology decisions and rationale
+- **data-model.md**: Entity definitions and relationships
+- **contracts/**: API specifications and interfaces
+- **quickstart.md**: Development setup guide
+
+### Key Features from Specs
+- **2-week betting rounds** with ETH wagers
+- **Puzzle proof submissions** for +40% weight multiplier
+- **Chainlink VRF v2.5** for verifiable randomness
+- **Emblem Vault integration** for prize distribution
+- **Dynamic gas estimation** for VRF callbacks
+- **Comprehensive security** following Constitution v1.1.0
+
 ## 🤝 Contributing
 
 1. **Fork the repository**
@@ -240,15 +349,15 @@ cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-k
 5. **Push to branch**: `git push origin feature/amazing-feature`
 6. **Open Pull Request**
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 🔗 Links
 
 - **Live Application**: pepedawn.art
 - **Contract on Etherscan**: [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A)
 - **Chainlink VRF**: [Sepolia VRF Coordinator](https://sepolia.etherscan.io/address/0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 

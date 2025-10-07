@@ -185,6 +185,7 @@ This workflow outlines the steps for deploying a new contract version and ensuri
 3. **Update Source-of-Truth Addresses File**:
    - Manually edit `deploy/artifacts/addresses.json` with the new contract address under the correct `chainId` (e.g., `11155111` for Sepolia).
    - MANUALLY UPDATE 'contracts/.env'
+   - MANUALLY ADD CONSUMER to subscription on vrf.chain.link
    - Example structure:
      ```json
      {

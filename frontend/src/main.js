@@ -612,14 +612,22 @@ function setupContractEventListeners() {
     });
     
     // Emblem Vault integration events
-    contract.on('EmblemVaultPrizeAssigned', (roundId, winner, assetId, timestamp, event) => {
+    contract.on('EmblemVaultPrizeAssigned', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId, winner, assetId, timestamp] = args;
+      
+      // Deduplicate events
+      const eventId = `EmblemVaultPrizeAssigned-${roundId.toString()}-${winner.toLowerCase()}-${assetId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         winner: winner.toLowerCase(),
         assetId: assetId.toString(),
         timestamp: Number(timestamp),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('🎁 Emblem Vault prize assigned:', eventData);
       logEvent('EmblemVaultPrizeAssigned', eventData);
@@ -630,13 +638,21 @@ function setupContractEventListeners() {
       }
     });
     
-    contract.on('RoundPrizesDistributed', (roundId, winnerCount, timestamp, event) => {
+    contract.on('RoundPrizesDistributed', (...args) => {
+      const event = args[args.length - 1]; // Event is always the last parameter
+      const [roundId, winnerCount, timestamp] = args;
+      
+      // Deduplicate events
+      const eventId = `RoundPrizesDistributed-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         winnerCount: Number(winnerCount),
         timestamp: Number(timestamp),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
+        blockNumber: event?.blockNumber,
+        transactionHash: event?.transactionHash
       };
       console.log('🏆 Round prizes distribution completed:', eventData);
       logEvent('RoundPrizesDistributed', eventData);

@@ -91,6 +91,95 @@ function Check-State {
             Write-Host "  VRF Requested At:  " -NoNewline; Write-Host $fields[8] -ForegroundColor Cyan
             Write-Host "  Fees Distributed:  " -NoNewline; Write-Host $fields[9] -ForegroundColor Cyan
             Write-Host "  Participant Count: " -NoNewline; Write-Host $fields[10] -ForegroundColor Cyan
+            
+            # If round is distributed (status = 5), show winners organized by pack tier
+            if ($statusValue -eq 5) {
+                Write-Host ""
+                Write-Host "=== Round $roundIdDec Winners ===" -ForegroundColor Green
+                
+                # Get winners data
+                $winnersData = cast call $CONTRACT_ADDRESS "getRoundWinners(uint256)" $roundIdDec --rpc-url $env:SEPOLIA_RPC_URL
+                
+                if ($winnersData -and $winnersData.Trim() -ne "") {
+                    # Parse hex data from cast call
+                    $winnersList = @()
+                    
+                    try {
+                        # Remove 0x prefix
+                        $hexData = $winnersData -replace '^0x', ''
+                        
+                        # First 64 characters (32 bytes) = array offset pointer
+                        $arrayOffsetHex = $hexData.Substring(0, 64)
+                        $arrayOffset = [Convert]::ToInt64($arrayOffsetHex, 16)
+                        
+                        # Next 64 characters (32 bytes) = actual array length
+                        $arrayLengthHex = $hexData.Substring(64, 64)
+                        $arrayLength = [Convert]::ToInt64($arrayLengthHex, 16)
+                        
+                        # Parse each winner starting from the actual array data
+                        for ($i = 0; $i -lt $arrayLength; $i++) {
+                            $offset = 128 + ($i * 320) # Start after offset + length + i * winner size
+                            
+                            # Extract winner data (5 fields of 32 bytes each)
+                            $roundIdHex = $hexData.Substring($offset, 64)
+                            $addressHex = $hexData.Substring($offset + 64, 64)
+                            $prizeTierHex = $hexData.Substring($offset + 128, 64)
+                            $vrfRequestIdHex = $hexData.Substring($offset + 192, 64)
+                            $blockNumberHex = $hexData.Substring($offset + 256, 64)
+                            
+                            # Convert hex to values
+                            $roundId = [Convert]::ToInt64($roundIdHex, 16)
+                            $address = "0x" + $addressHex.Substring(24, 40) # Last 20 bytes = address
+                            $prizeTier = [Convert]::ToInt32($prizeTierHex, 16)
+                            $vrfRequestId = $vrfRequestIdHex # Keep as hex string for large numbers
+                            $blockNumber = [Convert]::ToInt64($blockNumberHex, 16)
+                            
+                            $winnersList += @{
+                                RoundId = $roundId
+                                Address = $address
+                                PrizeTier = $prizeTier
+                                VrfRequestId = $vrfRequestId
+                                BlockNumber = $blockNumber
+                            }
+                        }
+                    } catch {
+                        Write-Host "Error parsing winners data: $($_.Exception.Message)" -ForegroundColor Red
+                    }
+                    
+                    if ($winnersList.Count -gt 0) {
+                        # Group winners by prize tier
+                        $fakePackWinners = $winnersList | Where-Object { $_.PrizeTier -eq 1 }
+                        $kekPackWinners = $winnersList | Where-Object { $_.PrizeTier -eq 2 }
+                        $pepePackWinners = $winnersList | Where-Object { $_.PrizeTier -eq 3 }
+                        
+                        # Display winners by pack tier exactly as requested
+                        Write-Host "FAKE PACK Winner ($($fakePackWinners.Count))" -ForegroundColor Magenta
+                        if ($fakePackWinners.Count -gt 0) {
+                            foreach ($winner in $fakePackWinners) {
+                                Write-Host "$($winner.Address)" -ForegroundColor White
+                            }
+                        }
+                        
+                        Write-Host "KEK PACK Winner ($($kekPackWinners.Count))" -ForegroundColor Yellow
+                        if ($kekPackWinners.Count -gt 0) {
+                            foreach ($winner in $kekPackWinners) {
+                                Write-Host "$($winner.Address)" -ForegroundColor White
+                            }
+                        }
+                        
+                        Write-Host "PEPE PACK Winners ($($pepePackWinners.Count))" -ForegroundColor Green
+                        if ($pepePackWinners.Count -gt 0) {
+                            foreach ($winner in $pepePackWinners) {
+                                Write-Host "$($winner.Address)" -ForegroundColor White
+                            }
+                        }
+                    } else {
+                        Write-Host "No winners found or unable to parse winner data" -ForegroundColor Yellow
+                    }
+                } else {
+                    Write-Host "No winners found for this round" -ForegroundColor Yellow
+                }
+            }
         } else {
             Write-Host "  Error parsing round data" -ForegroundColor Red
         }

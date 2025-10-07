@@ -3,14 +3,7 @@
 ## Setup (One-time)
 
 ### Configure Environment Variables
-
-Create a `.env` file in the `contracts/` directory with your configuration:
-
-```bash
-CONTRACT_ADDRESS=0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A
-SEPOLIA_RPC_URL=https://sepolia.drpc.org
-PRIVATE_KEY=your_private_key_here
-```
+assuming .env is setup correctly
 
 ### Load Environment Variables
 
@@ -136,14 +129,18 @@ When you call `check` and see the round details, the status field shows:
 
 # Users place bets via frontend or CLI...
 
-# 4. Close round when ready (future feature - add to script)
-cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "closeRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+# 4. Close round when ready (future feature - add to script) BASH
+``` BASH COMMANDS
+set -a; source contracts/.env; set +a
+cast send $CONTRACT_ADDRESS "closeRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
 # 5. Snapshot participants
-cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "snapshotRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+set -a; source contracts/.env; set +a
+cast send $CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
 # 6. Request VRF for winner selection
-cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "requestVRF(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+set -a; source contracts/.env; set +a
+cast send $CONTRACT_ADDRESS "requestVRF(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 ## View Round Winners
@@ -152,10 +149,17 @@ After VRF fulfillment and prize distribution, view the winners:
 
 ```powershell
 # Get all winners for round 1
-cast call 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "getRoundWinners(uint256)" 1 --rpc-url $env:SEPOLIA_RPC_URL
+.\contracts\scripts\interact-sepolia.ps1 winners 1
 
-# Or use the check command to see formatted output
+# Or use the check command to see general contract state
 .\contracts\scripts\interact-sepolia.ps1 check
+```
+
+**Note**: The `winners` command shows raw winner data. To get organized pack tier display, you can parse the output or use the contract directly:
+
+```powershell
+# Direct contract call to get winners
+cast call $env:CONTRACT_ADDRESS "getRoundWinners(uint256)" 1 --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Winner Data Structure:**

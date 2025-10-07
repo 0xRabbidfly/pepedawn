@@ -12,6 +12,10 @@ assuming .env is setup correctly
 
 Before running any commands, load your `.env` variables:
 
+```BASH
+set -a; source contracts/.env; set +a
+```
+
 ```powershell
 cd contracts
 Get-Content .env | ForEach-Object { 
@@ -22,11 +26,6 @@ Get-Content .env | ForEach-Object {
 ```
 
 **Note**: The PowerShell script will automatically fallback to reading from `deploy/artifacts/addresses.json` if `CONTRACT_ADDRESS` is not set in your environment.
-
-Or just run from the project root:
-```powershell
-cd Z:\Projects\pepedawn
-```
 
 ## Available Commands
 
@@ -84,6 +83,13 @@ cd Z:\Projects\pepedawn
 # 10 tickets = 0.04 ETH (20% discount)
 .\contracts\scripts\cli\interact.ps1 bet 10 0.04
 ```
+
+### Set valid proof hash for the round (REQUIRED for proof validation)
+``` BASH COMMANDS
+# Replace 0x... with the keccak256 hash of the correct proof solution
+cast send $CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 0x... --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+```
+
 **Requirements:**
 - Round must be `Open` (status = 1)
 - Correct ETH amount for ticket count
@@ -94,19 +100,6 @@ cd Z:\Projects\pepedawn
 - Adds tickets and weight to your account
 - Updates round totals
 - ETH held in contract until round settlement
-
-### Quick Start (Create + Open)
-```powershell
-.\contracts\scripts\cli\interact.ps1 quick-start
-```
-**Does:**
-1. Shows current state
-2. Creates new round
-3. Waits 2 seconds
-4. Opens the round
-5. Shows updated state
-
-Perfect for starting a fresh round!
 
 ## Round Status Values
 
@@ -143,29 +136,9 @@ When you call `check` and see the round details, the status field shows:
 - If proof doesn't match: NO bonus, `ProofRejected` event emitted, attempt consumed
 - Frontend shows immediate success/failure feedback
 
-## Complete Round Workflow (Owner Operations)
+## Wrap-up Round Workflow (Owner Operations)
 
-```powershell
-# 1. Check if a round exists
-.\contracts\scripts\cli\interact.ps1 check
-
-# 2. Create new round (if needed)
-.\contracts\scripts\cli\interact.ps1 create
-
-# 3. Set valid proof hash for the round (REQUIRED for proof validation)
-``` BASH COMMANDS
-set -a; source contracts/.env; set +a
-# Replace 0x... with the keccak256 hash of the correct proof solution
-cast send $CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 0x... --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
-```
-
-# 4. Open round for betting
-.\contracts\scripts\cli\interact.ps1 open 1
-
-# Users place bets and submit proofs via frontend or CLI...
-# NOTE: If user submits incorrect proof, they get immediate feedback and attempt is consumed
-
-# 5. Close round when ready
+# Close round when ready
 # IMPORTANT: If round has < 10 tickets, closeRound() automatically refunds all participants
 ``` BASH COMMANDS
 set -a; source contracts/.env; set +a
@@ -216,7 +189,7 @@ cast call $env:CONTRACT_ADDRESS "getRoundWinners(uint256)" 1 --rpc-url $env:SEPO
 
 **View on Etherscan:**
 ```
-https://sepolia.etherscan.io/address/0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A
+https://sepolia.etherscan.io/address/<new contract address>
 ```
 
 Look for these events:
@@ -236,17 +209,6 @@ Add `SEPOLIA_RPC_URL=https://sepolia.drpc.org` to your `.env` file.
 A round already exists and hasn't been distributed yet. Either:
 - Use `open 1` to open the existing round
 - Complete the existing round workflow before creating a new one
-
-### Check Raw Contract Output
-Use `cast call` directly for debugging:
-```powershell
-cast call 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "currentRoundId()" --rpc-url $env:SEPOLIA_RPC_URL
-```
-
-## Contract Address
-**Current Deployment**: `0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A` (VRF v2.5)
-
-View on Etherscan: https://sepolia.etherscan.io/address/0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A
 
 ---
 

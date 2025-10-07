@@ -9,7 +9,7 @@ param(
 $CONTRACT_ADDRESS = $env:CONTRACT_ADDRESS
 if (-not $CONTRACT_ADDRESS) {
     # Fallback to reading from addresses.json
-    $addressesPath = Join-Path $PSScriptRoot "..\..\deploy\artifacts\addresses.json"
+    $addressesPath = Join-Path $PSScriptRoot "..\..\..\deploy\artifacts\addresses.json"
     if (Test-Path $addressesPath) {
         $addresses = Get-Content $addressesPath | ConvertFrom-Json
         $CONTRACT_ADDRESS = $addresses.'11155111'.PepedawnRaffle

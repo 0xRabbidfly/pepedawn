@@ -214,7 +214,7 @@ This workflow outlines the steps for deploying a new contract version and ensuri
      ```
    - Commit with a descriptive message:
      ```bash
-     git commit -m "Deploy PepedawnRaffle vX.Y on Sepolia and sync configs/docs"
+     git commit -m "Deploy PepedawnRaffle vX.Y and sync configs/docs"
      ```
    - The post-commit hook will then automatically validate:
      - `deploy/artifacts/addresses.json` is present and contains a non-placeholder address.

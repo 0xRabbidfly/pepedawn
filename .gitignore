@@ -10,6 +10,7 @@ lerna-debug.log*
 build/
 out/
 .vite/
+dist-ssr/
 # Note: frontend/dist/ is tracked for deployment
 
 # Environment variables
@@ -25,6 +26,11 @@ out/
 *.swp
 *.swo
 *~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.local
 
 # Cursor and VS Code workspace files
 *.code-workspace

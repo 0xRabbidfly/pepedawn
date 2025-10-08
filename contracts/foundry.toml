@@ -70,7 +70,7 @@ gas_reports = []       # No gas reports
 # === UNIT TESTS (Primary Development) ===
 [profile.unit]
 # Comprehensive unit tests - All core functionality
-test_pattern = "test/{Core,RoundLifecycle,BettingAndProofs,WinnerSelection,Security,Governance}.t.sol"
+test_pattern = "test/{Core,RoundLifecycle,BettingAndProofs,WinnerSelection,Security,Governance,Claims,MerkleProofs,Refunds}.t.sol"
 fuzz_runs = 1000
 verbosity = 2
 
@@ -84,7 +84,7 @@ verbosity = 2
 # === CI/CD PIPELINE ===
 [profile.ci]
 # Fast, reliable tests for CI/CD (unit tests only)
-test_pattern = "test/{Core,RoundLifecycle,BettingAndProofs,WinnerSelection,Security,Governance}.t.sol"
+test_pattern = "test/{Core,RoundLifecycle,BettingAndProofs,WinnerSelection,Security,Governance,Claims,MerkleProofs,Refunds}.t.sol"
 fuzz_runs = 1000
 verbosity = 1
 
@@ -98,16 +98,9 @@ invariant_depth = 100
 
 # === ALL NEW TESTS ===
 [profile.all]
-# Run all new test files (unit + integration)
-test_pattern = "test/{Core,RoundLifecycle,BettingAndProofs,WinnerSelection,Security,Governance,Integration}.t.sol"
+# Run all new test files (unit + integration + Merkle)
+test_pattern = "test/{Core,RoundLifecycle,BettingAndProofs,WinnerSelection,Security,Governance,Integration,Claims,MerkleProofs,Refunds}.t.sol"
 verbosity = 2
-
-# === NETWORK-SPECIFIC TESTS ===
-[profile.deployed]
-# Live network tests - Requires deployed contract on Sepolia
-test_pattern = "test/DeployedContractTest.t.sol"
-fork_url = "${SEPOLIA_RPC_URL}"
-verbosity = 3
 
 # === DEPLOYMENT PROFILE (Simplified for easier verification) ===
 [profile.deploy]

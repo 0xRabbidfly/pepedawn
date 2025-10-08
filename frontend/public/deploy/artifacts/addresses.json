@@ -7,10 +7,10 @@
     "verified": false
   },
   "11155111": {
-    "PepedawnRaffle": "0xaE8dD313328281178ca2fdd2eF103069eC9f0C3B",
-    "deployedAt": "2025-02-06T00:00:00.000Z",
-    "deployedBy": "0xae8ca7a6e52af06d523c797ce210661e99a59a04",
+    "PepedawnRaffle": "0xCc0678a598F9c2D12e0770f8e83966bd129482Ca",
+    "deployedAt": "2025-10-08T22:37:04.660Z",
+    "deployedBy": "deployment-script",
     "deploymentTx": "pending",
-    "verified": true
+    "verified": false
   }
 }

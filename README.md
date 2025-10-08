@@ -189,9 +189,14 @@ This workflow outlines the steps for deploying a new contract version and ensuri
 
 2. **Deploy New Contract**:
    ```bash
+   # 1. Deploy first (without verification)
    cd contracts
    set -a; source .env; set +a
-   forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+   forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast
+
+   # 2. Then verify separately (after deployment succeeds)
+   TODO: This is currently not working because of a new deployment bytecode issue i cannott figure out 
+   forge verify-contract <NEW_CONTRACT_ADDRESS> PepedawnRaffle --chain sepolia --watch
    ```
 
 3. **Update Source-of-Truth Addresses File**:
@@ -203,10 +208,11 @@ This workflow outlines the steps for deploying a new contract version and ensuri
    - Run the automation script to update all dependent files:
      ```bash
      cd ..
-     npm run update-configs
+     - DO NOT RUN npm run update-configs - try the prompts below instead
      npm run update-docs
      ```
-   - **CRITICAL**: Manually fix ABI format in `frontend/src/contract-config.js` (replace escaped JSON strings with proper JSON objects)
+   - **CRITICAL**: Fix ABI format in `frontend/src/contract-config.js` (replace escaped JSON strings with proper JSON objects)
+   - or try running prompts .cursor/commands/fix-abi-format or .cursor/commands/update-contract-config
    - Manually update .env file if not done above
 
 5. **Commit Changes (Triggers Post-Commit Validation)**:

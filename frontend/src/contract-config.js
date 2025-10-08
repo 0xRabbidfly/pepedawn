@@ -1,15 +1,16 @@
 // Contract configuration for PepedawnRaffle deployment
-// Update this with your actual contract address from deployment
+// Last updated: 2025-10-08T06:00:00.000Z
+// Deployed on: Sepolia Testnet
 
 export const CONTRACT_CONFIG = {
-  // Your deployed contract address (update after deployment)
-  address: "0x359220DbD1E7f2Fcb93f0A16776069e5a48bff79", // Main contract deployed on Sepolia testnet (VRF v2.5)
+  // Contract address from latest deployment with binary search optimization
+  address: "0xaE8dD313328281178ca2fdd2eF103069eC9f0C3B", // Deployed on 2025-02-06 - Binary search optimization
   
   // Sepolia testnet configuration
   network: 'sepolia',
   chainId: 11155111,
   
-  // Enhanced ABI for PepedawnRaffle contract with security features
+  // Latest ABI for PepedawnRaffle contract with binary search and enhanced security features
   abi: [
     {
       "type": "constructor",
@@ -1519,7 +1520,6 @@ export const CONTRACT_CONFIG = {
         {
           "name": "proofHash",
           "type": "bytes32",
-          "indexed": false,
           "internalType": "bytes32"
         },
         {
@@ -1891,6 +1891,33 @@ export const CONTRACT_CONFIG = {
       "inputs": []
     }
   ]
+};
+
+// VRF Configuration from deployment artifacts
+export const VRF_CONFIG = {
+  coordinator: "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625",
+  subscriptionId: 1,
+  keyHash: "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c",
+  callbackGasLimit: 500000,
+  requestConfirmations: 5,
+  lastUpdated: "2025-10-08T02:02:11.636Z",
+  notes: "Dynamic gas estimation enabled - callbackGasLimit calculated per request"
+};
+
+// Network-specific settings
+export const NETWORKS = {
+  sepolia: {
+    name: 'Sepolia Testnet',
+    chainId: 11155111,
+    rpcUrl: 'https://sepolia.infura.io/v3/',
+    blockExplorer: 'https://sepolia.etherscan.io'
+  },
+  mainnet: {
+    name: 'Ethereum Mainnet',
+    chainId: 1,
+    rpcUrl: 'https://mainnet.infura.io/v3/',
+    blockExplorer: 'https://etherscan.io'
+  }
 };
 
 // Security configuration for enhanced contract interaction

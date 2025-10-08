@@ -22,6 +22,7 @@ import {
   validateSecurityState,
   SECURITY_CONFIG
 } from './contract-config.js';
+import { displayClaimablePrizes, displayRefundButton } from './components/claims.js';
 
 // Global state
 let provider = null;
@@ -340,6 +341,13 @@ async function setupWalletConnection(showSuccessToast = true) {
     await updateUserStats(contract, userAddress);
     showSecurityStatus(contract, userAddress);
     await updateButtonStates(); // Update button states after connecting
+    
+    // Update claims and refunds
+    const currentRoundId = await contract.currentRoundId();
+    if (currentRoundId.toString() !== '0') {
+      await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
+      await displayRefundButton(contract, userAddress);
+    }
     
     // Populate round selector if on leaderboard page
     if (window.location.pathname.includes('leaderboard.html')) {
@@ -1155,6 +1163,13 @@ function startPeriodicUpdates() {
         
         if (userAddress) {
           await updateUserStats(contract, userAddress);
+          
+          // Update claims and refunds
+          const currentRoundId = await contract.currentRoundId();
+          if (currentRoundId.toString() !== '0') {
+            await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
+            await displayRefundButton(contract, userAddress);
+          }
         }
         
         await updateButtonStates(); // Update button states periodically

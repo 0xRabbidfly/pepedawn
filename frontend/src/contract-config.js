@@ -1,6 +1,10 @@
 // Contract configuration for PepedawnRaffle deployment
 // Last updated: 2025-10-08T06:00:00.000Z
 // Deployed on: Sepolia Testnet
+// 
+// NOTE: This ABI includes Merkle claims system functions.
+// If you need to update the ABI, run: cd contracts && forge build
+// Then copy from: contracts/out/PepedawnRaffle.sol/PepedawnRaffle.json
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
@@ -1244,6 +1248,229 @@ export const CONTRACT_CONFIG = {
       "stateMutability": "view"
     },
     {
+      "type": "function",
+      "name": "claim",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "prizeIndex",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "proof",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "withdrawRefund",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "commitParticipantsRoot",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "commitWinners",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "refunds",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "claims",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "claimCounts",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "prizeNFTs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "participantsCIDs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "winnersCIDs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "emblemVault",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IERC721"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
       "type": "event",
       "name": "AddressDenylisted",
       "inputs": [
@@ -1829,6 +2056,112 @@ export const CONTRACT_CONFIG = {
           "type": "uint8[]",
           "indexed": false,
           "internalType": "uint8[]"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PrizeClaimed",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "prizeIndex",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "tokenId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RefundWithdrawn",
+      "inputs": [
+        {
+          "name": "user",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "ParticipantsRootCommitted",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "WinnersCommitted",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
         }
       ],
       "anonymous": false

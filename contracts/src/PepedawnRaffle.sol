@@ -6,14 +6,18 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/vrf/dev/VRFConsumerBas
 import {VRFV2PlusClient} from "@chainlink/contracts/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
  * @title PepedawnRaffle
- * @notice Skill-weighted decentralized raffle with Chainlink VRF and Emblem Vault prizes
- * @dev Implements 2-week rounds with ETH wagers, puzzle proofs for +40% weight, and automatic distribution
+ * @notice Skill-weighted decentralized raffle with Chainlink VRF, Emblem Vault prizes, and Merkle-based claims
+ * @dev Implements 2-week rounds with ETH wagers, puzzle proofs for +40% weight, and pull-payment claims
  * @dev VRFConsumerBaseV2Plus provides ownership functionality via ConfirmedOwner
+ * @dev Merkle trees provide efficient verification and indefinite historical data retention
  */
-contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
+contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC721Holder {
     // =============================================================================
     // CONSTANTS
     // =============================================================================
@@ -75,6 +79,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         bool feesDistributed;
         uint256 participantCount; // Track number of participants for circuit breaker
         bytes32 validProofHash; // Valid proof hash set by owner for this round
+        bytes32 participantsRoot; // Merkle root of participants (for verification)
+        bytes32 winnersRoot; // Merkle root of winners (for claims)
+        bytes32 vrfSeed; // VRF seed for reproducibility
     }
     
     struct Wager {
@@ -116,6 +123,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     
     address public creatorsAddress;
     address public emblemVaultAddress;
+    IERC721 public emblemVault; // Emblem Vault NFT contract for prize custody
     
     uint256 public currentRoundId;
     uint256 public nextRoundFunds;
@@ -127,6 +135,16 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     mapping(uint256 => mapping(address => bool)) private _winnerSelected; // Prevent duplicate winners
     bool public emergencyPaused; // Additional emergency pause state
     uint256 public lastVrfRequestTime; // Track VRF request timing
+    
+    // Merkle & Claims state variables (NEW)
+    mapping(uint256 => string) public participantsCIDs; // roundId => IPFS CID for participants file
+    mapping(uint256 => string) public winnersCIDs; // roundId => IPFS CID for winners file
+    mapping(uint256 => mapping(uint8 => address)) public claims; // roundId => prizeIndex => claimer
+    mapping(uint256 => mapping(address => uint8)) public claimCounts; // roundId => user => claim count
+    mapping(uint256 => mapping(uint8 => uint256)) public prizeNFTs; // roundId => prizeIndex => tokenId
+    
+    // Refunds (pull-payment pattern)
+    mapping(address => uint256) public refunds; // user => accumulated refund balance
     
     // Mappings
     mapping(uint256 => Round) public rounds;
@@ -182,6 +200,18 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     event VRFRequested(uint256 indexed roundId, uint256 indexed requestId);
     event VRFFulfilled(uint256 indexed roundId, uint256 indexed requestId, uint256[] randomWords);
     
+    // Merkle & Claims events (NEW)
+    event ParticipantsRootCommitted(uint256 indexed roundId, bytes32 root, string cid);
+    event WinnersCommitted(uint256 indexed roundId, bytes32 root, string cid);
+    event PrizeClaimed(
+        uint256 indexed roundId,
+        address indexed winner,
+        uint8 prizeIndex,
+        uint8 prizeTier,
+        uint256 emblemVaultTokenId
+    );
+    event RefundWithdrawn(address indexed user, uint256 amount);
+    event PrizesSet(uint256 indexed roundId, uint256[] tokenIds);
     
     // Distribution events
     event WinnersAssigned(uint256 indexed roundId, address[] winners, uint8[] prizeTiers);
@@ -292,6 +322,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         
         creatorsAddress = _creatorsAddress;
         emblemVaultAddress = _emblemVaultAddress;
+        emblemVault = IERC721(_emblemVaultAddress); // Initialize ERC721 interface
         
         vrfConfig = VrfConfig({
             coordinator: IVRFCoordinatorV2Plus(_vrfCoordinator),
@@ -500,7 +531,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     }
     
     /**
-     * @notice Refund all participants of a round
+     * @notice Refund all participants of a round (pull-payment pattern)
      * @dev Internal function called when round doesn't meet minimum ticket threshold
      * @param roundId The round to refund
      */
@@ -520,9 +551,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
                 userTicketsInRound[roundId][participant] = 0;
                 userWeightInRound[roundId][participant] = 0;
                 
-                // Transfer refund
-                (bool success, ) = participant.call{value: refundAmount}("");
-                require(success, "Refund transfer failed");
+                // Accrue refund (pull-payment pattern - no immediate transfer)
+                refunds[participant] += refundAmount;
                 
                 totalRefunded += refundAmount;
                 emit ParticipantRefunded(roundId, participant, refundAmount);
@@ -555,8 +585,140 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         emit RoundSnapshot(roundId, round.totalTickets, round.totalWeight);
     }
     
+    /**
+     * @notice Commit Merkle root and IPFS CID for participants
+     * @param roundId The round to commit participants for
+     * @param root Merkle root of participants tree
+     * @param cid IPFS CID of participants file
+     */
+    function commitParticipantsRoot(
+        uint256 roundId,
+        bytes32 root,
+        string calldata cid
+    ) external onlyOwner roundExists(roundId) roundInStatus(roundId, RoundStatus.Snapshot) {
+        require(root != bytes32(0), "Invalid root: zero");
+        
+        rounds[roundId].participantsRoot = root;
+        participantsCIDs[roundId] = cid;
+        
+        emit ParticipantsRootCommitted(roundId, root, cid);
+    }
+    
+    /**
+     * @notice Commit Merkle root and IPFS CID for winners
+     * @param roundId The round to commit winners for
+     * @param root Merkle root of winners tree
+     * @param cid IPFS CID of winners file
+     */
+    function commitWinners(
+        uint256 roundId,
+        bytes32 root,
+        string calldata cid
+    ) external onlyOwner roundExists(roundId) {
+        Round storage round = rounds[roundId];
+        require(round.status == RoundStatus.Distributed, "Round not distributed");
+        require(root != bytes32(0), "Invalid root: zero");
+        require(round.vrfSeed != bytes32(0), "VRF seed not set");
+        
+        rounds[roundId].winnersRoot = root;
+        winnersCIDs[roundId] = cid;
+        
+        emit WinnersCommitted(roundId, root, cid);
+    }
+    
+    /**
+     * @notice Set prize NFTs for a round (must be called before round opens)
+     * @param roundId The round to set prizes for
+     * @param tokenIds Array of 10 Emblem Vault token IDs
+     */
+    function setPrizesForRound(
+        uint256 roundId,
+        uint256[] calldata tokenIds
+    ) external onlyOwner roundExists(roundId) {
+        require(tokenIds.length == 10, "Must provide 10 prizes");
+        Round storage round = rounds[roundId];
+        require(round.status == RoundStatus.Created, "Round already opened");
+        
+        for (uint8 i = 0; i < 10; i++) {
+            require(
+                emblemVault.ownerOf(tokenIds[i]) == address(this),
+                "Contract must own NFT"
+            );
+            prizeNFTs[roundId][i] = tokenIds[i];
+        }
+        
+        emit PrizesSet(roundId, tokenIds);
+    }
+    
     // =============================================================================
-    // PLACEHOLDER FUNCTIONS (TO BE IMPLEMENTED)
+    // CLAIMS & REFUNDS (Pull-Payment Pattern)
+    // =============================================================================
+    
+    /**
+     * @notice Claim a prize using Merkle proof
+     * @param roundId The round to claim from
+     * @param prizeIndex Prize slot (0-9)
+     * @param prizeTier Prize tier for validation
+     * @param proof Merkle proof
+     */
+    function claim(
+        uint256 roundId,
+        uint8 prizeIndex,
+        uint8 prizeTier,
+        bytes32[] calldata proof
+    ) external nonReentrant roundExists(roundId) {
+        require(prizeIndex < 10, "Invalid prize index");
+        
+        Round storage round = rounds[roundId];
+        require(
+            round.status == RoundStatus.Distributed || round.status == RoundStatus.Closed,
+            "Round not ready for claims"
+        );
+        require(round.winnersRoot != bytes32(0), "Winners not committed");
+        require(claims[roundId][prizeIndex] == address(0), "Prize already claimed");
+        
+        // Verify Merkle proof
+        bytes32 leaf = keccak256(abi.encode(msg.sender, prizeTier, prizeIndex));
+        require(
+            MerkleProof.verify(proof, round.winnersRoot, leaf),
+            "Invalid Merkle proof"
+        );
+        
+        // Check claim limit (user can claim up to their ticket count)
+        uint256 userTickets = userTicketsInRound[roundId][msg.sender];
+        require(userTickets > 0, "No tickets in round");
+        require(claimCounts[roundId][msg.sender] < userTickets, "Claim limit exceeded");
+        
+        // Update state before external call
+        claims[roundId][prizeIndex] = msg.sender;
+        claimCounts[roundId][msg.sender]++;
+        
+        // Transfer NFT
+        uint256 tokenId = prizeNFTs[roundId][prizeIndex];
+        require(tokenId != 0, "Prize not set");
+        emblemVault.safeTransferFrom(address(this), msg.sender, tokenId);
+        
+        emit PrizeClaimed(roundId, msg.sender, prizeIndex, prizeTier, tokenId);
+    }
+    
+    /**
+     * @notice Withdraw accumulated refunds (pull-payment)
+     */
+    function withdrawRefund() external nonReentrant {
+        uint256 amount = refunds[msg.sender];
+        require(amount > 0, "No refund available");
+        
+        // Zero balance before transfer (checks-effects-interactions)
+        refunds[msg.sender] = 0;
+        
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Refund transfer failed");
+        
+        emit RefundWithdrawn(msg.sender, amount);
+    }
+    
+    // =============================================================================
+    // BETTING & PROOFS
     // =============================================================================
     
     /**
@@ -877,6 +1039,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
             rounds[roundId].vrfRequestId == requestId,
             "VRF request ID mismatch"
         );
+        
+        // Store VRF seed for reproducibility (NEW for Merkle system)
+        rounds[roundId].vrfSeed = bytes32(randomWords[0]);
         
         // Interactions: Emit VRF fulfilled event
         emit VRFFulfilled(roundId, requestId, randomWords);
@@ -1205,5 +1370,85 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
      */
     function estimateVrfCallbackGas(uint256 roundId) external view returns (uint32) {
         return _estimateCallbackGas(roundId);
+    }
+    
+    // =============================================================================
+    // MERKLE & CLAIMS VIEW FUNCTIONS
+    // =============================================================================
+    
+    /**
+     * @notice Get claim status for a prize
+     * @param roundId The round ID
+     * @param prizeIndex The prize index (0-9)
+     * @return claimer Address that claimed (zero if unclaimed)
+     * @return claimed Whether prize has been claimed
+     */
+    function getClaimStatus(uint256 roundId, uint8 prizeIndex) 
+        external 
+        view 
+        returns (address claimer, bool claimed) 
+    {
+        claimer = claims[roundId][prizeIndex];
+        claimed = claimer != address(0);
+    }
+    
+    /**
+     * @notice Get refund balance for a user
+     * @param user The user address
+     * @return balance The refund balance
+     */
+    function getRefundBalance(address user) external view returns (uint256 balance) {
+        return refunds[user];
+    }
+    
+    /**
+     * @notice Get participants root and CID for a round
+     * @param roundId The round ID
+     * @return root The Merkle root
+     * @return cid The IPFS CID
+     */
+    function getParticipantsData(uint256 roundId) 
+        external 
+        view 
+        returns (bytes32 root, string memory cid) 
+    {
+        return (rounds[roundId].participantsRoot, participantsCIDs[roundId]);
+    }
+    
+    /**
+     * @notice Get winners root and CID for a round
+     * @param roundId The round ID
+     * @return root The Merkle root
+     * @return cid The IPFS CID
+     */
+    function getWinnersData(uint256 roundId) 
+        external 
+        view 
+        returns (bytes32 root, string memory cid) 
+    {
+        return (rounds[roundId].winnersRoot, winnersCIDs[roundId]);
+    }
+    
+    /**
+     * @notice Verify a Merkle proof for winners (helper for frontend)
+     * @param roundId The round ID
+     * @param user The user address
+     * @param prizeIndex The prize index
+     * @param prizeTier The prize tier
+     * @param proof The Merkle proof
+     * @return valid Whether the proof is valid
+     */
+    function isWinner(
+        uint256 roundId,
+        address user,
+        uint8 prizeIndex,
+        uint8 prizeTier,
+        bytes32[] calldata proof
+    ) external view returns (bool valid) {
+        bytes32 root = rounds[roundId].winnersRoot;
+        if (root == bytes32(0)) return false;
+        
+        bytes32 leaf = keccak256(abi.encode(user, prizeTier, prizeIndex));
+        return MerkleProof.verify(proof, root, leaf);
     }
 }

@@ -687,12 +687,28 @@ export function showTransactionStatus(message, type = 'info') {
   statusEl.className = `tx-status ${type}`;
   statusEl.style.display = 'block';
   
-  // Auto-hide after 5 seconds for success/error messages
-  if (type === 'success' || type === 'error') {
-    setTimeout(() => {
-      statusEl.style.display = 'none';
-    }, 5000);
+  // Auto-hide after timeout (different times based on type)
+  let timeout;
+  switch(type) {
+    case 'success':
+      timeout = 5000; // 5 seconds for success
+      break;
+    case 'error':
+      timeout = 8000; // 8 seconds for errors (need more time to read)
+      break;
+    case 'info':
+      timeout = 4000; // 4 seconds for info
+      break;
+    case 'warning':
+      timeout = 6000; // 6 seconds for warnings
+      break;
+    default:
+      timeout = 5000; // 5 seconds default
   }
+  
+  setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, timeout);
 }
 
 // Hide transaction status

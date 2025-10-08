@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Configuration Updater for PEPEDAWN
+ * Update Contract Address Script
  * 
- * This script automatically updates configuration files when contract changes are detected.
- * It synchronizes contract addresses, ABIs, and other configs across the project.
+ * Updates addresses.json with a new contract address and syncs all config files.
+ * Use this after deploying a new contract.
  */
 
 const fs = require('fs');
@@ -18,110 +18,6 @@ class ConfigurationUpdater {
     this.frontendConfigPath = 'frontend/src/contract-config.js';
     this.frontendAddressesPath = 'frontend/public/deploy/artifacts/addresses.json';
     this.frontendAbiPath = 'frontend/public/deploy/PepedawnRaffle-abi.json';
-  }
-
-  /**
-   * Main execution function
-   */
-  async run() {
-    console.log('⚙️  PEPEDAWN Configuration Updater Starting...\n');
-    
-    try {
-      // 1. Check if contract was compiled
-      await this.checkContractCompilation();
-      
-      // 2. Update ABI if needed (DISABLED - regex replacement is buggy)
-      // await this.updateABI();
-      
-      // 3. Update contract addresses
-      await this.updateAddresses();
-      
-      // 4. Update frontend configuration
-      await this.updateFrontendConfig();
-      
-      // 5. Update VRF configuration
-      await this.updateVRFConfig();
-      
-      console.log('✅ Configuration update complete!');
-      
-    } catch (error) {
-      console.error('❌ Configuration update failed:', error.message);
-      process.exit(1);
-    }
-  }
-
-  /**
-   * Check if contract needs to be compiled
-   */
-  async checkContractCompilation() {
-    if (!fs.existsSync(this.abiPath)) {
-      console.log('⚠️  Contract ABI not found. Run "forge build" first.');
-      return false;
-    }
-    
-    // Check if ABI is newer than contract
-    const contractStats = fs.statSync(this.contractPath);
-    const abiStats = fs.statSync(this.abiPath);
-    
-    if (contractStats.mtime > abiStats.mtime) {
-      console.log('⚠️  Contract is newer than ABI. Run "forge build" first.');
-      return false;
-    }
-    
-    console.log('✅ Contract compilation is up to date');
-    return true;
-  }
-
-  /**
-   * Update ABI in configuration files
-   */
-  async updateABI() {
-    if (!fs.existsSync(this.abiPath)) {
-      console.log('⚠️  ABI file not found, skipping ABI update');
-      return;
-    }
-
-    const abiData = JSON.parse(fs.readFileSync(this.abiPath, 'utf8'));
-    const abi = abiData.abi;
-
-    // Update frontend config - SAFE METHOD: Don't touch ABI, only update addresses
-    if (fs.existsSync(this.frontendConfigPath)) {
-      let content = fs.readFileSync(this.frontendConfigPath, 'utf8');
-      
-      // Only update the address field, leave ABI untouched
-      const addressRegex = /address:\s*"0x[a-fA-F0-9]{40}"/;
-      const latestAddress = this.getLatestContractAddress();
-      
-      if (latestAddress && addressRegex.test(content)) {
-        const newAddress = `address: "${latestAddress}"`;
-        content = content.replace(addressRegex, newAddress);
-        fs.writeFileSync(this.frontendConfigPath, content);
-        console.log('✅ Frontend contract address updated');
-      } else {
-        console.warn('⚠️  Could not update contract address in frontend config');
-      }
-    }
-
-    // Update deployment artifacts
-    const artifactsPath = 'deploy/artifacts/abis/';
-    if (!fs.existsSync(artifactsPath)) {
-      fs.mkdirSync(artifactsPath, { recursive: true });
-    }
-    
-    fs.writeFileSync(
-      path.join(artifactsPath, 'PepedawnRaffle.json'),
-      JSON.stringify(abi, null, 2)
-    );
-    console.log('✅ ABI artifacts updated');
-
-    // Update frontend ABI file
-    const frontendAbiDir = path.dirname(this.frontendAbiPath);
-    if (!fs.existsSync(frontendAbiDir)) {
-      fs.mkdirSync(frontendAbiDir, { recursive: true });
-    }
-    
-    fs.writeFileSync(this.frontendAbiPath, JSON.stringify(abi, null, 2));
-    console.log('✅ Frontend ABI file updated');
   }
 
   /**
@@ -141,10 +37,12 @@ class ConfigurationUpdater {
     const latestAddress = sepolia.PepedawnRaffle || mainnet.PepedawnRaffle || null;
     
     // Update frontend addresses
-    if (fs.existsSync(this.frontendAddressesPath)) {
-      fs.writeFileSync(this.frontendAddressesPath, JSON.stringify(addressesJson, null, 2));
-      console.log('✅ Frontend addresses updated');
+    const frontendArtifactsDir = path.dirname(this.frontendAddressesPath);
+    if (!fs.existsSync(frontendArtifactsDir)) {
+      fs.mkdirSync(frontendArtifactsDir, { recursive: true });
     }
+    fs.writeFileSync(this.frontendAddressesPath, JSON.stringify(addressesJson, null, 2));
+    console.log('✅ Frontend addresses updated');
 
     // Update frontend config with latest address
     if (fs.existsSync(this.frontendConfigPath) && latestAddress) {
@@ -160,6 +58,45 @@ class ConfigurationUpdater {
         console.warn('⚠️  Could not find address field in frontend contract-config.js');
       }
     }
+  }
+
+  /**
+   * Update addresses.json with new contract address
+   * @param {string} newAddress - New contract address
+   * @param {number} chainId - Chain ID (default: 11155111 for Sepolia)
+   */
+  async updateContractAddress(newAddress, chainId = 11155111) {
+    console.log(`📝 Updating contract address to: ${newAddress}`);
+    
+    let addressesJson = {};
+    
+    // Read existing addresses if file exists
+    if (fs.existsSync(this.addressesPath)) {
+      addressesJson = JSON.parse(fs.readFileSync(this.addressesPath, 'utf8'));
+    }
+    
+    // Ensure chain entry exists
+    if (!addressesJson[chainId]) {
+      addressesJson[chainId] = {};
+    }
+    
+    // Update the address
+    addressesJson[chainId].PepedawnRaffle = newAddress;
+    addressesJson[chainId].deployedAt = new Date().toISOString();
+    addressesJson[chainId].deployedBy = "deployment-script";
+    addressesJson[chainId].verified = false; // Will be updated after verification
+    
+    // Ensure deploy directory exists
+    const deployDir = path.dirname(this.addressesPath);
+    if (!fs.existsSync(deployDir)) {
+      fs.mkdirSync(deployDir, { recursive: true });
+    }
+    
+    // Write updated addresses
+    fs.writeFileSync(this.addressesPath, JSON.stringify(addressesJson, null, 2));
+    console.log('✅ Contract address updated in addresses.json');
+    
+    return addressesJson;
   }
 
   /**
@@ -220,21 +157,6 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
   }
 
   /**
-   * Get the latest contract address from addresses.json
-   */
-  getLatestContractAddress() {
-    if (!fs.existsSync(this.addressesPath)) {
-      return null;
-    }
-    
-    const addressesJson = JSON.parse(fs.readFileSync(this.addressesPath, 'utf8'));
-    // Prefer Sepolia (11155111) if present, otherwise mainnet (1)
-    const sepolia = addressesJson['11155111'] || {};
-    const mainnet = addressesJson['1'] || {};
-    return sepolia.PepedawnRaffle || mainnet.PepedawnRaffle || null;
-  }
-
-  /**
    * Update VRF configuration
    */
   async updateVRFConfig() {
@@ -261,10 +183,71 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
   }
 }
 
-// Run the updater
-if (require.main === module) {
-  const updater = new ConfigurationUpdater();
-  updater.run().catch(console.error);
+async function main() {
+  const args = process.argv.slice(2);
+  
+  if (args.length === 0) {
+    console.log(`
+🔧 Update Contract Address
+
+Usage:
+  node scripts/update-contract-address.js <contract-address> [chain-id]
+
+Examples:
+  node scripts/update-contract-address.js 0xCc0678a598F9c2D12e0770f8e83966bd129482Ca
+  node scripts/update-contract-address.js 0xCc0678a598F9c2D12e0770f8e83966bd129482Ca 11155111
+
+Chain IDs:
+  1         - Ethereum Mainnet
+  11155111  - Sepolia Testnet (default)
+`);
+    process.exit(1);
+  }
+
+  const contractAddress = args[0];
+  const chainId = args[1] ? parseInt(args[1]) : 11155111;
+
+  // Validate contract address
+  if (!/^0x[a-fA-F0-9]{40}$/.test(contractAddress)) {
+    console.error('❌ Invalid contract address format');
+    process.exit(1);
+  }
+
+  // Validate chain ID
+  if (![1, 11155111].includes(chainId)) {
+    console.error('❌ Unsupported chain ID. Use 1 (mainnet) or 11155111 (sepolia)');
+    process.exit(1);
+  }
+
+  console.log('🚀 Updating contract address...\n');
+  console.log(`Contract: ${contractAddress}`);
+  console.log(`Chain ID: ${chainId} (${chainId === 1 ? 'Mainnet' : 'Sepolia'})\n`);
+
+  try {
+    const updater = new ConfigurationUpdater();
+    
+    // 1. Update addresses.json
+    await updater.updateContractAddress(contractAddress, chainId);
+    
+    // 2. Update all frontend configs
+    await updater.updateAddresses();
+    await updater.updateFrontendConfig();
+    await updater.updateVRFConfig();
+    
+    console.log('\n✅ Contract address update complete!');
+    console.log('\n📋 Next steps:');
+    console.log('1. Refresh your frontend (F5)');
+    console.log('2. Verify the new contract on Etherscan');
+    console.log('3. Add contract as VRF consumer (if using VRF)');
+    
+  } catch (error) {
+    console.error('❌ Update failed:', error.message);
+    process.exit(1);
+  }
 }
 
-module.exports = ConfigurationUpdater;
+if (require.main === module) {
+  main().catch(console.error);
+}
+
+module.exports = main;

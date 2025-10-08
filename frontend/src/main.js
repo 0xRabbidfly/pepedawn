@@ -24,6 +24,18 @@ import {
 } from './contract-config.js';
 import { displayClaimablePrizes, displayRefundButton } from './components/claims.js';
 
+// Suppress harmless MetaMask filter errors
+const originalError = console.error;
+console.error = (...args) => {
+  // Filter out MetaMask "No filter for index" errors
+  const errorString = args.join(' ');
+  if (errorString.includes('No filter for index') || 
+      errorString.includes('eth_getFilterChanges')) {
+    return; // Suppress these specific errors
+  }
+  originalError.apply(console, args);
+};
+
 // Global state
 let provider = null;
 let signer = null;

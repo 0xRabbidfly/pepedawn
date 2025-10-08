@@ -87,13 +87,34 @@ async function generateParticipantsFile(roundId, outputPath) {
   const participantAddresses = await contract.getRoundParticipants(roundId);
   console.log(`Found ${participantAddresses.length} participants`);
   
-  // Get stats for each participant
+  // Get stats for each participant with rate limiting
   console.log('\nFetching participant stats...');
   const participants = [];
   
+  // Helper function to add delay for rate limiting
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  
   for (let i = 0; i < participantAddresses.length; i++) {
     const address = participantAddresses[i];
-    const stats = await contract.getUserStats(roundId, address);
+    
+    // Retry logic for rate limit errors
+    let retries = 3;
+    let stats;
+    
+    while (retries > 0) {
+      try {
+        stats = await contract.getUserStats(roundId, address);
+        break; // Success, exit retry loop
+      } catch (error) {
+        if (error.message.includes('Too Many Requests') && retries > 1) {
+          console.log(`  ⏳ Rate limited, waiting 2 seconds... (${retries - 1} retries left)`);
+          await delay(2000); // Wait 2 seconds before retry
+          retries--;
+        } else {
+          throw error; // Not a rate limit error or out of retries
+        }
+      }
+    }
     
     participants.push({
       address: address,
@@ -105,6 +126,11 @@ async function generateParticipantsFile(roundId, outputPath) {
     
     if ((i + 1) % 10 === 0) {
       console.log(`  Processed ${i + 1}/${participantAddresses.length}...`);
+    }
+    
+    // Add small delay between requests to avoid rate limiting
+    if (i < participantAddresses.length - 1) {
+      await delay(100); // 100ms delay between requests
     }
   }
   

@@ -48,7 +48,7 @@ Create `contracts/.env` with your configuration:
 # Wallet Configuration
 PRIVATE_KEY=your_private_key_here_without_0x_prefix
 
-# Network Configuration
+# Network Configuration (Use drpc.org for better rate limits)
 SEPOLIA_RPC_URL=https://sepolia.drpc.org
 
 # Chainlink VRF Configuration (Sepolia)
@@ -198,23 +198,38 @@ forge verify-contract $env:CONTRACT_ADDRESS \
 - Should show green ✓ "Contract Source Code Verified"
 - Can see "Read Contract" and "Write Contract" tabs
 
-### 1.5 Update Environment with Contract Address
+### 1.5 Update Contract Address in All Configs
 
-Edit `contracts/.env` and add:
+**Automated Method (Recommended):**
+```powershell
+# From project root - updates addresses.json and all frontend configs
+node scripts/update-contract-address.js 0xYourNewContractAddress
+```
+
+**Expected Output**:
+```
+🚀 Updating contract address...
+
+Contract: 0xYourNewContractAddress
+Chain ID: 11155111 (Sepolia)
+
+📝 Updating contract address to: 0xYourNewContractAddress
+✅ Contract address updated in addresses.json
+✅ Frontend addresses updated
+✅ Frontend contract-config address updated
+✅ Frontend configuration updated
+✅ VRF configuration updated
+
+✅ Contract address update complete!
+```
+
+**Manual Method (Backup):**
+If the automated script fails, manually edit `contracts/.env`:
 ```bash
 CONTRACT_ADDRESS=0xYourNewContractAddress
 ```
 
 Then reload environment (repeat step 0.2)
-**PowerShell**:
-```powershell
-cd contracts
-Get-Content .env | ForEach-Object { 
-    if ($_ -match '^([^=]+)=(.*)$') {
-        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
-    }
-}
-```
 
 ### 1.6 Add Contract as VRF Consumer
 
@@ -358,26 +373,9 @@ Perfect! Round 1 is ready for betting.
 
 ### 3.1 Update Frontend Configuration
 
-**Step 1: Update Addresses and Config (Safe)**
+**Update ABI (If Contract Code Changed)**
 ```powershell
 cd ../../.. # To project root
-node scripts/update-configs.js
-```
-
-**Expected Output**:
-```
-⚙️  PEPEDAWN Configuration Updater Starting...
-
-⚠️  Contract is newer than ABI. Run "forge build" first.
-✅ Frontend addresses updated
-✅ Frontend contract-config address updated
-✅ Frontend configuration updated
-✅ VRF configuration updated
-✅ Configuration update complete!
-```
-
-**Step 2: Update ABI (If Contract Changed)**
-```powershell
 node scripts/update-abi.js
 ```
 
@@ -393,7 +391,7 @@ node scripts/update-abi.js
 ✅ ABI update complete!
 ```
 
-**Note**: Only run Step 2 if you've modified the contract. For address-only updates, Step 1 is sufficient.
+**Note**: Only run this if you've modified the contract code. For new deployments of the same contract, the address update in step 1.5 is sufficient.
 
 ### 3.2 Install Frontend Dependencies (First Time Only)
 
@@ -526,9 +524,7 @@ Should match UI display!
 
 ```powershell
 cd ../../ # To contracts/
-cast send $env:CONTRACT_ADDRESS "closeRound(uint256)" 1 \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "closeRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected**: Transaction succeeds
@@ -549,9 +545,7 @@ Should show: `Status: Closed (2)`
 
 ```powershell
 cd ../..
-cast send $env:CONTRACT_ADDRESS "snapshotRound(uint256)" 1 \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected**: Transaction succeeds
@@ -1121,6 +1115,19 @@ cast send $env:CONTRACT_ADDRESS "createRound()" \
 ---
 
 ## Troubleshooting
+
+### Issue: "Too Many Requests" or Rate Limit Error
+
+**Cause**: RPC endpoint rate limit exceeded (common with Infura free tier)  
+**Solution**: Switch to a more generous RPC endpoint:
+1. Update `contracts/.env`:
+   ```bash
+   SEPOLIA_RPC_URL=https://sepolia.drpc.org
+   ```
+2. Reload environment variables (repeat step 0.2)
+3. Retry the command
+
+**Note**: The scripts now have built-in retry logic and rate limiting (100ms delays between requests), but using drpc.org is still recommended.
 
 ### Issue: "Insufficient funds for intrinsic transaction cost"
 

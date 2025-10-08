@@ -1,6 +1,6 @@
 # Feature Specification: PEPEDAWN Betting Site with VRF Draws, Emblem Vault Prizes, Merkle Verification, and Claims System
 
-**Feature Branch**: `002-merkle`  
+**Feature Branch**: `002-merkle-uhoh`  
 **Created**: 2025-10-05 (Updated: 2025-10-08)  
 **Status**: Complete  
 **Input**: Comprehensive PEPEDAWN betting platform with user-facing round state management, Merkle-based verification, and pull-payment claims system.
@@ -19,7 +19,7 @@
 4. Fill User Scenarios & Testing section
    → Complete user journey from title page through betting to claiming prizes
 5. Generate Functional Requirements
-   → 44 functional requirements covering full system lifecycle
+   → 47 functional requirements covering full system lifecycle
 6. Identify Key Entities
    → Comprehensive data model for rounds, participants, winners, claims, and verification
 7. Run Review Checklist
@@ -126,8 +126,8 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
 - Refund processing when contract has insufficient ETH → should never happen
   (escrowed funds); emergency circuit breaker if detected.
 - VRF request failure/timeout → retry policy and incident logging.
-- Emblem Vault transfer failure → escrow and manual claim path with on-chain
-  eligibility proof.
+- VRF subscription underfunded → request fails; owner must add LINK to subscription; retry randomness request.
+- Contract doesn't hold required Emblem Vault NFT when claim() called → transaction reverts; owner must transfer missing NFT to contract; winner can retry claim.
 - Owner forgets to set valid proof before opening round → proofs cannot succeed.
 - Wallet disconnects mid-bet → do not create on-chain transaction; show status.
 - IPFS file fetch fails → Show retry option with copyable CID for alternative gateways; show "service unavailable" after 60 seconds.
@@ -164,8 +164,11 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
   requesting randomness; draw inputs MUST be reproducible from on-chain data.
 - **FR-009**: Winners MUST be selected using on-chain verifiable randomness
   (e.g., Chainlink VRF v2/v2.5) and be reproducible from request id/seed/block.
-- **FR-010**: Prizes MUST be distributed via Emblem Vault transfers to winning
-  ETH addresses or escrow with on-chain eligibility proof.
+- **FR-010**: Prizes MUST be distributed via Emblem Vault NFT transfers:
+  - The contract MUST hold the Emblem Vault NFTs before the round opens
+  - Winners claim prizes by calling claim() with valid Merkle proof
+  - Contract automatically transfers the corresponding Emblem Vault NFT to winner's address
+  - Each claim MUST emit an event with winner address, prize tier, and NFT token ID
 - **FR-011**: The system MUST emit structured events for round lifecycle,
   wagers, proofs, randomness, winners, and prize distributions.
 - **FR-012**: Public read-only endpoints MUST expose round status, ticket
@@ -193,13 +196,18 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
   - An accepted proof increases effective weight by 40% (multiplier = 1.4).
   - A hard cap of +40% additional weight per wallet per round is enforced.
   - The UI MUST show immediate feedback on proof submission success or failure.
-- **FR-020**: Emblem Vault prizes MUST be preloaded into the contract before the
-  round opens and automatically distributed at round close once VRF randomness
-  is fulfilled.
+- **FR-020**: Emblem Vault prizes MUST be transferred to the contract before the round opens:
+  - Owner transfers all 10 Emblem Vault NFTs to the contract address
+  - Contract stores mapping of prize tier to NFT token ID
+  - NFTs remain in contract custody until claimed by winners
+  - Unclaimed prizes remain claimable indefinitely (no expiration)
 - **FR-021**: Network and VRF configuration:
   - Ethereum only. No non-EVM or L2 networks in scope for this feature.
   - Use the simplest viable Chainlink VRF (v2 or v2.5) on Ethereum.
-  - Maintain a single subscription and key hash for the target network.
+  - Owner creates and manages VRF subscription externally via Chainlink dashboard or CLI
+  - Owner funds subscription with LINK tokens and adds contract as consumer
+  - Contract is configured with subscription ID at deployment
+  - Owner is responsible for monitoring and maintaining sufficient LINK balance in subscription
   - Document subId, keyHash, callbackGasLimit, and confirmations in deploy artifacts.
   - Emit events on randomness requested/fulfilled with request id and block data.
 - **FR-022**: Title page audio assets will be provided by the project creator.
@@ -232,25 +240,49 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
   - A progress indicator MUST show tickets purchased toward the 10-ticket minimum.
   - Progress bar format: "X / 10 tickets needed for round distribution"
   - If threshold not met by round end, participants MUST be notified of pending refund.
+- **FR-028**: Round state transitions MUST be manually controlled by the contract owner:
+  - Owner calls snapshotRound() to transition from Open → Snapshotted
+  - Owner calls requestRandomness() to transition from Snapshotted → VRF Requested
+  - VRF callback automatically transitions VRF Requested → VRF Fulfilled
+  - Owner calls commitWinners() to transition from VRF Fulfilled → Winners Committed
+  - Owner calls closeRound() to transition from Winners Committed → Closed
+  - Each transition MUST emit appropriate events for observability
+- **FR-029**: IPFS file generation and publication MUST be performed off-chain by the contract owner:
+  - Owner uses provided scripts to query contract state and generate Participants File (after snapshot) and Winners File (after VRF fulfillment)
+  - Owner uploads files to IPFS using free pinning services (e.g., NFT.Storage, Web3.Storage, Pinata)
+  - Owner commits the resulting CIDs on-chain via contract function calls
+  - Scripts MUST include clear step-by-step instructions for the manual workflow
+  - Contract events MUST emit all data necessary to reconstruct files for verification
+- **FR-030**: Storage efficiency MUST be optimized for indefinite on-chain retention:
+  - Round data stored using efficient patterns (Merkle roots for participants/winners instead of full mappings)
+  - Detailed participant/winner data emitted in events (lower gas cost than storage)
+  - Core round metadata (timestamps, status, roots, VRF seed) stored on-chain
+  - IPFS CIDs (32 bytes each) stored on-chain for verifiable off-chain data retrieval
+  - Design target: Support 100+ rounds on-chain without prohibitive gas costs
 
-#### UI/UX & Round State Visualization (FR-028 to FR-044)
-- **FR-028**: System MUST display six distinct round states with appropriate UI labels: "Live: betting open", "Snapshotted (inputs locked)", "Waiting for randomness", "Randomness received", "Winners finalized", and "Round closed"
-- **FR-029**: System MUST freeze the leaderboard when round reaches "Snapshotted" state and display the Participants File CID with participantsRoot hash; leaderboard MUST display top 20 participants by default with a "View all" option for rounds with more participants
-- **FR-030**: System MUST verify Merkle roots client-side by comparing file roots against on-chain roots and display "Verified ✓" badges when matched
-- **FR-031**: System MUST display VRF seed from on-chain events when randomness is received, with reproducibility documentation
-- **FR-032**: System MUST render winners table from Winners File showing address, prizeTier, and prizeIndex for each winner
-- **FR-033**: System MUST implement individual "Claim" buttons for each prize slot where the connected wallet appears as a winner
-- **FR-034**: System MUST generate Merkle proofs client-side using the format `keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))` for claims
-- **FR-035**: System MUST prevent double-claims by showing "Already claimed" status and disabling claimed prize slots; when claim transaction fails, system MUST display error message and keep Claim button enabled for manual retry
-- **FR-036**: System MUST implement "Withdraw Refund" functionality that calls the contract and shows success/failure status
-- **FR-037**: System MUST display ticket counts and explain that users can win multiple times up to their ticket count
-- **FR-038**: System MUST show clear error messages for denylisted addresses with policy information
-- **FR-039**: System MUST handle IPFS fetch failures with retry options and alternative gateway access; if fetch does not complete within 60 seconds, display "service unavailable" message
-- **FR-040**: System MUST display red warning banners when file verification fails (root mismatch) and hide claim functionality
-- **FR-041**: System MUST show appropriate loading states during VRF confirmation periods
-- **FR-042**: System MUST maintain historical view for closed rounds while keeping unclaimed prizes and refunds accessible
-- **FR-043**: System MUST log all errors (failed claims, verification failures, IPFS timeouts) and critical actions (claims submitted, refunds withdrawn, Merkle verification completed) for observability and debugging
-- **FR-044**: System MUST be fully responsive and functional on mobile browsers; all features (betting, claiming, verification, leaderboard viewing) MUST work on mobile devices with appropriate touch-friendly UI elements
+#### UI/UX & Round State Visualization (FR-031 to FR-047)
+- **FR-031**: System MUST display six distinct round states with appropriate UI labels: "Live: betting open", "Snapshotted (inputs locked)", "Waiting for randomness", "Randomness received", "Winners finalized", and "Round closed"
+- **FR-032**: System MUST freeze the leaderboard when round reaches "Snapshotted" state and display the Participants File CID with participantsRoot hash; leaderboard MUST display top 20 participants by default with a "View all" option for rounds with more participants
+- **FR-033**: System MUST verify Merkle roots client-side by comparing file roots against on-chain roots and display "Verified ✓" badges when matched
+- **FR-034**: System MUST display VRF seed from on-chain events when randomness is received, with reproducibility documentation
+- **FR-035**: System MUST render winners table from Winners File showing address, prizeTier, and prizeIndex for each winner
+- **FR-036**: System MUST implement individual "Claim" buttons for each prize slot where the connected wallet appears as a winner
+- **FR-037**: System MUST generate Merkle proofs client-side using the format `keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))` for claims
+- **FR-038**: System MUST prevent double-claims by showing "Already claimed" status and disabling claimed prize slots; when claim transaction fails, system MUST display error message and keep Claim button enabled for manual retry
+- **FR-039**: System MUST implement "Withdraw Refund" functionality that calls the contract and shows success/failure status
+- **FR-040**: System MUST display ticket counts and explain that users can win multiple times up to their ticket count
+- **FR-041**: System MUST show clear error messages for denylisted addresses with policy information
+- **FR-042**: System MUST handle IPFS fetch failures with retry options and alternative gateway access; if fetch does not complete within 60 seconds, display "service unavailable" message
+- **FR-043**: System MUST display red warning banners when file verification fails (root mismatch) and hide claim functionality
+- **FR-044**: System MUST show appropriate loading states during VRF confirmation periods
+- **FR-045**: System MUST maintain historical view for closed rounds while keeping unclaimed prizes and refunds accessible:
+  - All round data MUST remain on-chain indefinitely using efficient storage (Merkle roots, events)
+  - UI MUST display all historical rounds with ability to view details, participants, and winners
+  - Detailed participant/winner lists reconstructed from IPFS files (using CIDs stored on-chain)
+  - UI MAY implement pagination for rounds list if count exceeds 50 rounds
+  - Unclaimed prizes and refunds remain claimable forever (no expiration)
+- **FR-046**: System MUST log all errors (failed claims, verification failures, IPFS timeouts) and critical actions (claims submitted, refunds withdrawn, Merkle verification completed) for observability and debugging
+- **FR-047**: System MUST be fully responsive and functional on mobile browsers; all features (betting, claiming, verification, leaderboard viewing) MUST work on mobile devices with appropriate touch-friendly UI elements
 
 ### Key Entities *(include if feature involves data)*
 
@@ -271,7 +303,8 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
   - 1st place: Fake Pack (3 cards bundled in one Emblem Vault)
   - 2nd place: Kek Pack (2 cards bundled in one Emblem Vault)
   - 3rd-10th place: Pepe Pack (1 card per Emblem Vault, 8 total packs)
-  - Associated Emblem Vault token ids (pre-committed).
+  - Associated Emblem Vault NFT token IDs (stored in contract mapping)
+  - Contract custody: NFTs transferred to contract before round opens, held until claimed
 - **WinnerAssignment**: Round id, wallet address, prize tier, randomness
   request id/seed/block references; emitted via events. Each winner receives
   exactly one prize pack.
@@ -281,8 +314,7 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
   percentage, warning if under threshold.
 - **RefundRecord**: Round id, wallet address, amount refunded, timestamp;
   emitted only when round fails to meet minimum tickets.
-- **DeployArtifacts (docs/ops)**: Contract addresses, ABIs, VRF config, event
-  tx hashes for lifecycle, randomness, prize mapping, and refunds.
+- **DeployArtifacts (docs/ops)**: Contract addresses, ABIs, VRF config (subscription ID, key hash, coordinator address, callback gas limit), event tx hashes for lifecycle, randomness, prize mapping, and refunds, instructions for funding VRF subscription.
 
 #### UI/Verification Entities
 - **Round State**: Represents current phase of a betting round with six possible values (Open, Snapshotted, VRFRequested, VRFFulfilled, WinnersCommitted, Closed)
@@ -436,5 +468,10 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
 - Q: What user actions or events should be logged for observability and debugging purposes? → A: Errors + critical actions (claims submitted, refunds withdrawn, verification completed)
 - Q: Should the application support mobile devices, and if so, what is the minimum acceptable experience? → A: Mobile responsive - all features must work on mobile browsers
 - Q: When a user attempts to claim a prize but the transaction fails (e.g., insufficient gas, network error), what should happen? → A: Show error only - user must manually retry
+- Q: Round lifecycle automation: How are round state transitions triggered? → A: Fully manual - Owner manually calls functions to transition each state (snapshot, request VRF, commit winners, close)
+- Q: IPFS file publication: Who creates and publishes the Participants File and Winners File to IPFS? → A: Contract owner off-chain - Owner generates files locally using provided scripts, uploads to IPFS, then commits CIDs on-chain via contract calls
+- Q: Emblem Vault prize distribution: How are the actual Emblem Vault NFTs transferred to winners? → A: Contract holds vaults - Contract owns the Emblem Vault NFTs; winners call claim() to trigger automatic transfer
+- Q: Chainlink VRF subscription management: Who funds and manages the VRF subscription? → A: Contract owner external - Owner creates/funds subscription externally via Chainlink dashboard/CLI; contract uses the subscription ID
+- Q: Data retention and historical access: How long must past round data remain accessible on-chain and via the UI? → A: Indefinite on-chain - All round data stored on-chain forever using efficient patterns (Merkle roots); UI shows all historical rounds with full details
 
 ---

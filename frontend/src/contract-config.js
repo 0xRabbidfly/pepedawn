@@ -15,7 +15,7 @@ export const CONTRACT_CONFIG = {
   chainId: 11155111,
   
   // Latest ABI for PepedawnRaffle contract with binary search and enhanced security features
-  abi: [
+    abi:   [
     {
       "type": "constructor",
       "inputs": [
@@ -303,12 +303,134 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "claim",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "prizeIndex",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "proof",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "claimCounts",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "claims",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "closeRound",
       "inputs": [
         {
           "name": "roundId",
           "type": "uint256",
           "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "commitParticipantsRoot",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "commitWinners",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "internalType": "string"
         }
       ],
       "outputs": [],
@@ -368,6 +490,19 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "emblemVault",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IERC721"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "emblemVaultAddress",
       "inputs": [],
       "outputs": [
@@ -407,6 +542,78 @@ export const CONTRACT_CONFIG = {
           "name": "",
           "type": "uint32",
           "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getClaimStatus",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "prizeIndex",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "claimer",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "claimed",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getParticipantsData",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "root",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRefundBalance",
+      "inputs": [
+        {
+          "name": "user",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "balance",
+          "type": "uint256",
+          "internalType": "uint256"
         }
       ],
       "stateMutability": "view"
@@ -484,6 +691,21 @@ export const CONTRACT_CONFIG = {
             },
             {
               "name": "validProofHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "participantsRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "winnersRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "vrfSeed",
               "type": "bytes32",
               "internalType": "bytes32"
             }
@@ -598,6 +820,30 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "getWinnersData",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "root",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "isParticipant",
       "inputs": [
         {
@@ -614,6 +860,45 @@ export const CONTRACT_CONFIG = {
       "outputs": [
         {
           "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isWinner",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "user",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "prizeIndex",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "proof",
+          "type": "bytes32[]",
+          "internalType": "bytes32[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "valid",
           "type": "bool",
           "internalType": "bool"
         }
@@ -648,6 +933,40 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "onERC721Received",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "bytes",
+          "internalType": "bytes"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes4",
+          "internalType": "bytes4"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
       "name": "openRound",
       "inputs": [
         {
@@ -668,6 +987,25 @@ export const CONTRACT_CONFIG = {
           "name": "",
           "type": "address",
           "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "participantsCIDs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "string",
+          "internalType": "string"
         }
       ],
       "stateMutability": "view"
@@ -707,6 +1045,30 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "prizeNFTs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "rawFulfillRandomWords",
       "inputs": [
         {
@@ -722,6 +1084,25 @@ export const CONTRACT_CONFIG = {
       ],
       "outputs": [],
       "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "refunds",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
     },
     {
       "type": "function",
@@ -881,6 +1262,21 @@ export const CONTRACT_CONFIG = {
           "name": "validProofHash",
           "type": "bytes32",
           "internalType": "bytes32"
+        },
+        {
+          "name": "participantsRoot",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "winnersRoot",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "vrfSeed",
+          "type": "bytes32",
+          "internalType": "bytes32"
         }
       ],
       "stateMutability": "view"
@@ -937,6 +1333,24 @@ export const CONTRACT_CONFIG = {
           "name": "paused",
           "type": "bool",
           "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setPrizesForRound",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "tokenIds",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
         }
       ],
       "outputs": [],
@@ -1249,197 +1663,6 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
-      "name": "claim",
-      "inputs": [
-        {
-          "name": "roundId",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "prizeIndex",
-          "type": "uint8",
-          "internalType": "uint8"
-        },
-        {
-          "name": "prizeTier",
-          "type": "uint8",
-          "internalType": "uint8"
-        },
-        {
-          "name": "proof",
-          "type": "bytes32[]",
-          "internalType": "bytes32[]"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "withdrawRefund",
-      "inputs": [],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "commitParticipantsRoot",
-      "inputs": [
-        {
-          "name": "roundId",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "root",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "cid",
-          "type": "string",
-          "internalType": "string"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "commitWinners",
-      "inputs": [
-        {
-          "name": "roundId",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "root",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "cid",
-          "type": "string",
-          "internalType": "string"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "refunds",
-      "inputs": [
-        {
-          "name": "",
-          "type": "address",
-          "internalType": "address"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "claims",
-      "inputs": [
-        {
-          "name": "",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "",
-          "type": "uint8",
-          "internalType": "uint8"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "address",
-          "internalType": "address"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "claimCounts",
-      "inputs": [
-        {
-          "name": "",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "",
-          "type": "address",
-          "internalType": "address"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint8",
-          "internalType": "uint8"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "prizeNFTs",
-      "inputs": [
-        {
-          "name": "",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "",
-          "type": "uint8",
-          "internalType": "uint8"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "participantsCIDs",
-      "inputs": [
-        {
-          "name": "",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "",
-          "type": "string",
-          "internalType": "string"
-        }
-      ],
-      "stateMutability": "view"
-    },
-    {
-      "type": "function",
       "name": "winnersCIDs",
       "inputs": [
         {
@@ -1459,16 +1682,10 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
-      "name": "emblemVault",
+      "name": "withdrawRefund",
       "inputs": [],
-      "outputs": [
-        {
-          "name": "",
-          "type": "address",
-          "internalType": "contract IERC721"
-        }
-      ],
-      "stateMutability": "view"
+      "outputs": [],
+      "stateMutability": "nonpayable"
     },
     {
       "type": "event",
@@ -1661,6 +1878,31 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "event",
+      "name": "ParticipantsRootCommitted",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "root",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "cid",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
       "name": "Paused",
       "inputs": [
         {
@@ -1668,6 +1910,43 @@ export const CONTRACT_CONFIG = {
           "type": "address",
           "indexed": false,
           "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PrizeClaimed",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "prizeIndex",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "emblemVaultTokenId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
         }
       ],
       "anonymous": false
@@ -1699,6 +1978,25 @@ export const CONTRACT_CONFIG = {
           "type": "uint256",
           "indexed": false,
           "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PrizesSet",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "tokenIds",
+          "type": "uint256[]",
+          "indexed": false,
+          "internalType": "uint256[]"
         }
       ],
       "anonymous": false
@@ -1747,10 +2045,30 @@ export const CONTRACT_CONFIG = {
         {
           "name": "proofHash",
           "type": "bytes32",
+          "indexed": false,
           "internalType": "bytes32"
         },
         {
           "name": "newWeight",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RefundWithdrawn",
+      "inputs": [
+        {
+          "name": "user",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
           "type": "uint256",
           "indexed": false,
           "internalType": "uint256"
@@ -2062,87 +2380,6 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "event",
-      "name": "PrizeClaimed",
-      "inputs": [
-        {
-          "name": "roundId",
-          "type": "uint256",
-          "indexed": true,
-          "internalType": "uint256"
-        },
-        {
-          "name": "winner",
-          "type": "address",
-          "indexed": true,
-          "internalType": "address"
-        },
-        {
-          "name": "prizeIndex",
-          "type": "uint8",
-          "indexed": false,
-          "internalType": "uint8"
-        },
-        {
-          "name": "prizeTier",
-          "type": "uint8",
-          "indexed": false,
-          "internalType": "uint8"
-        },
-        {
-          "name": "tokenId",
-          "type": "uint256",
-          "indexed": false,
-          "internalType": "uint256"
-        }
-      ],
-      "anonymous": false
-    },
-    {
-      "type": "event",
-      "name": "RefundWithdrawn",
-      "inputs": [
-        {
-          "name": "user",
-          "type": "address",
-          "indexed": true,
-          "internalType": "address"
-        },
-        {
-          "name": "amount",
-          "type": "uint256",
-          "indexed": false,
-          "internalType": "uint256"
-        }
-      ],
-      "anonymous": false
-    },
-    {
-      "type": "event",
-      "name": "ParticipantsRootCommitted",
-      "inputs": [
-        {
-          "name": "roundId",
-          "type": "uint256",
-          "indexed": true,
-          "internalType": "uint256"
-        },
-        {
-          "name": "root",
-          "type": "bytes32",
-          "indexed": false,
-          "internalType": "bytes32"
-        },
-        {
-          "name": "cid",
-          "type": "string",
-          "indexed": false,
-          "internalType": "string"
-        }
-      ],
-      "anonymous": false
-    },
-    {
-      "type": "event",
       "name": "WinnersCommitted",
       "inputs": [
         {
@@ -2228,13 +2465,11 @@ export const CONTRACT_CONFIG = {
 
 // VRF Configuration from deployment artifacts
 export const VRF_CONFIG = {
-  coordinator: "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625",
-  subscriptionId: 1,
-  keyHash: "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c",
-  callbackGasLimit: 500000,
-  requestConfirmations: 5,
-  lastUpdated: "2025-10-08T02:02:11.636Z",
-  notes: "Dynamic gas estimation enabled - callbackGasLimit calculated per request"
+  "coordinator": "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625",
+  "subscriptionId": 1,
+  "keyHash": "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c",
+  "callbackGasLimit": 500000,
+  "requestConfirmations": 5
 };
 
 // Network-specific settings

@@ -17,6 +17,7 @@ class ConfigurationUpdater {
     this.addressesPath = 'deploy/artifacts/addresses.json';
     this.frontendConfigPath = 'frontend/src/contract-config.js';
     this.frontendAddressesPath = 'frontend/public/deploy/artifacts/addresses.json';
+    this.frontendAbiPath = 'frontend/public/deploy/PepedawnRaffle-abi.json';
   }
 
   /**
@@ -29,7 +30,7 @@ class ConfigurationUpdater {
       // 1. Check if contract was compiled
       await this.checkContractCompilation();
       
-      // 2. Update ABI if needed (DISABLED - handle manually)
+      // 2. Update ABI if needed (DISABLED - regex replacement is buggy)
       // await this.updateABI();
       
       // 3. Update contract addresses
@@ -83,32 +84,21 @@ class ConfigurationUpdater {
     const abiData = JSON.parse(fs.readFileSync(this.abiPath, 'utf8'));
     const abi = abiData.abi;
 
-    // Update frontend config
+    // Update frontend config - SAFE METHOD: Don't touch ABI, only update addresses
     if (fs.existsSync(this.frontendConfigPath)) {
       let content = fs.readFileSync(this.frontendConfigPath, 'utf8');
       
-      // Convert ABI array to string format for the frontend config
-      // The ABI from forge is an array of objects, but frontend expects strings
-      const abiStrings = abi.map(item => {
-        if (typeof item === 'string') {
-          return `    "${item}"`;
-        } else if (typeof item === 'object' && item !== null) {
-          // Convert ABI object to string format
-          return `    "${JSON.stringify(item).replace(/"/g, '\\"')}"`;
-        }
-        return `    "${String(item)}"`;
-      }).join(',\n');
-      const newAbi = `  abi: [\n${abiStrings}\n  ]`;
+      // Only update the address field, leave ABI untouched
+      const addressRegex = /address:\s*"0x[a-fA-F0-9]{40}"/;
+      const latestAddress = this.getLatestContractAddress();
       
-      // Find and replace the ABI array in CONTRACT_CONFIG
-      const abiRegex = /abi:\s*\[[\s\S]*?\]/;
-      
-      if (abiRegex.test(content)) {
-        content = content.replace(abiRegex, newAbi);
+      if (latestAddress && addressRegex.test(content)) {
+        const newAddress = `address: "${latestAddress}"`;
+        content = content.replace(addressRegex, newAddress);
         fs.writeFileSync(this.frontendConfigPath, content);
-        console.log('✅ Frontend ABI updated');
+        console.log('✅ Frontend contract address updated');
       } else {
-        console.warn('⚠️  Could not find ABI array in CONTRACT_CONFIG, skipping ABI update');
+        console.warn('⚠️  Could not update contract address in frontend config');
       }
     }
 
@@ -123,6 +113,15 @@ class ConfigurationUpdater {
       JSON.stringify(abi, null, 2)
     );
     console.log('✅ ABI artifacts updated');
+
+    // Update frontend ABI file
+    const frontendAbiDir = path.dirname(this.frontendAbiPath);
+    if (!fs.existsSync(frontendAbiDir)) {
+      fs.mkdirSync(frontendAbiDir, { recursive: true });
+    }
+    
+    fs.writeFileSync(this.frontendAbiPath, JSON.stringify(abi, null, 2));
+    console.log('✅ Frontend ABI file updated');
   }
 
   /**
@@ -174,6 +173,15 @@ class ConfigurationUpdater {
 
     let content = fs.readFileSync(this.frontendConfigPath, 'utf8');
     
+    // Define VRF config as a JavaScript object
+    const vrfConfigObj = {
+      coordinator: '0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625', // Sepolia VRF Coordinator
+      subscriptionId: 1, // Update with your subscription ID
+      keyHash: '0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c', // Sepolia key hash
+      callbackGasLimit: 500000, // Dynamic gas estimation
+      requestConfirmations: 5
+    };
+    
     // Update network configuration
     const networkConfig = `
 // Network configuration
@@ -193,13 +201,7 @@ const NETWORKS = {
 };
 
 // VRF Configuration
-const VRF_CONFIG = {
-  coordinator: '0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625', // Sepolia VRF Coordinator
-  subscriptionId: 1, // Update with your subscription ID
-  keyHash: '0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c', // Sepolia key hash
-  callbackGasLimit: 500000, // Dynamic gas estimation
-  requestConfirmations: 5
-};
+const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
 `;
 
     // Add network config if not exists
@@ -210,11 +212,26 @@ const VRF_CONFIG = {
     // Update VRF config if exists
     if (content.includes('const VRF_CONFIG')) {
       content = content.replace(/const\s+VRF_CONFIG\s*=\s*{[\s\S]*?};/, 
-        `const VRF_CONFIG = ${JSON.stringify(VRF_CONFIG, null, 2)};`);
+        `const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};`);
     }
 
     fs.writeFileSync(this.frontendConfigPath, content);
     console.log('✅ Frontend configuration updated');
+  }
+
+  /**
+   * Get the latest contract address from addresses.json
+   */
+  getLatestContractAddress() {
+    if (!fs.existsSync(this.addressesPath)) {
+      return null;
+    }
+    
+    const addressesJson = JSON.parse(fs.readFileSync(this.addressesPath, 'utf8'));
+    // Prefer Sepolia (11155111) if present, otherwise mainnet (1)
+    const sepolia = addressesJson['11155111'] || {};
+    const mainnet = addressesJson['1'] || {};
+    return sepolia.PepedawnRaffle || mainnet.PepedawnRaffle || null;
   }
 
   /**

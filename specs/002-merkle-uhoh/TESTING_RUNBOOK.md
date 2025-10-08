@@ -206,6 +206,15 @@ CONTRACT_ADDRESS=0xYourNewContractAddress
 ```
 
 Then reload environment (repeat step 0.2)
+**PowerShell**:
+```powershell
+cd contracts
+Get-Content .env | ForEach-Object { 
+    if ($_ -match '^([^=]+)=(.*)$') {
+        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+    }
+}
+```
 
 ### 1.6 Add Contract as VRF Consumer
 
@@ -249,10 +258,7 @@ This is normal - no rounds exist yet!
 
 ```powershell
 cd ../.. # Back to contracts/
-
-cast send $env:CONTRACT_ADDRESS "createRound()" \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected Output**:
@@ -287,12 +293,8 @@ Map the 10 NFTs you transferred as prizes:
 
 ```powershell
 # Example with token IDs 1-10
-cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" \
-    1 "[1,2,3,4,5,6,7,8,9,10]" \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
-
 **Replace `[1,2,3,4,5,6,7,8,9,10]`** with your actual token IDs!
 
 **Expected**: Transaction succeeds
@@ -303,10 +305,7 @@ Set a proof puzzle for +40% weight bonus:
 
 ```powershell
 # Using simple proof "pepedawn2025"
-cast send $env:CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" \
-    1 $(cast keccak256 "pepedawn2025") \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 $(cast keccak256 "pepedawn2025") --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected**: Transaction succeeds
@@ -316,9 +315,7 @@ cast send $env:CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" \
 ### 2.6 Open Round for Betting
 
 ```powershell
-cast send $env:CONTRACT_ADDRESS "openRound(uint256)" 1 \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "openRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected Output**:
@@ -361,6 +358,7 @@ Perfect! Round 1 is ready for betting.
 
 ### 3.1 Update Frontend Configuration
 
+**Step 1: Update Addresses and Config (Safe)**
 ```powershell
 cd ../../.. # To project root
 node scripts/update-configs.js
@@ -368,12 +366,34 @@ node scripts/update-configs.js
 
 **Expected Output**:
 ```
-✅ Updated deploy/artifacts/addresses.json
-✅ Updated frontend/public/deploy/PepedawnRaffle-abi.json
-✅ Updated frontend/src/contract-config.js
+⚙️  PEPEDAWN Configuration Updater Starting...
 
-Frontend configuration updated successfully!
+⚠️  Contract is newer than ABI. Run "forge build" first.
+✅ Frontend addresses updated
+✅ Frontend contract-config address updated
+✅ Frontend configuration updated
+✅ VRF configuration updated
+✅ Configuration update complete!
 ```
+
+**Step 2: Update ABI (If Contract Changed)**
+```powershell
+node scripts/update-abi.js
+```
+
+**Expected Output**:
+```
+🔧 PEPEDAWN ABI Updater Starting...
+
+📋 Loaded ABI with 122 functions/events
+💾 Created backup: frontend/src/contract-config.js.backup
+✅ Frontend config ABI updated
+✅ Standalone ABI file updated
+
+✅ ABI update complete!
+```
+
+**Note**: Only run Step 2 if you've modified the contract. For address-only updates, Step 1 is sufficient.
 
 ### 3.2 Install Frontend Dependencies (First Time Only)
 

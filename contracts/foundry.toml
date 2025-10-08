@@ -109,6 +109,18 @@ test_pattern = "test/DeployedContractTest.t.sol"
 fork_url = "${SEPOLIA_RPC_URL}"
 verbosity = 3
 
+# === DEPLOYMENT PROFILE (Simplified for easier verification) ===
+[profile.deploy]
+# Simplified settings for easier Etherscan verification
+# Use: forge script scripts/forge/Deploy.s.sol --profile deploy --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+optimizer = true
+optimizer_runs = 200
+# Disable advanced features that complicate verification
+via_ir = false
+bytecode_hash = "ipfs"  # Standard setting for Etherscan
+cbor_metadata = true    # Standard setting for Etherscan
+evm_version = "london"
+
 [fmt]
 line_length = 100
 tab_width = 4

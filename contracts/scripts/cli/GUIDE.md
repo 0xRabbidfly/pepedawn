@@ -145,7 +145,7 @@ If round has 10+ tickets, continue with snapshot
 cast send $CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
 Request VRF for winner selection
-cast send $CONTRACT_ADDRESS "requestVRF(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send $CONTRACT_ADDRESS "requestVrf(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 ## View Round Winners

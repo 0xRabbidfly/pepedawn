@@ -205,8 +205,6 @@ contract RoundLifecycleTest is Test {
         vm.prank(alice);
         raffle.placeBet{value: 0.0225 ether}(5);
         
-        uint256 aliceBalanceBefore = alice.balance;
-        
         // When refunding, RoundClosed is NOT emitted, only ParticipantRefunded and RoundRefunded
         // So we don't expect RoundClosed here
         
@@ -216,8 +214,16 @@ contract RoundLifecycleTest is Test {
         assertEq(uint8(round.status), 6, "Status should be Refunded");
         assertLt(round.totalTickets, 10, "Should have less than 10 tickets");
         
-        // Verify refund was processed
-        assertEq(alice.balance, aliceBalanceBefore + 0.0225 ether, "Alice should be refunded");
+        // Verify refund accrued (pull-payment pattern)
+        uint256 aliceRefundBalance = raffle.getRefundBalance(alice);
+        assertEq(aliceRefundBalance, 0.0225 ether, "Alice refund should be accrued");
+        
+        // Alice withdraws refund
+        uint256 aliceBalanceBefore = alice.balance;
+        vm.prank(alice);
+        raffle.withdrawRefund();
+        
+        assertEq(alice.balance, aliceBalanceBefore + 0.0225 ether, "Alice should be refunded after withdrawal");
     }
     
     /**
@@ -238,11 +244,7 @@ contract RoundLifecycleTest is Test {
         vm.prank(charlie);
         raffle.placeBet{value: 0.005 ether}(1); // 1 ticket
         
-        uint256 aliceBalanceBefore = alice.balance;
-        uint256 bobBalanceBefore = bob.balance;
-        uint256 charlieBalanceBefore = charlie.balance;
-        
-        // Close round - should trigger refunds
+        // Close round - should trigger refund accrual (pull-payment pattern)
         vm.expectEmit(true, true, false, true);
         emit ParticipantRefunded(1, alice, 0.005 ether);
         vm.expectEmit(true, true, false, true);
@@ -252,12 +254,31 @@ contract RoundLifecycleTest is Test {
         
         raffle.closeRound(1);
         
-        // Verify all refunds
+        // Verify refunds accrued (not transferred yet)
+        assertEq(raffle.getRefundBalance(alice), 0.005 ether, "Alice refund not accrued");
+        assertEq(raffle.getRefundBalance(bob), 0.0225 ether, "Bob refund not accrued");
+        assertEq(raffle.getRefundBalance(charlie), 0.005 ether, "Charlie refund not accrued");
+        
+        // Contract should still hold ETH until withdrawal
+        assertGt(address(raffle).balance, 0, "Contract should hold ETH for refunds");
+        
+        // Each participant withdraws their refund
+        uint256 aliceBalanceBefore = alice.balance;
+        vm.prank(alice);
+        raffle.withdrawRefund();
         assertEq(alice.balance, aliceBalanceBefore + 0.005 ether, "Alice not refunded");
+        
+        uint256 bobBalanceBefore = bob.balance;
+        vm.prank(bob);
+        raffle.withdrawRefund();
         assertEq(bob.balance, bobBalanceBefore + 0.0225 ether, "Bob not refunded");
+        
+        uint256 charlieBalanceBefore = charlie.balance;
+        vm.prank(charlie);
+        raffle.withdrawRefund();
         assertEq(charlie.balance, charlieBalanceBefore + 0.005 ether, "Charlie not refunded");
         
-        // Contract should have zero balance after refunds
+        // Contract should have zero balance after all withdrawals
         assertEq(address(raffle).balance, 0, "Contract should have no balance");
     }
     

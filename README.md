@@ -76,9 +76,12 @@ pepedawn/
 - **Prize tiers**: 1st=Fake Pack, 2nd=Kek Pack, 3rd-10th=Pepe Packs (10 winners total)
 - **Proof validation**: Owner sets valid proof per round; incorrect submissions consume attempt
 - **Chainlink VRF integration**: Verifiable random winner selection
+- **Merkle-based claims**: Gas-efficient on-chain storage with pull-payment prize claiming
+- **IPFS data availability**: Participant and winner data stored on IPFS with on-chain roots
+- **Pull-payment pattern**: Winners claim prizes using Merkle proofs, refunds withdrawn on demand
 - **Dynamic gas estimation**: Automatic VRF callback gas calculation
 - **Security-first design**: Reentrancy protection, access controls, circuit breakers
-- **Comprehensive testing**: 7 focused test files with 125 tests (100% FR coverage)
+- **Comprehensive testing**: 11 test files with 151 tests (100% FR coverage)
 
 ### Frontend (Vanilla JS + Vite)
 - **Multi-page application**: Title page, betting interface, rules
@@ -341,6 +344,130 @@ cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-k
 ```
 
 See `contracts/scripts/cli/GUIDE.md` for complete CLI documentation.
+
+## 🌳 Merkle-Based Claims System
+
+PEPEDAWN uses a Merkle tree system for efficient on-chain storage and verifiable prize claims.
+
+### Why Merkle Trees?
+
+- **Gas Efficiency**: Store thousands of participants with just one 32-byte root hash on-chain
+- **Indefinite History**: All historical rounds remain verifiable without excessive storage costs
+- **Client-Side Verification**: Anyone can verify participant/winner lists against on-chain roots
+- **Pull-Payment Safety**: Winners claim prizes on their own schedule using proofs
+
+### How It Works
+
+#### 1. Participants Phase (After Betting Closes)
+
+1. **Owner snapshots round** → Locks all bets and weights
+2. **Owner generates Participants File**:
+   ```bash
+   node contracts/scripts/cli/generate-participants-file.js 1
+   ```
+   - Creates JSON file with all participants and their weights
+   - Generates Merkle tree and root hash
+3. **Owner uploads to IPFS**:
+   ```bash
+   node contracts/scripts/cli/upload-to-ipfs.js participants-round-1.json
+   ```
+4. **Owner commits root on-chain**:
+   ```bash
+   cast send $CONTRACT "commitParticipantsRoot(uint256,bytes32,string)" 1 <ROOT> "<CID>" --private-key $KEY --rpc-url $RPC
+   ```
+
+#### 2. VRF Phase (Winner Selection)
+
+1. **Owner requests VRF** → Chainlink provides random seed
+2. **Contract selects winners** → Uses weighted lottery on-chain
+3. **VRF fulfillment** → Winners assigned deterministically
+
+#### 3. Winners Phase (After VRF)
+
+1. **Owner generates Winners File**:
+   ```bash
+   node contracts/scripts/cli/generate-winners-file.js 1
+   ```
+   - Fetches winners from contract
+   - Creates Merkle tree with winner assignments
+2. **Owner uploads to IPFS**:
+   ```bash
+   node contracts/scripts/cli/upload-to-ipfs.js winners-round-1.json
+   ```
+3. **Owner commits root on-chain**:
+   ```bash
+   cast send $CONTRACT "commitWinners(uint256,bytes32,string)" 1 <ROOT> "<CID>" --private-key $KEY --rpc-url $RPC
+   ```
+
+#### 4. Claims Phase (Winners Claim Prizes)
+
+1. **Frontend fetches Winners File from IPFS** using CID from contract
+2. **Frontend generates Merkle proof** for user's wins
+3. **User calls claim()** with proof → Contract verifies and transfers NFT
+4. **Pull-payment benefits**:
+   - Winners claim on their own schedule (no expiration)
+   - No gas waste if winner doesn't want to claim
+   - Failed claims can be retried
+
+### File Formats
+
+**Participants File** (`participants-round-{id}.json`):
+```json
+{
+  "roundId": "1",
+  "totalWeight": "123456",
+  "participants": [
+    {
+      "address": "0x...",
+      "weight": "14",
+      "tickets": "10",
+      "hasProof": true
+    }
+  ],
+  "merkle": {
+    "root": "0x...",
+    "leafFormat": "keccak256(abi.encode(address, uint128 weight))"
+  }
+}
+```
+
+**Winners File** (`winners-round-{id}.json`):
+```json
+{
+  "roundId": "1",
+  "vrfSeed": "0x...",
+  "winners": [
+    {
+      "address": "0x...",
+      "prizeTier": 1,
+      "prizeIndex": 0
+    }
+  ],
+  "merkle": {
+    "root": "0x...",
+    "leafFormat": "keccak256(abi.encode(address, uint8 tier, uint8 index))"
+  }
+}
+```
+
+### Owner Tools
+
+Complete CLI tools are available in `contracts/scripts/cli/`:
+
+```bash
+# Unified round management
+node manage-round.js status 1           # Check round state
+node manage-round.js snapshot 1         # Generate participants file
+node manage-round.js request-vrf 1      # Request randomness
+node manage-round.js commit-winners 1   # Generate winners file
+
+# Individual tools
+node generate-participants-file.js 1
+node generate-winners-file.js 1
+node upload-to-ipfs.js <file>
+```
+
+See `contracts/scripts/cli/README.md` for complete documentation.
 
 ## 📋 Current Deployment
 

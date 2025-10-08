@@ -259,17 +259,24 @@ contract IntegrationTest is Test {
         vm.prank(alice);
         raffle.placeBet{value: 0.0225 ether}(5);
         
-        uint256 aliceBalanceBefore = alice.balance;
-        
-        // Close round - should trigger refund
+        // Close round - should trigger refund accrual (pull-payment pattern)
         raffle.closeRound(1);
         
-        // Verify refund
-        assertEq(alice.balance, aliceBalanceBefore + 0.0225 ether, "Alice should be refunded");
+        // Verify refund accrued but not transferred yet
+        uint256 aliceRefundBalance = raffle.getRefundBalance(alice);
+        assertEq(aliceRefundBalance, 0.0225 ether, "Alice refund should be accrued");
         
         PepedawnRaffle.Round memory round = raffle.getRound(1);
         assertEq(uint8(round.status), 6, "Status should be Refunded");
-        assertEq(address(raffle).balance, 0, "Contract should have no balance after refund");
+        
+        // Now Alice withdraws her refund
+        uint256 aliceBalanceBefore = alice.balance;
+        vm.prank(alice);
+        raffle.withdrawRefund();
+        
+        // Verify Alice received refund
+        assertEq(alice.balance, aliceBalanceBefore + 0.0225 ether, "Alice should be refunded after withdrawal");
+        assertEq(raffle.getRefundBalance(alice), 0, "Alice refund balance should be zero");
         
         console.log("Refund flow completed successfully!");
     }

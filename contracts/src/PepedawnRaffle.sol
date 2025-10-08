@@ -441,7 +441,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Checks: Ensure previous round is completed (if exists)
         if (currentRoundId > 0) {
             require(
-                rounds[currentRoundId].status == RoundStatus.Distributed,
+                rounds[currentRoundId].status == RoundStatus.Distributed || 
+                rounds[currentRoundId].status == RoundStatus.Refunded,
                 "Previous round not completed"
             );
         }
@@ -464,7 +465,10 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
             vrfRequestedAt: 0,
             feesDistributed: false,
             participantCount: 0,
-            validProofHash: bytes32(0)
+            validProofHash: bytes32(0),
+            participantsRoot: bytes32(0),
+            winnersRoot: bytes32(0),
+            vrfSeed: bytes32(0)
         });
         
         // Interactions: Emit event

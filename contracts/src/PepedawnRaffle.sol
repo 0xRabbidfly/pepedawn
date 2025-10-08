@@ -38,6 +38,12 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     uint256 public constant MAX_TOTAL_WAGER_PER_ROUND = 1000 ether; // Circuit breaker
     uint256 public constant VRF_REQUEST_TIMEOUT = 1 hours; // VRF timeout protection
     
+    // VRF Gas Configuration Constants
+    uint32 public constant VRF_MIN_CALLBACK_GAS = 400000; // Minimum gas for lottery operations
+    uint32 public constant VRF_SAFETY_BUFFER_PCT = 50; // 50% safety buffer
+    uint32 public constant VRF_VOLATILITY_BUFFER_PCT = 25; // 25% volatility buffer
+    uint32 public constant VRF_MAX_CALLBACK_GAS = 2500000; // Maximum gas limit
+    
     // =============================================================================
     // ENUMS
     // =============================================================================
@@ -752,12 +758,18 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         
         // Dynamic gas estimation following Chainlink best practices
         uint32 estimatedGas = _estimateCallbackGas(roundId);
-        uint32 safetyBuffer = estimatedGas * 30 / 100; // 30% safety buffer
-        uint32 finalGasLimit = estimatedGas + safetyBuffer;
         
-        // Ensure gas limit is within bounds
-        require(finalGasLimit >= 10000, "Estimated gas too low");
-        require(finalGasLimit <= 2500000, "Estimated gas too high");
+        // Enhanced safety buffer for gas price volatility and complex operations
+        uint32 safetyBuffer = estimatedGas * VRF_SAFETY_BUFFER_PCT / 100;
+        
+        // Additional buffer for gas price spikes (common during high network activity)
+        uint32 volatilityBuffer = estimatedGas * VRF_VOLATILITY_BUFFER_PCT / 100;
+        
+        uint32 finalGasLimit = estimatedGas + safetyBuffer + volatilityBuffer;
+        
+        // Ensure gas limit is within bounds with higher minimum
+        require(finalGasLimit >= VRF_MIN_CALLBACK_GAS, "Estimated gas too low - minimum required");
+        require(finalGasLimit <= VRF_MAX_CALLBACK_GAS, "Estimated gas too high");
         
         // Update gas limit for this request
         vrfConfig.callbackGasLimit = finalGasLimit;
@@ -799,20 +811,20 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         address[] memory participants = roundParticipants[roundId];
         
         // Base gas for fulfillRandomWords function
-        uint32 baseGas = 50000; // Function overhead, event emission, basic checks
+        uint32 baseGas = 75000; // Increased for complex validation and setup
         
-        // Gas for winner selection algorithm
-        uint32 winnerSelectionGas = 20000; // Base winner selection logic
+        // Gas for optimized winner selection algorithm (O(N log N) instead of O(N²))
+        uint32 winnerSelectionGas = 30000; // Optimized algorithm with binary search
         
         // Gas for prize distribution (per winner)
-        uint32 prizeDistributionGasPerWinner = 15000; // Per winner distribution
+        uint32 prizeDistributionGasPerWinner = 25000; // Increased for complex distribution
         uint32 totalPrizeDistributionGas = prizeDistributionGasPerWinner * 10; // Max 10 winners
         
         // Gas for fee distribution
         uint32 feeDistributionGas = 25000; // Fee calculation and transfer
         
-        // Gas for storage operations (per participant)
-        uint32 storageGasPerParticipant = 5000; // Storage updates per participant
+        // Gas for storage operations (per participant) - optimized with pre-calculation
+        uint32 storageGasPerParticipant = 12000; // Pre-calculate cumulative weights + storage
         uint32 totalStorageGas = storageGasPerParticipant * uint32(participants.length);
         
         // Gas for event emissions
@@ -831,9 +843,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
             totalEstimatedGas = totalEstimatedGas * 110 / 100; // 10% increase for high weight rounds
         }
         
-        // Ensure minimum gas limit
-        if (totalEstimatedGas < 100000) {
-            totalEstimatedGas = 100000; // Minimum safe gas limit
+        // Ensure minimum gas limit for complex lottery operations
+        if (totalEstimatedGas < VRF_MIN_CALLBACK_GAS) {
+            totalEstimatedGas = VRF_MIN_CALLBACK_GAS;
         }
         
         return totalEstimatedGas;
@@ -877,44 +889,79 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
     }
     
     /**
-     * @notice Select a weighted winner from participants
+     * @notice Select multiple weighted winners efficiently using pre-calculated cumulative weights
      * @param randomSeed The random seed from VRF
-     * @param nonce Additional nonce for uniqueness
      * @param totalWeight Total weight of all participants
      * @param participants Array of participant addresses
      * @param roundId The round ID for weight lookup
-     * @return winner The selected winner address
+     * @param numWinners Number of winners to select
+     * @return winners Array of selected winner addresses
      */
-    function _selectWeightedWinner(
+    function _selectWeightedWinnersBatch(
         uint256 randomSeed,
-        uint256 nonce,
         uint256 totalWeight,
         address[] memory participants,
-        uint256 roundId
-    ) internal view returns (address) {
-        // Generate random number in range [0, totalWeight)
-        uint256 randomWeight = uint256(keccak256(abi.encode(randomSeed, nonce))) % totalWeight;
+        uint256 roundId,
+        uint256 numWinners
+    ) internal view returns (address[] memory winners) {
+        require(participants.length > 0, "No participants in round");
+        require(totalWeight > 0, "No weight in round");
         
-        // Walk through participants until cumulative weight >= randomWeight
-        uint256 cumulativeWeight = 0;
+        // Pre-calculate cumulative weights array (O(N) operation, done once)
+        uint256[] memory cumulativeWeights = new uint256[](participants.length);
+        uint256 cumulative = 0;
+        
         for (uint256 i = 0; i < participants.length; i++) {
-            address participant = participants[i];
-            uint256 participantWeight = userWeightInRound[roundId][participant];
-            cumulativeWeight += participantWeight;
-            
-            if (cumulativeWeight > randomWeight) {
-                return participant;
-            }
+            cumulative += userWeightInRound[roundId][participants[i]];
+            cumulativeWeights[i] = cumulative;
         }
         
-        // Fallback (should never reach if totalWeight is correct)
-        return participants[0];
+        // Select winners using binary search (O(log N) per winner)
+        winners = new address[](numWinners);
+        for (uint256 winnerIndex = 0; winnerIndex < numWinners; winnerIndex++) {
+            // Generate random weight for this winner
+            uint256 randomWeight = uint256(keccak256(abi.encode(randomSeed, winnerIndex))) % totalWeight;
+            
+            // Binary search to find winner efficiently
+            uint256 winnerIdx = _binarySearchCumulativeWeights(cumulativeWeights, randomWeight);
+            winners[winnerIndex] = participants[winnerIdx];
+        }
+        
+        return winners;
     }
     
     /**
-     * @notice Assign winners based on VRF randomness and distribute prizes using weighted lottery
+     * @notice Binary search to find participant index by cumulative weight
+     * @param cumulativeWeights Pre-calculated cumulative weights array
+     * @param targetWeight Target weight to find
+     * @return index The participant index
+     */
+    function _binarySearchCumulativeWeights(
+        uint256[] memory cumulativeWeights,
+        uint256 targetWeight
+    ) internal pure returns (uint256 index) {
+        uint256 left = 0;
+        uint256 right = cumulativeWeights.length;
+        
+        while (left < right) {
+            uint256 mid = (left + right) / 2;
+            
+            if (cumulativeWeights[mid] <= targetWeight) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        
+        // Ensure we return a valid index
+        return left < cumulativeWeights.length ? left : cumulativeWeights.length - 1;
+    }
+    
+    /**
+     * @notice Assign winners based on VRF randomness and distribute prizes using optimized weighted lottery
      * @dev 1st place: Fake Pack, 2nd place: Kek Pack, 3rd-10th place: Pepe Packs
      * @dev Same wallet can win multiple prizes (weighted lottery, not raffle)
+     * @dev Uses batch processing for gas efficiency with large participant counts
      * @param roundId The round to process
      * @param randomSeed The random seed from VRF
      */
@@ -925,55 +972,91 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable {
         uint256 totalWeight = round.totalWeight;
         require(totalWeight > 0, "No weight in round");
         
-        // Select 10 winners with weighted randomization
-        address[] memory winners = new address[](10);
-        uint8[] memory prizeTiers = new uint8[](10);
-        uint256 winnerCount = 0;
+        // Determine optimal batch size based on participant count
+        uint256 batchSize = _calculateOptimalBatchSize(participants.length);
+        uint256 totalWinners = 10;
         
-        // Select 10 winners: 1st=Fake, 2nd=Kek, 3rd-10th=Pepe
-        for (uint256 i = 0; i < 10 && totalWeight > 0; i++) {
-            // Use weighted selection
-            address winner = _selectWeightedWinner(randomSeed, i, totalWeight, participants, roundId);
+        // Process winners in batches if needed
+        address[] memory allWinners = new address[](totalWinners);
+        uint8[] memory allPrizeTiers = new uint8[](totalWinners);
+        uint256 winnerIndex = 0;
+        
+        for (uint256 batchStart = 0; batchStart < totalWinners; batchStart += batchSize) {
+            uint256 currentBatchSize = batchStart + batchSize > totalWinners ? 
+                totalWinners - batchStart : batchSize;
             
-            // Assign prize tier based on position
-            uint8 prizeTier;
-            if (i == 0) {
-                prizeTier = FAKE_PACK_TIER;  // 1st place: Fake Pack
-            } else if (i == 1) {
-                prizeTier = KEK_PACK_TIER;   // 2nd place: Kek Pack
-            } else {
-                prizeTier = PEPE_PACK_TIER;  // 3rd-10th place: Pepe Packs
+            // Select winners for this batch using optimized algorithm
+            address[] memory batchWinners = _selectWeightedWinnersBatch(
+                randomSeed,
+                totalWeight,
+                participants,
+                roundId,
+                currentBatchSize
+            );
+            
+            // Assign prize tiers and store results
+            for (uint256 i = 0; i < currentBatchSize; i++) {
+                uint256 globalIndex = batchStart + i;
+                uint8 prizeTier;
+                
+                if (globalIndex == 0) {
+                    prizeTier = FAKE_PACK_TIER;  // 1st place: Fake Pack
+                } else if (globalIndex == 1) {
+                    prizeTier = KEK_PACK_TIER;   // 2nd place: Kek Pack
+                } else {
+                    prizeTier = PEPE_PACK_TIER;  // 3rd-10th place: Pepe Packs
+                }
+                
+                allWinners[winnerIndex] = batchWinners[i];
+                allPrizeTiers[winnerIndex] = prizeTier;
+                
+                // Store winner assignment
+                roundWinners[roundId].push(WinnerAssignment({
+                    roundId: roundId,
+                    wallet: batchWinners[i],
+                    prizeTier: prizeTier,
+                    vrfRequestId: round.vrfRequestId,
+                    blockNumber: block.number
+                }));
+                
+                winnerIndex++;
             }
-            
-            winners[winnerCount] = winner;
-            prizeTiers[winnerCount] = prizeTier;
-            
-            // Store winner assignment
-            roundWinners[roundId].push(WinnerAssignment({
-                roundId: roundId,
-                wallet: winner,
-                prizeTier: prizeTier,
-                vrfRequestId: round.vrfRequestId,
-                blockNumber: block.number
-            }));
-            
-            winnerCount++;
-        }
-        
-        // Resize arrays to actual winner count
-        address[] memory finalWinners = new address[](winnerCount);
-        uint8[] memory finalPrizeTiers = new uint8[](winnerCount);
-        for (uint256 i = 0; i < winnerCount; i++) {
-            finalWinners[i] = winners[i];
-            finalPrizeTiers[i] = prizeTiers[i];
         }
         
         // Emit winners assigned event
-        emit WinnersAssigned(roundId, finalWinners, finalPrizeTiers);
+        emit WinnersAssigned(roundId, allWinners, allPrizeTiers);
         
         // Distribute prizes and fees
-        _distributePrizes(roundId, finalWinners, finalPrizeTiers);
+        _distributePrizes(roundId, allWinners, allPrizeTiers);
         _distributeFees(roundId);
+    }
+    
+    /**
+     * @notice Calculate optimal batch size based on participant count to stay under gas limits
+     * @param participantCount Number of participants in the round
+     * @return batchSize Optimal batch size for winner selection
+     */
+    function _calculateOptimalBatchSize(uint256 participantCount) internal pure returns (uint256 batchSize) {
+        // Gas limit considerations:
+        // - Base operations: ~400,000 gas
+        // - Per participant storage: ~8,000 gas
+        // - Per winner selection: ~50,000 gas (with binary search)
+        // - Target: Stay under 15M gas (50% of block limit for safety)
+        
+        uint256 maxGasForWinnerSelection = 15000000; // 15M gas limit
+        uint256 baseGas = 400000; // Base operations
+        uint256 participantGas = participantCount * 8000; // Storage operations
+        uint256 availableGasForWinners = maxGasForWinnerSelection - baseGas - participantGas;
+        
+        if (availableGasForWinners <= 0) {
+            return 1; // Fallback to single winner if gas is too constrained
+        }
+        
+        uint256 gasPerWinner = 50000; // Gas per winner with optimized algorithm
+        uint256 maxWinnersPerBatch = availableGasForWinners / gasPerWinner;
+        
+        // Cap at 10 winners max and ensure minimum batch size
+        return maxWinnersPerBatch > 10 ? 10 : (maxWinnersPerBatch > 0 ? maxWinnersPerBatch : 1);
     }
     
     /**

@@ -11,96 +11,1901 @@ export const CONTRACT_CONFIG = {
   
   // Enhanced ABI for PepedawnRaffle contract with security features
   abi: [
-    // Constructor (for reference)
-    "constructor(address _vrfCoordinator, uint64 _subscriptionId, bytes32 _keyHash, address _creatorsAddress, address _emblemVaultAddress)",
-    
-    // View functions
-    "function getRound(uint256 roundId) external view returns (tuple(uint256 id, uint64 startTime, uint64 endTime, uint8 status, uint256 totalTickets, uint256 totalWeight, uint256 totalWagered, uint256 vrfRequestId, uint64 vrfRequestedAt, bool feesDistributed, uint256 participantCount))",
-    "function getUserStats(uint256 roundId, address user) external view returns (uint256 wagered, uint256 tickets, uint256 weight, bool hasProof)",
-    "function getRoundParticipants(uint256 roundId) external view returns (address[])",
-    "function getRoundWinners(uint256 roundId) external view returns (tuple(uint256 roundId, address wallet, uint8 prizeTier, uint256 vrfRequestId, uint256 blockNumber)[])",
-    "function currentRoundId() external view returns (uint256)",
-    "function nextRoundFunds() external view returns (uint256)",
-    "function creatorsAddress() external view returns (address)",
-    "function emblemVaultAddress() external view returns (address)",
-    "function vrfConfig() external view returns (tuple(address coordinator, uint64 subscriptionId, bytes32 keyHash, uint32 callbackGasLimit, uint16 requestConfirmations))",
-    "function userProofInRound(uint256, address) external view returns (tuple(address wallet, uint256 roundId, bytes32 proofHash, bool verified, uint64 submittedAt))",
-    
-    // Security view functions
-    "function paused() external view returns (bool)",
-    "function emergencyPaused() external view returns (bool)",
-    "function denylisted(address user) external view returns (bool)",
-    "function lastVrfRequestTime() external view returns (uint256)",
-    
-    // Owner functions
-    "function createRound() external",
-    "function openRound(uint256 roundId) external", 
-    "function closeRound(uint256 roundId) external",
-    "function snapshotRound(uint256 roundId) external",
-    "function requestVrf(uint256 roundId) external",
-    "function setValidProof(uint256 roundId, bytes32 proofHash) external",
-    
-    // Security management functions (owner only)
-    "function setDenylistStatus(address user, bool status) external",
-    "function setEmergencyPause(bool paused) external",
-    "function pause() external",
-    "function unpause() external",
-    "function updateVRFConfig(address coordinator, uint64 subscriptionId, bytes32 keyHash) external",
-    "function updateCreatorsAddress(address newAddress) external",
-    "function updateEmblemVaultAddress(address newAddress) external",
-    
-    // User functions
-    "function placeBet(uint256 tickets) external payable",
-    "function submitProof(bytes32 proofHash) external",
-    
-    // Constants
-    "function MIN_WAGER() external view returns (uint256)",
-    "function BUNDLE_5_PRICE() external view returns (uint256)",
-    "function BUNDLE_10_PRICE() external view returns (uint256)",
-    "function WALLET_CAP() external view returns (uint256)",
-    "function PROOF_MULTIPLIER() external view returns (uint256)",
-    
-    // Events
-    "event RoundCreated(uint256 indexed roundId, uint64 startTime, uint64 endTime)",
-    "event RoundOpened(uint256 indexed roundId)",
-    "event RoundClosed(uint256 indexed roundId)",
-    "event RoundSnapshot(uint256 indexed roundId, uint256 totalTickets, uint256 totalWeight)",
-    "event BetPlaced(uint256 indexed roundId, address indexed user, uint256 amount, uint256 tickets, uint256 weight)",
-    "event ProofSubmitted(address indexed wallet, uint256 indexed roundId, bytes32 proofHash, uint256 newWeight)",
-    "event ProofRejected(address indexed wallet, uint256 indexed roundId, bytes32 proofHash)",
-    "event ValidProofSet(uint256 indexed roundId, bytes32 validProofHash)",
-    "event VRFRequested(uint256 indexed roundId, uint256 indexed requestId)",
-    "event PrizesDistributed(uint256 indexed roundId, uint256[] randomWords)",
-    "event EmblemVaultPrizeAssigned(uint256 indexed roundId, address indexed winner, uint256 indexed assetId, uint256 timestamp)",
-    "event RoundPrizesDistributed(uint256 indexed roundId, uint256 winnerCount, uint256 timestamp)",
-    "event FeesDistributed(uint256 indexed roundId, uint256 creatorsAmount, uint256 nextRoundAmount)",
-    
-    // Security events
-    "event AddressDenylisted(address indexed user, bool status)",
-    "event EmergencyPauseToggled(bool paused)",
-    "event VRFTimeoutDetected(uint256 indexed roundId, uint256 requestTime)",
-    "event CircuitBreakerTriggered(uint256 indexed roundId, string reason)",
-    "event SecurityValidationFailed(address indexed user, string reason)"
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "_vrfCoordinator",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_subscriptionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "_keyHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "_creatorsAddress",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_emblemVaultAddress",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "BUNDLE_10_PRICE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "BUNDLE_5_PRICE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "CREATORS_FEE_PCT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "FAKE_PACK_TIER",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "KEK_PACK_TIER",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_PARTICIPANTS_PER_ROUND",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_TOTAL_WAGER_PER_ROUND",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MIN_TICKETS_FOR_DISTRIBUTION",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MIN_WAGER",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "NEXT_ROUND_FEE_PCT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "PEPE_PACK_TIER",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "PROOF_MULTIPLIER",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ROUND_DURATION",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "VRF_MAX_CALLBACK_GAS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "VRF_MIN_CALLBACK_GAS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "VRF_REQUEST_TIMEOUT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "VRF_SAFETY_BUFFER_PCT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "VRF_VOLATILITY_BUFFER_PCT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "WALLET_CAP",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "acceptOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "closeRound",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createRound",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "creatorsAddress",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "currentRoundId",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "denylisted",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "emblemVaultAddress",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "emergencyPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "estimateVrfCallbackGas",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRound",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct PepedawnRaffle.Round",
+          "components": [
+            {
+              "name": "id",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "startTime",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "endTime",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "status",
+              "type": "uint8",
+              "internalType": "enum PepedawnRaffle.RoundStatus"
+            },
+            {
+              "name": "totalTickets",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalWeight",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalWagered",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "vrfRequestId",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "vrfRequestedAt",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "feesDistributed",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "participantCount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "validProofHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRoundParticipants",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRoundWinners",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple[]",
+          "internalType": "struct PepedawnRaffle.WinnerAssignment[]",
+          "components": [
+            {
+              "name": "roundId",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "wallet",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "prizeTier",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "vrfRequestId",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "blockNumber",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getUserStats",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "user",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "wagered",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "tickets",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "weight",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "hasProof",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isParticipant",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "lastVrfRequestTime",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "nextRoundFunds",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "openRound",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "paused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "placeBet",
+      "inputs": [
+        {
+          "name": "tickets",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "rawFulfillRandomWords",
+      "inputs": [
+        {
+          "name": "requestId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "randomWords",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "requestVrf",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "resetVrfTiming",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "roundParticipants",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "roundWinners",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "wallet",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "vrfRequestId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "blockNumber",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "rounds",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "id",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "startTime",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "endTime",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "status",
+          "type": "uint8",
+          "internalType": "enum PepedawnRaffle.RoundStatus"
+        },
+        {
+          "name": "totalTickets",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalWeight",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalWagered",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "vrfRequestId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "vrfRequestedAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "feesDistributed",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "participantCount",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "validProofHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "s_vrfCoordinator",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IVRFCoordinatorV2Plus"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setCoordinator",
+      "inputs": [
+        {
+          "name": "_vrfCoordinator",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setDenylistStatus",
+      "inputs": [
+        {
+          "name": "wallet",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "isDenylisted",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setEmergencyPause",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setValidProof",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "proofHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "snapshotRound",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "submitProof",
+      "inputs": [
+        {
+          "name": "proofHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        {
+          "name": "to",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "updateCreatorsAddress",
+      "inputs": [
+        {
+          "name": "_creatorsAddress",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "updateEmblemVaultAddress",
+      "inputs": [
+        {
+          "name": "_emblemVaultAddress",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "updateVrfConfig",
+      "inputs": [
+        {
+          "name": "_coordinator",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_subscriptionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "_keyHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "userHasProofInRound",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "userProofInRound",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "wallet",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "proofHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "verified",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "submittedAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "userTicketsInRound",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "userWageredInRound",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "userWeightInRound",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "vrfConfig",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "coordinator",
+          "type": "address",
+          "internalType": "contract IVRFCoordinatorV2Plus"
+        },
+        {
+          "name": "subscriptionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "keyHash",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "callbackGasLimit",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "requestConfirmations",
+          "type": "uint16",
+          "internalType": "uint16"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "vrfRequestToRound",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "AddressDenylisted",
+      "inputs": [
+        {
+          "name": "wallet",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "denylisted",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CircuitBreakerTriggered",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CoordinatorSet",
+      "inputs": [
+        {
+          "name": "vrfCoordinator",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "EmblemVaultPrizeAssigned",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "assetId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "timestamp",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "EmergencyPauseToggled",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "FeesDistributed",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "creators",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "creatorsAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "nextRoundAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferRequested",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "from",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "ParticipantRefunded",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "participant",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Paused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PrizeDistributed",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "prizeTier",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "assetId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "ProofRejected",
+      "inputs": [
+        {
+          "name": "wallet",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "proofHash",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "ProofSubmitted",
+      "inputs": [
+        {
+          "name": "wallet",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "proofHash",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        },
+        {
+          "name": "newWeight",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundClosed",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundCreated",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "startTime",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "endTime",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundOpened",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundPrizesDistributed",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winnerCount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "timestamp",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundRefunded",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "participantCount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalRefunded",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundSnapshot",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalTickets",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalWeight",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SecurityValidationFailed",
+      "inputs": [
+        {
+          "name": "user",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Unpaused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "VRFFulfilled",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "requestId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "randomWords",
+          "type": "uint256[]",
+          "indexed": false,
+          "internalType": "uint256[]"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "VRFRequested",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "requestId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "VRFTimeoutDetected",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "requestId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "ValidProofSet",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "validProofHash",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "WagerPlaced",
+      "inputs": [
+        {
+          "name": "wallet",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "tickets",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "effectiveWeight",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "WinnersAssigned",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winners",
+          "type": "address[]",
+          "indexed": false,
+          "internalType": "address[]"
+        },
+        {
+          "name": "prizeTiers",
+          "type": "uint8[]",
+          "indexed": false,
+          "internalType": "uint8[]"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "EnforcedPause",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ExpectedPause",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "OnlyCoordinatorCanFulfill",
+      "inputs": [
+        {
+          "name": "have",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "want",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "OnlyOwnerOrCoordinator",
+      "inputs": [
+        {
+          "name": "have",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "owner",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "coordinator",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "ReentrancyGuardReentrantCall",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroAddress",
+      "inputs": []
+    }
   ]
 };
 
-// Security configuration
+// Security configuration for enhanced contract interaction
 export const SECURITY_CONFIG = {
   // Network validation
-  SUPPORTED_NETWORKS: [11155111], // Sepolia testnet
   NETWORK_NAMES: {
-    11155111: 'Sepolia Testnet'
+    11155111: 'Sepolia',
+    1: 'Ethereum Mainnet'
   },
   
-  // Input validation
-  MAX_PROOF_LENGTH: 1000,
-  MIN_PROOF_LENGTH: 1,
+  // Contract interaction limits
+  MAX_RETRY_ATTEMPTS: 3,
+  REQUEST_TIMEOUT: 30000, // 30 seconds
   
-  // Rate limiting
-  MIN_TX_INTERVAL: 5000, // 5 seconds between transactions
-  
-  // Security checks
-  ENABLE_DENYLIST_CHECK: true,
+  // Security features
   ENABLE_PAUSE_CHECK: true,
   ENABLE_NETWORK_VALIDATION: true
 };
@@ -125,147 +1930,96 @@ export function validateContractConfig() {
 export function validateNetwork(chainId) {
   const numericChainId = Number(chainId);
   
-  if (!SECURITY_CONFIG.SUPPORTED_NETWORKS.includes(numericChainId)) {
-    const networkName = SECURITY_CONFIG.NETWORK_NAMES[numericChainId] || `Chain ID ${numericChainId}`;
-    const supportedNames = SECURITY_CONFIG.SUPPORTED_NETWORKS
-      .map(id => SECURITY_CONFIG.NETWORK_NAMES[id] || `Chain ID ${id}`)
-      .join(', ');
-    
-    throw new Error(`Unsupported network: ${networkName}. Please switch to: ${supportedNames}`);
+  if (!SECURITY_CONFIG.NETWORK_NAMES[numericChainId]) {
+    const error = `Unsupported network: ${numericChainId}`;
+    console.error("❌", error);
+    throw new Error(error);
   }
   
+  const networkName = SECURITY_CONFIG.NETWORK_NAMES[numericChainId];
+  console.log(`✅ Connected to ${networkName} (${numericChainId})`);
   return true;
 }
 
-// Sanitize user input
-export function sanitizeInput(input, type = 'string') {
+// Input sanitization for security
+export function sanitizeInput(input, type) {
   if (typeof input !== 'string') {
-    throw new Error('Input must be a string');
+    throw new Error(`Invalid ${type}: must be a string`);
   }
   
-  // Remove null bytes and control characters
-  const sanitized = input.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+  // Remove potentially dangerous characters
+  const sanitized = input
+    .replace(/[<>'"&]/g, '') // Remove HTML/script injection characters
+    .trim() // Remove leading/trailing whitespace
+    .substring(0, 1000); // Limit length
   
-  switch (type) {
-    case 'proof':
-      if (sanitized.length < SECURITY_CONFIG.MIN_PROOF_LENGTH) {
-        throw new Error(`Proof too short (minimum ${SECURITY_CONFIG.MIN_PROOF_LENGTH} characters)`);
-      }
-      if (sanitized.length > SECURITY_CONFIG.MAX_PROOF_LENGTH) {
-        throw new Error(`Proof too long (maximum ${SECURITY_CONFIG.MAX_PROOF_LENGTH} characters)`);
-      }
-      return sanitized.trim();
-    
-    case 'address':
-      if (!/^0x[a-fA-F0-9]{40}$/.test(sanitized)) {
-        throw new Error('Invalid Ethereum address format');
-      }
-      return sanitized.toLowerCase();
-    
-    default:
-      return sanitized.trim();
+  if (sanitized.length === 0) {
+    throw new Error(`Invalid ${type}: cannot be empty`);
   }
+  
+  return sanitized;
 }
 
-// Rate limiting helper
-const lastTransactionTimes = new Map();
-
+// Rate limiting for user actions
+const rateLimitMap = new Map();
 export function checkRateLimit(userAddress) {
   const now = Date.now();
-  const lastTx = lastTransactionTimes.get(userAddress?.toLowerCase());
+  const windowMs = 60000; // 1 minute window
+  const maxRequests = 10; // Max requests per window
   
-  if (lastTx && (now - lastTx) < SECURITY_CONFIG.MIN_TX_INTERVAL) {
-    const remaining = Math.ceil((SECURITY_CONFIG.MIN_TX_INTERVAL - (now - lastTx)) / 1000);
-    throw new Error(`Please wait ${remaining} seconds before submitting another transaction`);
+  if (!rateLimitMap.has(userAddress)) {
+    rateLimitMap.set(userAddress, []);
   }
   
-  lastTransactionTimes.set(userAddress?.toLowerCase(), now);
-  return true;
+  const userRequests = rateLimitMap.get(userAddress);
+  
+  // Remove old requests outside the window
+  const validRequests = userRequests.filter(time => now - time < windowMs);
+  
+  if (validRequests.length >= maxRequests) {
+    throw new Error('Rate limit exceeded. Please wait before making another request.');
+  }
+  
+  // Add current request
+  validRequests.push(now);
+  rateLimitMap.set(userAddress, validRequests);
 }
 
-// Security validation for contract interactions
+// Validate contract security state
 export async function validateSecurityState(contract, userAddress) {
-  if (!contract || !userAddress) {
-    throw new Error('Contract and user address required for security validation');
+  if (!contract) {
+    throw new Error('Contract not available');
   }
   
-  const checks = [];
-  
+  try {
   // Check if contract is paused
-  if (SECURITY_CONFIG.ENABLE_PAUSE_CHECK) {
-    checks.push(
-      contract.paused().then(paused => {
-        if (paused) throw new Error('Contract is currently paused');
-      }),
-      contract.emergencyPaused().then(emergencyPaused => {
-        if (emergencyPaused) throw new Error('Contract is in emergency pause mode');
-      })
-    );
-  }
-  
-  // Check if user is denylisted
-  if (SECURITY_CONFIG.ENABLE_DENYLIST_CHECK) {
-    checks.push(
-      contract.denylisted(userAddress).then(denylisted => {
-        if (denylisted) throw new Error('Address is denylisted and cannot interact with the contract');
-      })
-    );
-  }
-  
-  await Promise.all(checks);
-  return true;
-}
-
-// Basic read-only data functions for small-scale site
-export async function getBasicRoundData(contract) {
-  if (!contract) return null;
-  
-  try {
-    const currentRoundId = await contract.currentRoundId();
-    if (currentRoundId.toString() === '0') {
-      return { hasActiveRound: false };
+    const isPaused = await contract.paused();
+    if (isPaused) {
+      throw new Error('Contract is currently paused');
     }
     
-    const roundData = await contract.getRound(currentRoundId);
-    
-    return {
-      hasActiveRound: true,
-      roundId: currentRoundId.toString(),
-      status: Number(roundData.status),
-      totalTickets: roundData.totalTickets.toString(),
-      totalWeight: roundData.totalWeight.toString(),
-      totalWagered: roundData.totalWagered.toString(),
-      participantCount: roundData.participantCount.toString(),
-      endTime: Number(roundData.endTime)
-    };
-  } catch (error) {
-    console.error('Error fetching basic round data:', error);
-    return null;
-  }
-}
-
-export async function getUserBasicStats(contract, userAddress, roundId) {
-  if (!contract || !userAddress || !roundId) return null;
-  
-  try {
-    const stats = await contract.getUserStats(roundId, userAddress);
-    const roundData = await getBasicRoundData(contract);
-    
-    // Calculate basic odds
-    let odds = '0%';
-    if (roundData && Number(roundData.totalWeight) > 0 && Number(stats.weight) > 0) {
-      odds = ((Number(stats.weight) / Number(roundData.totalWeight)) * 100).toFixed(1) + '%';
+    // Check if emergency pause is active
+    const isEmergencyPaused = await contract.emergencyPaused();
+    if (isEmergencyPaused) {
+      throw new Error('Contract is in emergency pause mode');
     }
     
-    return {
-      tickets: stats.tickets.toString(),
-      weight: stats.weight.toString(),
-      wagered: stats.wagered.toString(),
-      hasProof: stats.hasProof,
-      odds: odds
-    };
+    // Check if user is denylisted (if function exists)
+    try {
+      const isDenylisted = await contract.denylisted(userAddress);
+      if (isDenylisted) {
+        throw new Error('Your address is not allowed to interact with this contract');
+      }
   } catch (error) {
-    console.error('Error fetching user stats:', error);
-    return null;
+      // Function might not exist, ignore this check
+      console.log('Denylist check not available');
+    }
+    
+    console.log('✅ Security validation passed');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Security validation failed:', error.message);
+    throw error;
   }
 }

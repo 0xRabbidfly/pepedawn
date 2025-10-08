@@ -183,14 +183,15 @@ This workflow outlines the steps for deploying a new contract version and ensuri
 
 1. **Build New Contract**:
    ```bash
+   cd contracts
    forge build
    ```
 
 2. **Deploy New Contract**:
    ```bash
-    cd contracts
-    set -a; source .env; set +a
-    forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+   cd contracts
+   set -a; source .env; set +a
+   forge script scripts/forge/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
    ```
 
 3. **Update Source-of-Truth Addresses File**:
@@ -205,12 +206,13 @@ This workflow outlines the steps for deploying a new contract version and ensuri
      npm run update-configs
      npm run update-docs
      ```
-   - manually update .env file if not done above
+   - **CRITICAL**: Manually fix ABI format in `frontend/src/contract-config.js` (replace escaped JSON strings with proper JSON objects)
+   - Manually update .env file if not done above
 
 5. **Commit Changes (Triggers Post-Commit Validation)**:
    - Stage the updated files:
      ```bash
-     git add deploy/artifacts/addresses.json frontend/public/deploy/artifacts/addresses.json frontend/src/contract-config.js README.md
+     git add deploy/artifacts/addresses.json deploy/artifacts/abis/PepedawnRaffle.json frontend/public/deploy/artifacts/addresses.json frontend/src/contract-config.js README.md
      ```
    - Commit with a descriptive message:
      ```bash

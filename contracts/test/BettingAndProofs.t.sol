@@ -280,10 +280,18 @@ contract BettingAndProofsTest is Test {
         raffle.snapshotRound(1);
         raffle.requestVrf(1);
         
-        // Simulate VRF fulfillment
+        // Get the request ID from the round
+        PepedawnRaffle.Round memory round = raffle.getRound(1);
+        uint256 requestId = round.vrfRequestId;
+        
+        // Simulate VRF fulfillment - this should set round status to Distributed
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 12345;
-        mockVrfCoordinator.fulfillRandomWords(1, randomWords);
+        mockVrfCoordinator.fulfillRandomWords(requestId, randomWords);
+        
+        // Verify round 1 is now Distributed
+        PepedawnRaffle.Round memory round1 = raffle.getRound(1);
+        assertEq(uint256(round1.status), uint256(PepedawnRaffle.RoundStatus.Distributed), "Round 1 should be Distributed");
         
         // Now create round 2 but don't open it
         vm.warp(block.timestamp + 61); // Wait for VRF cooldown

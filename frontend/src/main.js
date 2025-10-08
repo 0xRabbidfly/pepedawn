@@ -628,7 +628,7 @@ function setupContractEventListeners() {
     });
     
     // User interaction events
-    contract.on('BetPlaced', (...args) => {
+    contract.on('WagerPlaced', (...args) => {
       const event = args[args.length - 1]; // Event is always the last parameter
       const [roundId, user, amount, tickets, weight] = args;
       
@@ -642,7 +642,7 @@ function setupContractEventListeners() {
         transactionHash: event?.transactionHash
       };
       console.log('🎲 Bet placed:', eventData);
-      logEvent('BetPlaced', eventData);
+      logEvent('WagerPlaced', eventData);
       
       // Update UI if it's the current user
       if (eventData.user === userAddress?.toLowerCase()) {
@@ -743,7 +743,7 @@ function setupContractEventListeners() {
       updateRoundStatus(contract);
     });
     
-    contract.on('PrizesDistributed', (roundId, randomWords, event) => {
+    contract.on('RoundPrizesDistributed', (roundId, randomWords, event) => {
       const eventData = {
         roundId: roundId.toString(),
         randomWords: randomWords.map(w => w.toString()),
@@ -751,7 +751,7 @@ function setupContractEventListeners() {
         transactionHash: event.transactionHash
       };
       console.log('🏆 Prizes distributed:', eventData);
-      logEvent('PrizesDistributed', eventData);
+      logEvent('RoundPrizesDistributed', eventData);
       
       showTransactionStatus(`🏆 Winners selected for round #${eventData.roundId}! Check results.`, 'success');
       updateRoundStatus(contract);

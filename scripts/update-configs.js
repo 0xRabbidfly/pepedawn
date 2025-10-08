@@ -29,8 +29,8 @@ class ConfigurationUpdater {
       // 1. Check if contract was compiled
       await this.checkContractCompilation();
       
-      // 2. Update ABI if needed
-      await this.updateABI();
+      // 2. Update ABI if needed (DISABLED - handle manually)
+      // await this.updateABI();
       
       // 3. Update contract addresses
       await this.updateAddresses();

@@ -285,6 +285,123 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
   console.log(`\n🎉 Check the frontend at http://localhost:5173/main.html`);
 }
 
+async function watchAndAutomate(contractAddress) {
+  console.log('\n👁️  ========================================');
+  console.log('   WATCH MODE - AUTOMATED ROUND MANAGER');
+  console.log('========================================\n');
+  console.log(`📋 Contract: ${contractAddress}`);
+  console.log('⏱️  Polling every 30 seconds...');
+  console.log('🛑 Press Ctrl+C to stop\n');
+  
+  const state = {
+    lastRoundId: 0,
+    lastStatus: null,
+    snapshotDone: false,
+    vrfRequested: false,
+    winnersSubmitted: false
+  };
+  
+  async function checkAndAct() {
+    try {
+      // Get current round
+      const currentRoundIdHex = exec(
+        `cast call ${contractAddress} "currentRoundId()" --rpc-url ${process.env.SEPOLIA_RPC_URL}`,
+        { silent: true }
+      ).trim();
+      const roundId = parseInt(currentRoundIdHex, 16);
+      
+      if (roundId === 0) {
+        console.log('⏳ No rounds created yet. Waiting...');
+        return;
+      }
+      
+      // Reset state on new round
+      if (roundId !== state.lastRoundId) {
+        state.lastRoundId = roundId;
+        state.lastStatus = null;
+        state.snapshotDone = false;
+        state.vrfRequested = false;
+        state.winnersSubmitted = false;
+        console.log(`\n🆕 New round detected: ${roundId}`);
+      }
+      
+      // Get round status
+      const statusOutput = execSync(
+        `node manage-round.js status ${roundId}`,
+        {
+          cwd: path.join(__dirname, '../contracts/scripts/cli'),
+          encoding: 'utf8'
+        }
+      );
+      
+      // Parse status
+      let status = null;
+      if (statusOutput.includes('Created (0)')) status = 0;
+      else if (statusOutput.includes('Open (1)')) status = 1;
+      else if (statusOutput.includes('Closed (2)')) status = 2;
+      else if (statusOutput.includes('Snapshot (3)')) status = 3;
+      else if (statusOutput.includes('VRFRequested (4)')) status = 4;
+      else if (statusOutput.includes('WinnersReady (5)')) status = 5;
+      else if (statusOutput.includes('Distributed (6)')) status = 6;
+      
+      // Log status changes
+      if (status !== state.lastStatus) {
+        const statusNames = ['Created', 'Open', 'Closed', 'Snapshot', 'VRFRequested', 'WinnersReady', 'Distributed'];
+        console.log(`\n📊 Round ${roundId} status: ${statusNames[status] || 'Unknown'}`);
+        state.lastStatus = status;
+      }
+      
+      // Act based on status
+      if (status === 2 && !state.snapshotDone) {
+        // Closed -> Snapshot
+        console.log('\n🤖 Auto-action: Snapshotting round...');
+        exec(`cast send ${contractAddress} "snapshotRound(uint256)" ${roundId} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+        await sleep(2000);
+        state.snapshotDone = true;
+        
+      } else if (status === 3 && !state.vrfRequested) {
+        // Snapshot -> Generate participants + Request VRF
+        console.log('\n🤖 Auto-action: Generating participants and requesting VRF...');
+        await commitParticipantsAndRequestVRF(contractAddress, roundId);
+        state.vrfRequested = true;
+        
+      } else if (status === 5 && !state.winnersSubmitted) {
+        // WinnersReady -> Generate and submit winners
+        console.log('\n🤖 Auto-action: Generating and submitting winners...');
+        
+        // Generate winners file
+        const cliDir = path.join(__dirname, '../contracts/scripts/cli');
+        execSync(`node generate-winners-file.js ${roundId}`, {
+          cwd: cliDir,
+          stdio: 'inherit'
+        });
+        
+        const winnersFile = path.join(cliDir, `winners-round-${roundId}.json`);
+        const winnersData = JSON.parse(fs.readFileSync(winnersFile, 'utf8'));
+        const winnersRoot = winnersData.merkle.root;
+        const mockCID = `bafkrei-test-winners-${roundId}-${Date.now()}`;
+        
+        exec(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${winnersRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+        
+        state.winnersSubmitted = true;
+        console.log(`\n✅ Round ${roundId} complete! Winners can now claim prizes.`);
+        
+      } else if (status === 6) {
+        console.log(`✅ Round ${roundId} fully distributed`);
+      }
+      
+    } catch (error) {
+      console.error('⚠️  Error in watch loop:', error.message);
+    }
+  }
+  
+  // Initial check
+  await checkAndAct();
+  
+  // Poll every 30 seconds
+  setInterval(checkAndAct, 30000);
+}
+
 async function main() {
   try {
     loadEnv();
@@ -292,7 +409,7 @@ async function main() {
     const mode = process.argv[2]?.toUpperCase();
     const shouldDeploy = process.argv.includes('--deploy');
     
-    if (!mode || !['OPEN', 'VRF', 'FULL'].includes(mode)) {
+    if (!mode || !['OPEN', 'VRF', 'FULL', 'WATCH'].includes(mode)) {
       console.log(`
 🤖 PEPEDAWN Round Automation Script
 
@@ -300,23 +417,25 @@ Usage:
   node scripts/automate-round.js <MODE> [--deploy]
 
 Modes:
-  OPEN - Create round, set prizes, open for betting
-         └─ Stops at: Round is open, ready for bets
+  OPEN  - Create round, set prizes, open for betting
+          └─ Stops at: Round is open, ready for bets
   
-  VRF  - Do OPEN + Place 10 tickets, close, snapshot, commit participants, request VRF
-         └─ Stops at: VRF requested, waiting for Chainlink fulfillment
+  VRF   - Do OPEN + Place 10 tickets, close, snapshot, commit participants, request VRF
+          └─ Stops at: VRF requested, waiting for Chainlink fulfillment
   
-  FULL - Do VRF + Wait for VRF, generate winners, commit winners
-         └─ Stops at: Round complete, ready for claims in UI
+  FULL  - Do VRF + Wait for VRF, generate winners, commit winners
+          └─ Stops at: Round complete, ready for claims in UI
+  
+  WATCH - Continuously monitor contract and auto-complete all steps
+          └─ Runs forever: Snapshot → Participants → VRF → Winners
 
 Flags:
   --deploy  Deploy a new contract before running (default: use CONTRACT_ADDRESS from .env)
 
 Examples:
   node scripts/automate-round.js OPEN              # Create round 1 on existing contract
-  node scripts/automate-round.js OPEN --deploy     # Deploy new contract, then create round
+  node scripts/automate-round.js WATCH             # Monitor and auto-complete everything
   node scripts/automate-round.js VRF               # Continue with VRF on current round
-  node scripts/automate-round.js FULL              # Wait for VRF and finish round
 
 Requirements:
   - contracts/.env configured with PRIVATE_KEY, SEPOLIA_RPC_URL, etc.
@@ -342,6 +461,12 @@ Requirements:
         throw new Error('CONTRACT_ADDRESS not found in contracts/.env. Use --deploy flag or set CONTRACT_ADDRESS in .env');
       }
       console.log(`📋 Using existing contract: ${contractAddress}\n`);
+    }
+    
+    // WATCH mode: Monitor and auto-complete
+    if (mode === 'WATCH') {
+      await watchAndAutomate(contractAddress);
+      return; // Keep running forever
     }
     
     let roundId;

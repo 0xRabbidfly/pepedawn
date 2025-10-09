@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { validateNetwork, SECURITY_CONFIG } from './contract-config.js';
+import { validateNetwork, SECURITY_CONFIG, CONTRACT_CONFIG } from './contract-config.js';
 
 // Initialize UI components
 export function initUI() {
@@ -102,7 +102,7 @@ export async function updateWalletInfo(address, provider) {
 }
 
 // Update round status display
-export async function updateRoundStatus(contract) {
+export async function updateRoundStatus(contract, provider = null) {
   try {
     if (!contract) {
       // Show mock data when contract not available
@@ -204,6 +204,18 @@ export async function updateRoundStatus(contract) {
       totalTickets.textContent = roundData.totalTickets.toString();
     }
     
+    // Update vaulted ETH (contract balance)
+    const vaultedEth = document.getElementById('vaulted-eth');
+    if (vaultedEth && provider) {
+      try {
+        const balance = await provider.getBalance(CONTRACT_CONFIG.address);
+        const balanceEth = ethers.formatEther(balance);
+        vaultedEth.textContent = parseFloat(balanceEth).toFixed(4);
+      } catch (balanceError) {
+        vaultedEth.textContent = '--';
+      }
+    }
+    
   } catch (error) {
     console.error('Error updating round status:', error);
     
@@ -213,15 +225,16 @@ export async function updateRoundStatus(contract) {
   }
 }
 
-// Update progress indicator showing ticket count toward 10-ticket minimum
+// Update dispenser progress indicator showing ticket count toward 10-ticket minimum
 export async function updateProgressIndicator(contract) {
   try {
-    const progressFill = document.getElementById('ticket-progress');
-    const progressText = document.getElementById('progress-text');
-    const progressWarning = document.getElementById('progress-warning');
+    const dispenserText = document.getElementById('dispenser-text');
+    const dispenserBadge = document.getElementById('dispenser-badge');
+    const ticketIcons = document.querySelectorAll('.ticket-icon');
     
     if (!contract) {
-      if (progressText) progressText.textContent = 'No contract loaded';
+      if (dispenserText) dispenserText.textContent = 'minimum 10 tickets required';
+      ticketIcons.forEach(icon => icon.classList.remove('purchased'));
       return;
     }
     
@@ -229,9 +242,8 @@ export async function updateProgressIndicator(contract) {
     const currentRoundId = await contract.currentRoundId();
     
     if (currentRoundId.toString() === '0') {
-      if (progressText) progressText.textContent = 'No active round';
-      if (progressWarning) progressWarning.style.display = 'none';
-      if (progressFill) progressFill.style.width = '0%';
+      if (dispenserText) dispenserText.textContent = 'minimum 10 tickets required';
+      ticketIcons.forEach(icon => icon.classList.remove('purchased'));
       return;
     }
     
@@ -239,40 +251,30 @@ export async function updateProgressIndicator(contract) {
     const roundData = await contract.getRound(currentRoundId);
     const totalTickets = Number(roundData.totalTickets);
     
-    // Update progress bar
-    const progressPercent = Math.min((totalTickets / 10) * 100, 100);
-    if (progressFill) {
-      progressFill.style.width = progressPercent + '%';
-      // Color coding: red < 50%, yellow 50-99%, green >= 100%
-      if (progressPercent < 50) {
-        progressFill.style.backgroundColor = '#ef4444'; // red
-      } else if (progressPercent < 100) {
-        progressFill.style.backgroundColor = '#f59e0b'; // yellow
+    // Update ticket icons (fill in purchased tickets)
+    ticketIcons.forEach((icon, index) => {
+      if (index < totalTickets) {
+        icon.classList.add('purchased');
       } else {
-        progressFill.style.backgroundColor = '#10b981'; // green
+        icon.classList.remove('purchased');
       }
-    }
+    });
     
-    // Update text
-    if (progressText) {
+    // Update dispenser badge text
+    if (dispenserText && dispenserBadge) {
       if (totalTickets >= 10) {
-        progressText.textContent = 'PEPEDAWN Packs will be distributed this round !!';
+        dispenserText.textContent = '🐸 PEPEDAWN will be dispensed';
+        dispenserBadge.classList.add('dispensing');
+        dispenserBadge.classList.remove('waiting');
       } else {
-        progressText.textContent = `${totalTickets}/10 tickets are required for distribution when round closes`;
-      }
-    }
-    
-    // Show/hide warning
-    if (progressWarning) {
-      if (totalTickets < 10) {
-        progressWarning.style.display = 'block';
-      } else {
-        progressWarning.style.display = 'none';
+        dispenserText.textContent = 'minimum 10 tickets required';
+        dispenserBadge.classList.add('waiting');
+        dispenserBadge.classList.remove('dispensing');
       }
     }
     
   } catch (error) {
-    console.error('Error updating progress indicator:', error);
+    console.error('Error updating dispenser progress:', error);
   }
 }
 

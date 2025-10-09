@@ -471,7 +471,7 @@ async function reconnectWallet(newAddress) {
       await updateUserStats(contract, userAddress);
       showSecurityStatus(contract, userAddress);
       await updateButtonStates();
-      await updateRoundStatus(contract);
+      await updateRoundStatus(contract, provider);
       await updateProgressIndicator(contract);
       await updateLeaderboard(contract);
     }
@@ -585,7 +585,7 @@ function setupContractEventListeners() {
       logEvent('RoundCreated', eventData);
       
       showTransactionStatus(`New round #${eventData.roundId} created!`, 'success');
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
       updateButtonStates();
     });
     
@@ -607,7 +607,7 @@ function setupContractEventListeners() {
       logEvent('RoundOpened', eventData);
       
       showTransactionStatus(`Round #${eventData.roundId} is now open for betting!`, 'success');
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
       updateButtonStates();
     });
     
@@ -631,7 +631,7 @@ function setupContractEventListeners() {
       logEvent('RoundClosed', eventData);
       
       showTransactionStatus(`Round #${eventData.roundId} closed. No more bets accepted.`, 'info');
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
       updateButtonStates();
     });
     
@@ -655,7 +655,7 @@ function setupContractEventListeners() {
       logEvent('RoundSnapshot', eventData);
       
       showTransactionStatus(`Round #${eventData.roundId} snapshot taken. Preparing for draw...`, 'info');
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
     });
     
     // User interaction events
@@ -690,7 +690,7 @@ function setupContractEventListeners() {
       }
       
       // Update leaderboard, progress, and round status
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
       updateProgressIndicator(contract);
       updateLeaderboard(contract);
     });
@@ -786,7 +786,7 @@ function setupContractEventListeners() {
       logEvent('VRFRequested', eventData);
       
       showTransactionStatus(`🎰 Random number requested for round #${eventData.roundId}. Drawing winners...`, 'info');
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
     });
     
     // Note: RoundPrizesDistributed listener removed - duplicate of listener at line 813
@@ -838,7 +838,7 @@ function setupContractEventListeners() {
       logEvent('RoundPrizesDistributed', eventData);
       
       showTransactionStatus(`🏆 Round #${eventData.roundId} completed! ${eventData.winnerCount} prizes distributed.`, 'success');
-      updateRoundStatus(contract);
+      updateRoundStatus(contract, provider);
     });
     
     contract.on('FeesDistributed', (roundId, creatorsAmount, nextRoundAmount, event) => {
@@ -1212,7 +1212,7 @@ function startPeriodicUpdates() {
   setInterval(async () => {
     if (contract) {
       try {
-        await updateRoundStatus(contract);
+        await updateRoundStatus(contract, provider);
         await updateProgressIndicator(contract);
         await updateLeaderboard(contract);
         
@@ -1263,7 +1263,7 @@ function startPeriodicUpdates() {
   
   // Initial update
   if (contract) {
-    updateRoundStatus(contract);
+    updateRoundStatus(contract, provider);
     updateProgressIndicator(contract);
     updateLeaderboard(contract);
     

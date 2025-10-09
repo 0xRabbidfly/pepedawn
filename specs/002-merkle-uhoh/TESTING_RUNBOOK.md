@@ -23,6 +23,27 @@ This runbook walks you through a complete round test:
 8. **Claims (UI)** - View winners and test claim flow
 9. **Verification** - Confirm everything worked correctly
 
+### Automation Option
+
+**Phases 4.2, 5, 6.1, and 7 can be fully automated** by running:
+```bash
+node scripts/automate-round.js WATCH
+```
+
+This watcher polls the contract every 30 seconds and automatically:
+- Snapshots the round when closed
+- Generates participants file, uploads to IPFS, commits root
+- Requests VRF randomness
+- Generates winners file when VRF fulfills, uploads to IPFS, submits root
+
+See `scripts/WATCH_MODE_SETUP.md` for setup instructions.
+
+**Manual phases** (must be done by you):
+- Phase 0-2: Setup and deployment
+- Phase 3: User interactions (betting, proofs)
+- Phase 4.1: Close round (owner decision)
+- Phase 8-9: Frontend testing and verification
+
 ---
 
 ## Prerequisites Checklist
@@ -40,7 +61,11 @@ Before starting, verify:
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 0: Environment Setup
+################################################################################
+################################################################################
 
 ### 0.1 Configure Environment Variables
 
@@ -118,7 +143,11 @@ npm install
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 0.5: Test NFTs (Sepolia Only - FIRST TIME)
+################################################################################
+################################################################################
 
 **Skip if you already have**: Test NFT at `0xD8B3f0B3f35226eE624966b4d8F5E44EBc0FB1c9` - just update your `.env`
 
@@ -141,7 +170,11 @@ cast send $EMBLEM_VAULT_ADDRESS "mint(address)" $CREATORS_ADDRESS --private-key 
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 1: Deploy & Verify Contract
+################################################################################
+################################################################################
 
 ### 1.1 Build Contract
 
@@ -275,7 +308,11 @@ If automated methods fail, manually:
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 2: Round Setup
+################################################################################
+################################################################################
 
 ### 2.1 Check Initial Contract State
 
@@ -320,7 +357,7 @@ transactionHash         0x...
 
 ### 2.3 Transfer & Map Prize NFTs
 
-**If NFTs already used, mint 10 more**:
+**If NFTs already used, mint 10 more**: (be PATIENT! This takes a few trimes sometimes)
 ```powershell
 cast send $env:EMBLEM_VAULT_ADDRESS "mint(address,uint256)" $env:CREATORS_ADDRESS 10 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
@@ -357,7 +394,7 @@ cast send $CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4
 ```powershell
 cast call $env:CONTRACT_ADDRESS "balanceOf(address)" $env:CONTRACT_ADDRESS --rpc-url $env:SEPOLIA_RPC_URL
 # Map prizes (BEFORE opening round!)
-cast send $CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[11,12,13,14,15,16,17,18,19,20]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 ### 2.4 Set Valid Proof (Optional)
@@ -415,7 +452,11 @@ Perfect! Round 1 is ready for betting.
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 3: User Testing (Frontend)
+################################################################################
+################################################################################
 
 ### 3.1 Update Frontend Configuration
 
@@ -564,9 +605,13 @@ Should match UI display!
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 4: Close Round & Snapshot
+################################################################################
+################################################################################
 
-### 4.1 Close Round
+### 4.1 Close Round (MANUAL - You Must Do This)
 
 ```powershell
 cd Z:\Projects\pepedawn\contracts
@@ -587,8 +632,11 @@ node manage-round.js status 1
 
 Should show: `Status: Closed (2)`
 
-### 4.2 Take Snapshot
+### 4.2 Take Snapshot (AUTOMATED by automate-round.js WATCH)
 
+**If running `node scripts/automate-round.js WATCH`**: This step happens automatically. Skip to verification.
+
+**Manual method**:
 ```powershell
 cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -606,9 +654,15 @@ Should show: `Status: Snapshot (3)`
 
 ---
 
-## Phase 5: Generate & Commit Participants (Merkle)
+################################################################################
+################################################################################
+## Phase 5: Generate & Commit Participants (AUTOMATED by automate-round.js WATCH)
+################################################################################
+################################################################################
 
-### 5.1 Generate Participants File
+**If running `node scripts/automate-round.js WATCH`**: This entire phase happens automatically. Skip to Phase 6 verification.
+
+### 5.1 Generate Participants File (Manual Method)
 
 ```powershell
 cd Z:\Projects\pepedawn\contracts\scripts\cli
@@ -705,10 +759,17 @@ Participants CID: QmX1234... ✅
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 6: VRF Request & Winner Selection
+################################################################################
+################################################################################
 
-### 6.1 Request VRF Randomness
+### 6.1 Request VRF Randomness (AUTOMATED by automate-round.js WATCH)
 
+**If running `node scripts/automate-round.js WATCH`**: This step happens automatically after participants are committed. Skip to 6.2.
+
+**Manual method**:
 ```powershell
 cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "requestVrf(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -774,9 +835,15 @@ Next Steps:
 
 ---
 
-## Phase 7: Generate & Submit Winners (Merkle)
+################################################################################
+################################################################################
+## Phase 7: Generate & Submit Winners (AUTOMATED by automate-round.js WATCH)
+################################################################################
+################################################################################
 
-### 7.1 Generate Winners File
+**If running `node scripts/automate-round.js WATCH`**: This entire phase happens automatically once VRF is fulfilled. Skip to Phase 8.
+
+### 7.1 Generate Winners File (Manual Method)
 
 ```powershell
 node manage-round.js commit-winners 1
@@ -837,7 +904,11 @@ Winners Root: 0x... ✅
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 8: View Winners & Test Claims (Frontend)
+################################################################################
+################################################################################
 
 ### 8.1 Refresh Frontend
 
@@ -942,7 +1013,11 @@ This verifies claims work for multiple users!
 
 ---
 
+################################################################################
+################################################################################
 ## Phase 9: Verification & Cleanup
+################################################################################
+################################################################################
 
 ### 9.1 Verify Round Completion
 

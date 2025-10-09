@@ -261,6 +261,10 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     event CircuitBreakerTriggered(uint256 indexed roundId, string reason);
     event SecurityValidationFailed(address indexed user, string reason);
     
+    // Emergency & Recovery events
+    event EmergencyWithdrawal(address indexed to, uint256 amount, string assetType);
+    event DirectETHReceived(address indexed sender, uint256 amount);
+    
     // =============================================================================
     // MODIFIERS
     // =============================================================================
@@ -1354,6 +1358,94 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         emit FeesDistributed(roundId, creatorsAddress, creatorsAmount, nextRoundAmount);
     }
     
+    // =============================================================================
+    // EMERGENCY & RECOVERY FUNCTIONS
+    // =============================================================================
+    
+    /**
+     * @notice Emergency withdrawal of ETH (only when contract is paused)
+     * @dev Requires both regular pause AND emergency pause to prevent accidental use
+     * @dev This is a last resort function for recovering funds if contract becomes unusable
+     * @param to Address to send ETH to (should be multisig or governance contract)
+     * @param amount Amount of ETH to withdraw (in wei)
+     */
+    function emergencyWithdrawETH(address payable to, uint256 amount) 
+        external 
+        onlyOwner 
+        whenPaused 
+        whenEmergencyPaused 
+        validAddress(to) 
+        validAmount(amount) 
+    {
+        require(amount <= address(this).balance, "Insufficient contract balance");
+        require(to != address(this), "Cannot withdraw to self");
+        
+        // Additional safety: Require contract to be paused for at least 24 hours
+        // This gives users time to withdraw refunds before emergency action
+        require(
+            block.timestamp >= lastVrfRequestTime + 24 hours, 
+            "Must wait 24 hours after last activity"
+        );
+        
+        (bool success, ) = to.call{value: amount}("");
+        require(success, "Emergency ETH transfer failed");
+        
+        emit EmergencyWithdrawal(to, amount, "ETH");
+    }
+    
+    /**
+     * @notice Emergency withdrawal of NFTs (only when contract is paused)
+     * @dev For recovering prize NFTs if Emblem Vault integration fails
+     * @param nftContract The NFT contract address
+     * @param tokenId The token ID to withdraw
+     * @param to Address to send NFT to
+     */
+    function emergencyWithdrawNFT(
+        address nftContract, 
+        uint256 tokenId, 
+        address to
+    ) 
+        external 
+        onlyOwner 
+        whenPaused 
+        whenEmergencyPaused 
+        validAddress(nftContract)
+        validAddress(to) 
+    {
+        require(to != address(this), "Cannot withdraw to self");
+        require(nftContract != address(0), "Invalid NFT contract");
+        
+        // Additional safety check
+        require(
+            block.timestamp >= lastVrfRequestTime + 24 hours, 
+            "Must wait 24 hours after last activity"
+        );
+        
+        IERC721(nftContract).safeTransferFrom(address(this), to, tokenId);
+        
+        emit EmergencyWithdrawal(to, tokenId, "NFT");
+    }
+    
+    /**
+     * @notice Receive function to handle direct ETH transfers
+     * @dev Accepts ETH and adds to nextRoundFunds (for legitimate transfers)
+     * @dev This prevents ETH from being lost if sent directly to contract
+     */
+    receive() external payable {
+        // Add received ETH to next round funds
+        nextRoundFunds += msg.value;
+        
+        emit DirectETHReceived(msg.sender, msg.value);
+    }
+    
+    /**
+     * @notice Fallback function for any other calls
+     * @dev Rejects all other function calls to prevent accidental interactions
+     */
+    fallback() external payable {
+        revert("Function not found - use placeBet() to participate");
+    }
+
     // =============================================================================
     // VIEW FUNCTIONS
     // =============================================================================

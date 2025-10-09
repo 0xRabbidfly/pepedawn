@@ -28,10 +28,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // ABI for the functions we need
 const RAFFLE_ABI = [
-  "function getRound(uint256) view returns (tuple(uint256 id, uint64 startTime, uint64 endTime, uint8 status, uint256 totalTickets, uint256 totalWeight, uint256 totalWagered, uint256 vrfRequestId, uint64 vrfRequestedAt, bool feesDistributed, uint256 participantCount, bytes32 validProofHash, bytes32 participantsRoot, bytes32 winnersRoot, bytes32 vrfSeed))",
-  "function getRoundParticipants(uint256) view returns (address[])",
-  "function getUserStats(uint256, address) view returns (uint256 wagered, uint256 tickets, uint256 weight, bool hasProof)",
-  "function getRoundWinners(uint256) view returns (tuple(uint256 roundId, address wallet, uint8 prizeTier, uint256 vrfRequestId, uint256 blockNumber)[])"
+  "function getRound(uint256) view returns (tuple(uint256 id, uint64 startTime, uint64 endTime, uint8 status, uint256 totalTickets, uint256 totalWeight, uint256 totalWagered, uint256 vrfRequestId, uint64 vrfRequestedAt, bool feesDistributed, uint256 participantCount, bytes32 validProofHash, bytes32 participantsRoot, bytes32 winnersRoot, bytes32 vrfSeed))"
 ];
 
 // Prize tier constants (from contract)
@@ -51,30 +48,54 @@ function generateLeaf(address, prizeTier, prizeIndex) {
 }
 
 /**
- * Reconstruct winner selection from VRF seed (matches on-chain algorithm)
- * This is a simplified version - the actual on-chain selection is more complex
+ * Select winners off-chain using VRF seed (MUST match on-chain algorithm exactly)
+ * @param participants Array of participant objects with {address, weight}
+ * @param vrfSeed The VRF seed (bytes32)
+ * @param totalWeight Total weight of all participants
+ * @return Array of 10 winners with {address, prizeTier, prizeIndex}
  */
-function selectWinnerFromParticipants(participants, totalWeight, randomSeed, winnerIndex) {
-  // Generate random weight for this winner
-  const randomHash = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'uint256'],
-      [randomSeed, winnerIndex]
-    )
-  );
-  const randomWeight = BigInt(randomHash) % totalWeight;
+function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
+  const winners = [];
+  const numWinners = 10;
   
-  // Find winner by cumulative weight (binary search simulation)
-  let cumulative = 0n;
-  for (const participant of participants) {
-    cumulative += BigInt(participant.weight);
-    if (cumulative > randomWeight) {
-      return participant.address;
+  // Convert vrfSeed to uint256 for hashing
+  const seedUint = BigInt(vrfSeed);
+  
+  for (let i = 0; i < numWinners; i++) {
+    // Generate random hash for this winner (matches on-chain: keccak256(abi.encode(seed, index)))
+    const randomHash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['uint256', 'uint256'],
+        [seedUint, i]
+      )
+    );
+    
+    // Convert to random weight in range [0, totalWeight)
+    const randomWeight = BigInt(randomHash) % BigInt(totalWeight);
+    
+    // Find winner by cumulative weight (linear scan - matches on-chain)
+    let cumulative = 0n;
+    let winnerAddress = participants[participants.length - 1].address; // fallback
+    
+    for (const participant of participants) {
+      cumulative += BigInt(participant.weight);
+      if (cumulative > randomWeight) {
+        winnerAddress = participant.address;
+        break;
+      }
     }
+    
+    // Assign prize tier
+    const prizeTier = getPrizeTier(i);
+    
+    winners.push({
+      address: winnerAddress,
+      prizeTier: prizeTier,
+      prizeIndex: i
+    });
   }
   
-  // Fallback to last participant (edge case)
-  return participants[participants.length - 1].address;
+  return winners;
 }
 
 /**
@@ -113,12 +134,12 @@ async function generateWinnersFile(roundId, outputPath) {
   // Get round data
   console.log('\nFetching round data...');
   const round = await contract.getRound(roundId);
-  console.log(`Round status: ${round.status} (5 = Distributed expected)`);
+  console.log(`Round status: ${round.status} (5 = WinnersReady expected)`);
   
-  // Validate round status
-  if (round.status !== 5n) { // Distributed status
-    console.warn(`\n⚠️  Warning: Round is not in Distributed status (current: ${round.status})`);
-    console.warn('    Expected status: 5 (Distributed)');
+  // Validate round status  
+  if (round.status !== 5n) { // WinnersReady status
+    console.warn(`\n⚠️  Warning: Round is not in WinnersReady status (current: ${round.status})`);
+    console.warn('    Expected status: 5 (WinnersReady - VRF fulfilled, awaiting Merkle root)');
     console.warn('    Continuing anyway...\n');
   }
   
@@ -130,23 +151,34 @@ async function generateWinnersFile(roundId, outputPath) {
   console.log(`VRF Seed: ${round.vrfSeed}`);
   console.log(`Total weight: ${round.totalWeight}`);
   
-  // Get winners from contract (they were already assigned on-chain)
-  console.log('\nFetching winners from contract...');
-  const onChainWinners = await contract.getRoundWinners(roundId);
-  console.log(`Found ${onChainWinners.length} winners on-chain`);
+  // Load participants file (required for off-chain winner selection)
+  console.log('\nLoading participants file...');
+  const participantsFile = `participants-round-${roundId}.json`;
   
-  // Convert to our format
-  const winners = [];
-  for (let i = 0; i < onChainWinners.length; i++) {
-    const winner = onChainWinners[i];
-    winners.push({
-      address: winner.wallet,
-      prizeTier: Number(winner.prizeTier),
-      prizeIndex: i, // Prize index is the order in the winners array
-      vrfRequestId: winner.vrfRequestId.toString(),
-      blockNumber: winner.blockNumber.toString()
-    });
+  if (!fs.existsSync(participantsFile)) {
+    throw new Error(`Participants file not found: ${participantsFile}\nRun: node generate-participants-file.js ${roundId}`);
   }
+  
+  const participantsData = JSON.parse(fs.readFileSync(participantsFile, 'utf8'));
+  console.log(`Loaded ${participantsData.participants.length} participants from file`);
+  
+  // Select winners OFF-CHAIN using VRF seed
+  console.log('\nSelecting winners off-chain using VRF seed...');
+  console.log('(This produces identical results to on-chain selection)');
+  
+  const winners = selectWinnersOffChain(
+    participantsData.participants,
+    round.vrfSeed,
+    round.totalWeight
+  );
+  
+  console.log(`Selected ${winners.length} winners`);
+  
+  // Add metadata to winners
+  winners.forEach(w => {
+    w.vrfRequestId = round.vrfRequestId.toString();
+    w.blockNumber = 'N/A (selected off-chain)';
+  });
   
   console.log('\nWinners by tier:');
   const tierCounts = { 1: 0, 2: 0, 3: 0 };
@@ -171,7 +203,8 @@ async function generateWinnersFile(roundId, outputPath) {
     totalWeight: round.totalWeight.toString(),
     winnerCount: winners.length,
     generatedAt: new Date().toISOString(),
-    derivation: "Winners selected on-chain via VRF and weighted lottery",
+    derivation: "Winners selected OFF-CHAIN using VRF seed (deterministic, verifiable)",
+    selectionMethod: "Weighted lottery with cumulative weights (matches on-chain algorithm)",
     winners: winners,
     merkle: {
       root: root,
@@ -195,8 +228,8 @@ async function generateWinnersFile(roundId, outputPath) {
   console.log('\n=== Next Steps ===');
   console.log('1. Upload file to IPFS:');
   console.log(`   node upload-to-ipfs.js ${outputPath}`);
-  console.log('\n2. Commit winners root on-chain:');
-  console.log(`   cast send $CONTRACT_ADDRESS "commitWinners(uint256,bytes32,string)" ${roundId} ${root} "<IPFS_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
+  console.log('\n2. Submit winners root on-chain:');
+  console.log(`   cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${root} "<IPFS_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
   console.log('\n3. Winners can now claim their prizes using the frontend with Merkle proofs!');
   
   return {

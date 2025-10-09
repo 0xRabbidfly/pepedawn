@@ -40,8 +40,9 @@ const RoundStatus = {
   2: 'Closed',
   3: 'Snapshot',
   4: 'VRFRequested',
-  5: 'Distributed',
-  6: 'Refunded'
+  5: 'WinnersReady',
+  6: 'Distributed',
+  7: 'Refunded'
 };
 
 /**
@@ -160,15 +161,20 @@ function displayNextSteps(round, roundId) {
     console.log('Waiting for VRF fulfillment...');
     console.log('This usually takes 5-30 minutes depending on network confirmations.');
     console.log('\nCheck back later or monitor events on Etherscan.');
-  } else if (status === 5) { // Distributed
+  } else if (status === 5) { // WinnersReady
+    console.log('✅ VRF fulfilled! Random seed received.');
+    console.log('1. Generate and submit winners Merkle root:');
+    console.log(`   node manage-round.js commit-winners ${roundId}`);
+  } else if (status === 6) { // Distributed
     if (round.winnersRoot === ethers.ZeroHash) {
-      console.log('1. Generate and commit winners file:');
+      console.log('⚠️  Warning: Status is Distributed but winnersRoot not set.');
+      console.log('1. Generate and submit winners file:');
       console.log(`   node manage-round.js commit-winners ${roundId}`);
     } else {
       console.log('✅ Round is complete!');
       console.log('Winners can now claim their prizes via the frontend.');
     }
-  } else if (status === 6) { // Refunded
+  } else if (status === 7) { // Refunded
     console.log('✅ Round was refunded (had <10 tickets).');
     console.log('Participants can withdraw their refunds via the frontend.');
   }
@@ -252,7 +258,7 @@ async function commitWinnersWorkflow(roundId) {
   const round = await contract.getRound(roundId);
   
   if (Number(round.status) !== 5) {
-    throw new Error(`Round must be in Distributed status (current: ${RoundStatus[Number(round.status)]})`);
+    throw new Error(`Round must be in WinnersReady status (current: ${RoundStatus[Number(round.status)]})`);
   }
   
   if (round.vrfSeed === ethers.ZeroHash) {
@@ -278,8 +284,8 @@ async function commitWinnersWorkflow(roundId) {
   
   console.log('\n2. Next: Upload to IPFS');
   console.log(`   node upload-to-ipfs.js ${winnersFile}`);
-  console.log('\n3. Then commit root on-chain:');
-  console.log(`   cast send $CONTRACT_ADDRESS "commitWinners(uint256,bytes32,string)" ${roundId} ${root} "<IPFS_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
+  console.log('\n3. Then submit winners root on-chain:');
+  console.log(`   cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${root} "<IPFS_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
 }
 
 /**

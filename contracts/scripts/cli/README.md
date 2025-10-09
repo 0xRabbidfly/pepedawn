@@ -198,8 +198,8 @@ node manage-round.js commit-winners 1
 node upload-to-ipfs.js winners-round-1.json
 # Follow instructions to get CID
 
-# Commit winners root on-chain
-cast send $CONTRACT_ADDRESS "commitWinners(uint256,bytes32,string)" 1 <MERKLE_ROOT> "<IPFS_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+# Submit winners root on-chain
+cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" 1 <MERKLE_ROOT> "<IPFS_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 #### Phase 6: Winners Claim Prizes
@@ -310,7 +310,6 @@ Use `manage-round.js snapshot <roundId>` for guidance.
 
 - Contract ABI: `../../PepedawnRaffle-abi.json`
 - Deployment addresses: `../../../deploy/artifacts/addresses.json`
-- PowerShell CLI: `./interact.ps1` (for basic operations)
 - Foundry scripts: `../forge/` (for deployment and automation)
 
 ---

@@ -1,7 +1,7 @@
 # PEPEDAWN Complete Testing Runbook
 
 **Purpose**: Step-by-step guide for testing the complete PepedawnRaffle lifecycle  
-**Last Updated**: October 8, 2025  
+**Last Updated**: October 9, 2025  
 **Target Network**: Sepolia Testnet  
 **Expected Duration**: 45-60 minutes (including VRF wait time)
 
@@ -16,8 +16,8 @@ This runbook walks you through a complete round test:
 3. **User Testing (UI)** - Place bets and submit proofs via frontend
 4. **Close & Snapshot** - Close round and take participants snapshot
 5. **Merkle Participants** - Generate participants file, upload to IPFS, commit root
-6. **VRF & Winners** - Request randomness, wait for fulfillment, select winners
-7. **Merkle Winners** - Generate winners file, upload to IPFS, commit root
+6. **VRF & Winners** - Request randomness, wait for fulfillment
+7. **Merkle Winners** - Generate winners file, upload to IPFS, submit root
 8. **Claims (UI)** - View winners and test claim flow
 9. **Verification** - Confirm everything worked correctly
 
@@ -671,9 +671,7 @@ Participants CID: QmX1234... ✅
 
 ```powershell
 cd ../..
-cast send $env:CONTRACT_ADDRESS "requestVrf(uint256)" 1 \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "requestVrf(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected**: Transaction succeeds
@@ -703,7 +701,7 @@ node manage-round.js status 1
 ```
 Status: VRFRequested (4) ⏳
 ↓ (wait 1-5 minutes)
-Status: VRFFulfilled (5) ✅
+Status: WinnersReady (5) ✅
 ```
 
 **Verify on Etherscan**:
@@ -712,13 +710,12 @@ Status: VRFFulfilled (5) ✅
 3. Look for:
    - ✅ `VRFRequested` - Request sent (should see immediately)
    - ✅ `VRFFulfilled` - Randomness received (after 1-5 min)
-   - ✅ `WinnersAssigned` - Winners selected (right after fulfillment)
 
 **If VRF takes > 10 minutes**: Check VRF subscription has enough LINK
 
-### 6.3 Verify Winners Selected On-Chain
+### 6.3 Verify VRF Fulfilled
 
-Once status shows `VRFFulfilled (5)`:
+Once status shows `WinnersReady (5)`:
 
 ```powershell
 node manage-round.js status 1
@@ -726,19 +723,18 @@ node manage-round.js status 1
 
 **Expected**:
 ```
-Status: VRFFulfilled (5) ✅
+Status: WinnersReady (5) ✅
 VRF Seed: 0x123abc... (non-zero)
-Winners Count: 10
 
-✨ Next Steps:
+Next Steps:
    1. Generate winners file
    2. Upload to IPFS
-   3. Commit winners root
+   3. Submit winners root
 ```
 
 ---
 
-## Phase 7: Generate & Commit Winners (Merkle)
+## Phase 7: Generate & Submit Winners (Merkle)
 
 ### 7.1 Generate Winners File
 
@@ -750,18 +746,7 @@ node manage-round.js commit-winners 1
 ```
 ✅ Generated winners-round-1.json
    - 10 winners selected
-   - VRF Seed: 0x...
    - Merkle root: 0x...
-
-📋 Winners:
-   1. 0xWallet1 - Prize Tier 1 (FAKE pack)
-   2. 0xWallet2 - Prize Tier 2 (KEK pack)
-   3. 0xWallet3 - Prize Tier 3 (PEPE pack)
-   ...
-
-📤 Next Steps:
-   1. Upload file to IPFS
-   2. Commit winners root on-chain
 ```
 
 **Verify**: File `winners-round-1.json` created
@@ -769,17 +754,10 @@ node manage-round.js commit-winners 1
 ### 7.2 Review Winners File
 
 ```powershell
-cat winners-round-1.json | ConvertFrom-Json | ConvertTo-Json -Depth 10
+cat winners-round-1.json
 ```
 
-**Should contain**:
-- 10 winners with addresses
-- Prize tiers (1 FAKE, 2 KEK, 7 PEPE)
-- Prize indices (which NFT token ID from the round)
-- VRF seed for reproducibility
-- Merkle root for claims
-
-**Note**: Same wallet can win multiple times (lottery with replacement)
+**Should contain**: 10 winners with addresses, prize tiers, VRF seed, and Merkle root
 
 ### 7.3 Upload Winners to IPFS (Automated!)
 
@@ -789,47 +767,27 @@ node upload-to-ipfs.js winners-round-1.json
 
 **Expected Output**:
 ```
-✅ NFT.Storage API key detected - uploading automatically...
-
-🚀 Uploading to NFT.Storage...
 ✅ Upload successful!
-
 📋 IPFS CID: bafybeixyz789...
 
-📝 Next Step - Commit on-chain:
-─────────────────────────────────────────────────
-cast send 0xYourContract "commitWinners(uint256,bytes32,string)" 1 0x8a2d35C... "bafybeixyz789..." --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+Next Step:
+cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" 1 0x... "bafybei..." --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 **Verify Upload**: Click the URLs in the output to confirm file is accessible.
 
-### 7.4 Commit Winners Root On-Chain
-
-**Copy the cast command from the upload output** and run it.
+### 7.4 Submit Winners Root On-Chain
 
 ```powershell
 cd ../..
 cast send $env:CONTRACT_ADDRESS \
-    "commitWinners(uint256,bytes32,string)" \
+    "submitWinnersRoot(uint256,bytes32,string)" \
     1 \
-    0xYOUR_WINNERS_MERKLE_ROOT \
-    "YOUR_WINNERS_IPFS_CID" \
+    0xYOUR_MERKLE_ROOT \
+    "YOUR_IPFS_CID" \
     --private-key $env:PRIVATE_KEY \
     --rpc-url $env:SEPOLIA_RPC_URL
 ```
-
-**Example**:
-```powershell
-cast send $env:CONTRACT_ADDRESS \
-    "commitWinners(uint256,bytes32,string)" \
-    1 \
-    0x8a2d35Cc6634C0532925a3b844Bc9e7595f0bEb9 \
-    "QmY5678efgh..." \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
-```
-
-**Expected**: Transaction succeeds
 
 **Verify**:
 ```powershell
@@ -839,11 +797,8 @@ node manage-round.js status 1
 
 Should show:
 ```
-Status: WinnersCommitted (6) ✅
-Winners Root: 0x8a2d35C... ✅
-Winners CID: QmY5678... ✅
-
-🎉 Round Complete! Winners can now claim prizes.
+Status: Distributed (6) ✅
+Winners Root: 0x... ✅
 ```
 
 ---
@@ -859,7 +814,7 @@ Go back to browser where frontend is running (`http://localhost:5173/main.html`)
 ### 8.2 View Round Status
 
 **Should now show**:
-- Round status: "**Winners Committed**" or "**Distributed**"
+- Round status: "**Distributed**" (status 6)
 - Total participants: 3
 - Total tickets: 25
 - Total wagered: 0.1025 ETH
@@ -964,7 +919,7 @@ node manage-round.js status 1
 
 **Expected**:
 ```
-Status: WinnersCommitted (6) ✅
+Status: Distributed (6) ✅
 Total Tickets: 25
 Total Wagered: 0.1025 ETH
 Participants: 3

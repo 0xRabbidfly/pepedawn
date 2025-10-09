@@ -211,7 +211,7 @@ contract RoundLifecycleTest is Test {
         raffle.closeRound(1);
         
         PepedawnRaffle.Round memory round = raffle.getRound(1);
-        assertEq(uint8(round.status), 6, "Status should be Refunded");
+        assertEq(uint8(round.status), 7, "Status should be Refunded");
         assertLt(round.totalTickets, 10, "Should have less than 10 tickets");
         
         // Verify refund accrued (pull-payment pattern)
@@ -483,10 +483,14 @@ contract RoundLifecycleTest is Test {
         raffle.snapshotRound(1);
         raffle.requestVrf(1);
         
-        // Fulfill VRF to complete round 1
+        // Fulfill VRF and complete round 1
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 12345;
         mockVrfCoordinator.fulfillRandomWords(1, randomWords);
+        
+        // Submit winners root to complete round 1
+        bytes32 winnersRoot = keccak256("test_winners_root");
+        raffle.submitWinnersRoot(1, winnersRoot, "QmTestWinners123");
         
         // Create second round immediately
         raffle.createRound();
@@ -635,7 +639,7 @@ contract RoundLifecycleTest is Test {
         
         raffle.closeRound(1);
         round = raffle.getRound(1);
-        assertEq(uint8(round.status), 6, "Should be Refunded");
+        assertEq(uint8(round.status), 7, "Should be Refunded");
     }
     
     /**

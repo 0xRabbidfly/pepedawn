@@ -108,7 +108,11 @@ contract IntegrationTest is Test {
         mockVrf.fulfillRandomWords(1, randomWords);
         console.log("VRF fulfilled with random word:", randomWords[0]);
         
-        // 6. Verify round is distributed
+        // 6. Submit winners root to complete the round
+        bytes32 winnersRoot = keccak256("test_winners_root");
+        raffle.submitWinnersRoot(1, winnersRoot, "QmTestWinners123");
+        
+        // 7. Verify round is distributed
         PepedawnRaffle.Round memory round = raffle.getRound(1);
         assertEq(uint8(round.status), uint8(PepedawnRaffle.RoundStatus.Distributed), "Round should be distributed");
         console.log("Round distributed successfully!");
@@ -190,6 +194,10 @@ contract IntegrationTest is Test {
             randomWords[0] = uint256(keccak256(abi.encodePacked(i, block.timestamp)));
             mockVrf.fulfillRandomWords(i, randomWords);
             
+            // Submit winners root to complete the round
+            bytes32 winnersRoot = keccak256(abi.encodePacked("winners_round_", i));
+            raffle.submitWinnersRoot(i, winnersRoot, "QmTestWinners123");
+            
             console.log("Round", i, "completed");
         }
         
@@ -226,6 +234,10 @@ contract IntegrationTest is Test {
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 12345;
         mockVrf.fulfillRandomWords(1, randomWords);
+        
+        // Submit winners root to trigger fee distribution
+        bytes32 winnersRoot = keccak256("test_winners_root");
+        raffle.submitWinnersRoot(1, winnersRoot, "QmTestWinners123");
         
         // Verify fee distribution
         uint256 creatorsBalanceAfter = creatorsAddress.balance;
@@ -267,7 +279,7 @@ contract IntegrationTest is Test {
         assertEq(aliceRefundBalance, 0.0225 ether, "Alice refund should be accrued");
         
         PepedawnRaffle.Round memory round = raffle.getRound(1);
-        assertEq(uint8(round.status), 6, "Status should be Refunded");
+        assertEq(uint8(round.status), 7, "Status should be Refunded");
         
         // Now Alice withdraws her refund
         uint256 aliceBalanceBefore = alice.balance;

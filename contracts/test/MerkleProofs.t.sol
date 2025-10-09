@@ -164,7 +164,7 @@ contract MerkleProofsTest is Test {
         // Now commit winners root
         vm.expectEmit(true, true, true, true);
         emit WinnersCommitted(1, SAMPLE_WINNERS_ROOT, SAMPLE_CID);
-        raffle.commitWinners(1, SAMPLE_WINNERS_ROOT, SAMPLE_CID);
+        raffle.submitWinnersRoot(1, SAMPLE_WINNERS_ROOT, SAMPLE_CID);
         
         // Verify storage
         (bytes32 storedRoot, string memory storedCID) = raffle.getWinnersData(1);
@@ -183,9 +183,9 @@ contract MerkleProofsTest is Test {
         vm.prank(alice);
         raffle.placeBet{value: 0.0225 ether}(5);
         
-        // Try to commit winners before VRF - should fail
-        vm.expectRevert("Round not distributed");
-        raffle.commitWinners(1, SAMPLE_WINNERS_ROOT, SAMPLE_CID);
+        // Try to submit winners before VRF - should fail
+        vm.expectRevert("Round not ready for winners submission");
+        raffle.submitWinnersRoot(1, SAMPLE_WINNERS_ROOT, SAMPLE_CID);
     }
     
     /**
@@ -212,9 +212,9 @@ contract MerkleProofsTest is Test {
         randomWords[0] = 12345;
         mockVrfCoordinator.fulfillRandomWords(round.vrfRequestId, randomWords);
         
-        // Try to commit zero root
-        vm.expectRevert("Invalid root: zero");
-        raffle.commitWinners(1, bytes32(0), SAMPLE_CID);
+        // Try to submit zero root
+        vm.expectRevert("Invalid Merkle root");
+        raffle.submitWinnersRoot(1, bytes32(0), SAMPLE_CID);
     }
     
     // ============================================

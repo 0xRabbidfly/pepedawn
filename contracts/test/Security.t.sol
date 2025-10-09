@@ -312,6 +312,10 @@ contract SecurityTest is Test {
         randomWords[0] = 12345;
         mockVrfCoordinator.fulfillRandomWords(1, randomWords);
         
+        // Submit winners root to complete round 1
+        bytes32 winnersRoot = keccak256("test_winners_root");
+        raffle.submitWinnersRoot(1, winnersRoot, "QmTestWinners123");
+        
         // Second round immediately
         raffle.createRound();
         raffle.openRound(2);

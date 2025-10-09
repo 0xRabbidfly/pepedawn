@@ -84,7 +84,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(roundId, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(roundId, winnersRoot, SAMPLE_CID);
         
         // Generate proof for Alice (prize 0)
         bytes32[] memory proof = _generateProof(leaves, 0);
@@ -122,7 +122,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(roundId, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(roundId, winnersRoot, SAMPLE_CID);
         
         // Bob tries to claim Alice's prize with invalid proof
         bytes32[] memory invalidProof = new bytes32[](1);
@@ -148,7 +148,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(roundId, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(roundId, winnersRoot, SAMPLE_CID);
         
         // First claim succeeds
         bytes32[] memory proof = _generateProof(leaves, 0);
@@ -205,7 +205,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(1, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(1, winnersRoot, SAMPLE_CID);
         
         // Alice claims first prize - should succeed
         bytes32[] memory proof0 = _generateProof(leaves, 0);
@@ -234,7 +234,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(roundId, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(roundId, winnersRoot, SAMPLE_CID);
         
         // Verify contract owns NFT before claim
         assertEq(emblemVault.ownerOf(1000), address(raffle), "Contract should own NFT");
@@ -262,7 +262,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(roundId, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(roundId, winnersRoot, SAMPLE_CID);
         
         bytes32[] memory proof = _generateProof(leaves, 0);
         
@@ -332,7 +332,7 @@ contract ClaimsTest is Test {
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
-        raffle.commitWinners(1, winnersRoot, SAMPLE_CID);
+        raffle.submitWinnersRoot(1, winnersRoot, SAMPLE_CID);
         
         // Alice claims all 3 prizes (within her 5-ticket limit)
         for (uint8 i = 0; i < 3; i++) {

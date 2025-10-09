@@ -58,7 +58,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         Closed,     // Round closed, no more bets/proofs
         Snapshot,   // Snapshot taken, ready for VRF
         VRFRequested, // VRF requested, waiting for fulfillment
-        Distributed, // Prizes distributed, round complete
+        WinnersReady, // VRF fulfilled, Merkle root ready for submission
+        Distributed, // Merkle root submitted, prizes available for claiming
         Refunded    // Round refunded due to insufficient tickets
     }
     
@@ -609,28 +610,6 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     }
     
     /**
-     * @notice Commit Merkle root and IPFS CID for winners
-     * @param roundId The round to commit winners for
-     * @param root Merkle root of winners tree
-     * @param cid IPFS CID of winners file
-     */
-    function commitWinners(
-        uint256 roundId,
-        bytes32 root,
-        string calldata cid
-    ) external onlyOwner roundExists(roundId) {
-        Round storage round = rounds[roundId];
-        require(round.status == RoundStatus.Distributed, "Round not distributed");
-        require(root != bytes32(0), "Invalid root: zero");
-        require(round.vrfSeed != bytes32(0), "VRF seed not set");
-        
-        rounds[roundId].winnersRoot = root;
-        winnersCIDs[roundId] = cid;
-        
-        emit WinnersCommitted(roundId, root, cid);
-    }
-    
-    /**
      * @notice Set prize NFTs for a round (must be called before round opens)
      * @param roundId The round to set prizes for
      * @param tokenIds Array of 10 Emblem Vault token IDs
@@ -675,7 +654,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         Round storage round = rounds[roundId];
         require(
-            round.status == RoundStatus.Distributed || round.status == RoundStatus.Closed,
+            round.status == RoundStatus.Distributed,
             "Round not ready for claims"
         );
         require(round.winnersRoot != bytes32(0), "Winners not committed");
@@ -1044,17 +1023,58 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
             "VRF request ID mismatch"
         );
         
-        // Store VRF seed for reproducibility (NEW for Merkle system)
+        // Store VRF seed for reproducibility (for off-chain winner selection)
         rounds[roundId].vrfSeed = bytes32(randomWords[0]);
         
-        // Interactions: Emit VRF fulfilled event
+        // Effects: Mark round as ready for Merkle root submission
+        rounds[roundId].status = RoundStatus.WinnersReady;
+        
+        // Interactions: Emit VRF fulfilled event (off-chain bot listens for this)
         emit VRFFulfilled(roundId, requestId, randomWords);
+    }
+    
+    // =============================================================================
+    // MERKLE ROOT SUBMISSION & CLAIMS
+    // =============================================================================
+    
+    /**
+     * @notice Submit Merkle root of winners after off-chain computation
+     * @dev Only callable by owner after VRF has been fulfilled
+     * @param roundId Round ID for which winners were computed
+     * @param winnersRoot Merkle root of the winners tree
+     * @param ipfsHash IPFS hash of the winners file for transparency
+     */
+    function submitWinnersRoot(
+        uint256 roundId,
+        bytes32 winnersRoot,
+        string calldata ipfsHash
+    ) external onlyOwner {
+        Round storage round = rounds[roundId];
         
-        // Effects & Interactions: Assign winners and distribute prizes
-        _assignWinnersAndDistribute(roundId, randomWords[0]);
+        // Checks: Round must be in WinnersReady status
+        require(
+            round.status == RoundStatus.WinnersReady,
+            "Round not ready for winners submission"
+        );
         
-        // Effects: Mark round as completed
-        rounds[roundId].status = RoundStatus.Distributed;
+        // Checks: Merkle root must not be zero
+        require(winnersRoot != bytes32(0), "Invalid Merkle root");
+        
+        // Checks: IPFS hash must not be empty
+        require(bytes(ipfsHash).length > 0, "Empty IPFS hash");
+        
+        // Effects: Store Merkle root and IPFS hash
+        round.winnersRoot = winnersRoot;
+        winnersCIDs[roundId] = ipfsHash;
+        
+        // Effects: Update round status to Distributed (ready for claims)
+        round.status = RoundStatus.Distributed;
+        
+        // Effects & Interactions: Distribute fees to creators and next round
+        _distributeFees(roundId);
+        
+        // Interactions: Emit event
+        emit WinnersCommitted(roundId, winnersRoot, ipfsHash);
     }
     
     /**

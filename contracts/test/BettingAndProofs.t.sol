@@ -284,10 +284,14 @@ contract BettingAndProofsTest is Test {
         PepedawnRaffle.Round memory round = raffle.getRound(1);
         uint256 requestId = round.vrfRequestId;
         
-        // Simulate VRF fulfillment - this should set round status to Distributed
+        // Simulate VRF fulfillment
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 12345;
         mockVrfCoordinator.fulfillRandomWords(requestId, randomWords);
+        
+        // Submit winners root to complete the round
+        bytes32 winnersRoot = keccak256("test_winners_root");
+        raffle.submitWinnersRoot(1, winnersRoot, "QmTestWinners123");
         
         // Verify round 1 is now Distributed
         PepedawnRaffle.Round memory round1 = raffle.getRound(1);

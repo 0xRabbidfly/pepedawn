@@ -354,11 +354,18 @@ async function setupWalletConnection(showSuccessToast = true) {
     showSecurityStatus(contract, userAddress);
     await updateButtonStates(); // Update button states after connecting
     
-    // Update claims and refunds
+    // Update claims and refunds (only on leaderboard page)
     const currentRoundId = await contract.currentRoundId();
+    console.log('🔍 Current page:', window.location.pathname);
+    console.log('🔍 Current round ID:', currentRoundId.toString());
     if (currentRoundId.toString() !== '0') {
-      await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
-      await displayRefundButton(contract, userAddress);
+      if (window.location.pathname.includes('leaderboard.html')) {
+        console.log('🎯 On leaderboard page - calling displayClaimablePrizes');
+        await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
+      }
+      if (window.location.pathname.includes('main.html')) {
+        await displayRefundButton(contract, userAddress);
+      }
     }
     
     // Populate round selector if on leaderboard page
@@ -652,6 +659,11 @@ function setupContractEventListeners() {
       const event = args[args.length - 1]; // Event is always the last parameter
       const [roundId, user, amount, tickets, weight] = args;
       
+      // Deduplicate events
+      const eventId = `WagerPlaced-${user}-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         user: user.toLowerCase(),
@@ -680,6 +692,11 @@ function setupContractEventListeners() {
     });
     
     contract.on('ProofSubmitted', (roundId, user, weight, event) => {
+      // Deduplicate events
+      const eventId = `ProofSubmitted-${user}-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         user: user.toLowerCase(),
@@ -713,6 +730,11 @@ function setupContractEventListeners() {
     });
     
     contract.on('ProofRejected', (user, roundId, proofHash, event) => {
+      // Deduplicate events
+      const eventId = `ProofRejected-${user}-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         user: user.toLowerCase(),
@@ -763,20 +785,7 @@ function setupContractEventListeners() {
       updateRoundStatus(contract);
     });
     
-    contract.on('RoundPrizesDistributed', (roundId, randomWords, event) => {
-      const eventData = {
-        roundId: roundId.toString(),
-        randomWords: randomWords.map(w => w.toString()),
-        blockNumber: event.blockNumber,
-        transactionHash: event.transactionHash
-      };
-      console.log('🏆 Prizes distributed:', eventData);
-      logEvent('RoundPrizesDistributed', eventData);
-      
-      showTransactionStatus(`🏆 Winners selected for round #${eventData.roundId}! Check results.`, 'success');
-      updateRoundStatus(contract);
-      updateLeaderboard(contract);
-    });
+    // Note: RoundPrizesDistributed listener removed - duplicate of listener at line 813
     
     // Emblem Vault integration events
     contract.on('EmblemVaultPrizeAssigned', (...args) => {
@@ -829,6 +838,11 @@ function setupContractEventListeners() {
     });
     
     contract.on('FeesDistributed', (roundId, creatorsAmount, nextRoundAmount, event) => {
+      // Deduplicate events
+      const eventId = `FeesDistributed-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         creatorsAmount: ethers.formatEther(creatorsAmount),
@@ -842,6 +856,11 @@ function setupContractEventListeners() {
     
     // Security events
     contract.on('AddressDenylisted', (user, status, event) => {
+      // Deduplicate events
+      const eventId = `AddressDenylisted-${user}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         user: user.toLowerCase(),
         status: status,
@@ -859,6 +878,11 @@ function setupContractEventListeners() {
     });
     
     contract.on('EmergencyPauseToggled', (paused, event) => {
+      // Deduplicate events
+      const eventId = `EmergencyPauseToggled-${paused}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         paused: paused,
         blockNumber: event.blockNumber,
@@ -876,6 +900,11 @@ function setupContractEventListeners() {
     });
     
     contract.on('CircuitBreakerTriggered', (roundId, reason, event) => {
+      // Deduplicate events
+      const eventId = `CircuitBreakerTriggered-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         reason: reason,
@@ -889,6 +918,11 @@ function setupContractEventListeners() {
     });
     
     contract.on('SecurityValidationFailed', (user, reason, event) => {
+      // Deduplicate events
+      const eventId = `SecurityValidationFailed-${user}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         user: user.toLowerCase(),
         reason: reason,
@@ -905,6 +939,11 @@ function setupContractEventListeners() {
     
     // VRF security events
     contract.on('VRFTimeoutDetected', (roundId, requestTime, event) => {
+      // Deduplicate events
+      const eventId = `VRFTimeoutDetected-${roundId.toString()}-${event?.transactionHash || 'unknown'}`;
+      if (processedEvents.has(eventId)) return;
+      processedEvents.add(eventId);
+      
       const eventData = {
         roundId: roundId.toString(),
         requestTime: requestTime.toString(),

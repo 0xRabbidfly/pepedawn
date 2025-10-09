@@ -195,9 +195,9 @@ function displayInstructions(filePath, data, isParticipants) {
   console.log('2. Commit the CID on-chain:');
   
   if (isParticipants) {
-    console.log(`   cast send $CONTRACT_ADDRESS "commitParticipantsRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "<YOUR_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
+    console.log(`   cast send $env:CONTRACT_ADDRESS "commitParticipantsRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "<YOUR_CID>" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL`);
   } else {
-    console.log(`   cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "<YOUR_CID>" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
+    console.log(`   cast send $env:CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "<YOUR_CID>" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL`);
   }
   
   console.log('\n✅ Pro tip: Keep a backup of the CID in a safe place!');
@@ -260,18 +260,17 @@ Description:
         console.log(`   https://ipfs.io/ipfs/${cid}`);
         console.log(`   https://cloudflare-ipfs.com/ipfs/${cid}`);
         
-        // Generate commit command
-        const contractAddress = process.env.CONTRACT_ADDRESS || '$CONTRACT_ADDRESS';
-        const privateKey = process.env.PRIVATE_KEY ? '--private-key $PRIVATE_KEY' : '--private-key $PRIVATE_KEY';
-        const rpcUrl = process.env.SEPOLIA_RPC_URL || '$SEPOLIA_RPC_URL';
+        // Generate commit command (PowerShell syntax)
+        const contractAddress = process.env.CONTRACT_ADDRESS || '$env:CONTRACT_ADDRESS';
+        const rpcUrl = process.env.SEPOLIA_RPC_URL || '$env:SEPOLIA_RPC_URL';
         
-        console.log(`\n📝 Next Step - Commit on-chain:`);
+        console.log(`\n📝 Next Step - Commit on-chain: (GRAB THIS CMD FROM TERMINAL OUTPUT)`);
         console.log('─────────────────────────────────────────────────');
         
         if (isParticipants) {
-          console.log(`cast send ${contractAddress} "commitParticipantsRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "${cid}" ${privateKey} --rpc-url ${rpcUrl}`);
+          console.log(`cast send ${contractAddress} "commitParticipantsRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "${cid}" --private-key $env:PRIVATE_KEY --rpc-url ${rpcUrl}`);
         } else {
-          console.log(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "${cid}" ${privateKey} --rpc-url ${rpcUrl}`);
+          console.log(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "${cid}" --private-key $env:PRIVATE_KEY --rpc-url ${rpcUrl}`);
         }
         
         console.log('\n✅ File uploaded and ready to commit!');

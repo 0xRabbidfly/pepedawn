@@ -8,7 +8,7 @@
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
-  address: "0xCc0678a598F9c2D12e0770f8e83966bd129482Ca", // Deployed on 2025-02-06 - Binary search optimization
+  address: "0xBfEA61DD1c9E7ccCd0b564154362DbD9F476Af55", // Deployed on 2025-02-06 - Binary search optimization
   
   // Sepolia testnet configuration
   network: 'sepolia',
@@ -393,29 +393,6 @@ export const CONTRACT_CONFIG = {
     {
       "type": "function",
       "name": "commitParticipantsRoot",
-      "inputs": [
-        {
-          "name": "roundId",
-          "type": "uint256",
-          "internalType": "uint256"
-        },
-        {
-          "name": "root",
-          "type": "bytes32",
-          "internalType": "bytes32"
-        },
-        {
-          "name": "cid",
-          "type": "string",
-          "internalType": "string"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "commitWinners",
       "inputs": [
         {
           "name": "roundId",
@@ -1395,6 +1372,29 @@ export const CONTRACT_CONFIG = {
           "name": "proofHash",
           "type": "bytes32",
           "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "submitWinnersRoot",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "winnersRoot",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        },
+        {
+          "name": "ipfsHash",
+          "type": "string",
+          "internalType": "string"
         }
       ],
       "outputs": [],

@@ -1,0 +1,87 @@
+{
+  "version": "1.0",
+  "roundId": "1",
+  "vrfSeed": "0x10e1e370871a2ca8b10d973fda522964de1c2fefe182bf2805c61dd32e34279f",
+  "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+  "totalWeight": "25",
+  "winnerCount": 10,
+  "generatedAt": "2025-10-09T02:22:54.919Z",
+  "derivation": "Winners selected OFF-CHAIN using VRF seed (deterministic, verifiable)",
+  "selectionMethod": "Weighted lottery with cumulative weights (matches on-chain algorithm)",
+  "winners": [
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 1,
+      "prizeIndex": 0,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 2,
+      "prizeIndex": 1,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "prizeTier": 3,
+      "prizeIndex": 2,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "prizeTier": 3,
+      "prizeIndex": 3,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
+      "prizeIndex": 4,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
+      "prizeIndex": 5,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaA18892B069b04aE23F37B60a06aFa3C015Ad6e2",
+      "prizeTier": 3,
+      "prizeIndex": 6,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaA18892B069b04aE23F37B60a06aFa3C015Ad6e2",
+      "prizeTier": 3,
+      "prizeIndex": 7,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
+      "prizeIndex": 8,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "prizeTier": 3,
+      "prizeIndex": 9,
+      "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
+      "blockNumber": "N/A (selected off-chain)"
+    }
+  ],
+  "merkle": {
+    "root": "0x3829e8a7fde16c33feaaed4ecb97cfd3213a127dbea4f8b52ca86186207c1c9c",
+    "leafFormat": "keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))"
+  }
+}

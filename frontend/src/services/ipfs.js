@@ -2,16 +2,19 @@
 // Implements gateway fallback strategy with timeout handling
 
 const IPFS_GATEWAYS = [
-  'https://gateway.pinata.cloud/ipfs',
-  'https://ipfs.io/ipfs',
-  'https://cloudflare-ipfs.com/ipfs',
-  'https://dweb.link/ipfs'
+  'https://dweb.link/ipfs',             // Most reliable, CORS-friendly
+  'https://ipfs.io/ipfs',               // Official gateway
+  'https://w3s.link/ipfs',              // Web3.Storage gateway
+  'https://nftstorage.link/ipfs',       // NFT.Storage gateway - very reliable
+  'https://cloudflare-ipfs.com/ipfs',   // Cloudflare (try both variations)
+  'https://cf-ipfs.com/ipfs',           // Cloudflare alternate
+  'https://gateway.pinata.cloud/ipfs'   // Has rate limits but good fallback
 ];
 
 const DEFAULT_TIMEOUT = 60000; // 60 seconds as per spec
 
 /**
- * Fetch a file from IPFS with gateway fallback
+ * Fetch a file from IPFS with local fallback and gateway fallback
  * @param {string} cid - IPFS CID
  * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise<Object>} - Parsed JSON object
@@ -22,6 +25,30 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT) {
   }
 
   const errors = [];
+  
+  // Try local file first (for development)
+  try {
+    console.log('🏠 Attempting to fetch from local files...');
+    const localUrls = [
+      `/winners/winners-round-1.json`,
+      `/participants/participants-round-1.json`
+    ];
+    
+    for (const localUrl of localUrls) {
+      try {
+        const response = await fetch(localUrl);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`✅ Successfully fetched from local file: ${localUrl}`);
+          return data;
+        }
+      } catch (localError) {
+        // Continue to next local file
+      }
+    }
+  } catch (error) {
+    console.log('🏠 Local files not available, trying IPFS gateways...');
+  }
   
   // Try each gateway in sequence
   for (const gateway of IPFS_GATEWAYS) {
@@ -34,6 +61,7 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT) {
       
       const response = await fetch(url, {
         signal: controller.signal,
+        mode: 'cors',
         headers: {
           'Accept': 'application/json'
         }
@@ -55,6 +83,11 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT) {
         : error.message;
       console.warn(`❌ Failed to fetch from ${gateway}: ${errorMsg}`);
       errors.push({ gateway, error: errorMsg });
+      
+      // Small delay before trying next gateway to avoid hammering
+      if (IPFS_GATEWAYS.indexOf(gateway) < IPFS_GATEWAYS.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
   }
   
@@ -80,7 +113,7 @@ export async function fetchParticipantsFile(cid, roundId) {
     throw new Error(`Unsupported Participants File version: ${data.version}`);
   }
   
-  if (data.roundId !== roundId) {
+  if (data.roundId.toString() !== roundId.toString()) {
     throw new Error(`Round ID mismatch: expected ${roundId}, got ${data.roundId}`);
   }
   
@@ -110,7 +143,7 @@ export async function fetchWinnersFile(cid, roundId) {
     throw new Error(`Unsupported Winners File version: ${data.version}`);
   }
   
-  if (data.roundId !== roundId) {
+  if (data.roundId.toString() !== roundId.toString()) {
     throw new Error(`Round ID mismatch: expected ${roundId}, got ${data.roundId}`);
   }
   

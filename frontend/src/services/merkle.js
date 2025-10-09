@@ -41,11 +41,10 @@ export function buildWinnersTree(winners) {
   
   // Generate leaves: keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))
   const leaves = winners.map(w => {
-    const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+    return ethers.solidityPackedKeccak256(
       ['address', 'uint8', 'uint8'],
       [w.address, w.prizeTier, w.prizeIndex]
     );
-    return ethers.keccak256(encoded);
   });
   
   // Build tree with sorted pairs for deterministic root
@@ -105,11 +104,10 @@ export function generateWinnerProof(winners, address, prizeIndex) {
   }
   
   // Generate leaf for this winner
-  const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+  const leaf = ethers.solidityPackedKeccak256(
     ['address', 'uint8', 'uint8'],
     [winner.address, winner.prizeTier, winner.prizeIndex]
   );
-  const leaf = ethers.keccak256(encoded);
   
   // Get proof
   const proof = tree.getHexProof(leaf);
@@ -148,11 +146,10 @@ export function verifyParticipantProof(proof, root, address, weight) {
  */
 export function verifyWinnerProof(proof, root, address, prizeTier, prizeIndex) {
   // Generate leaf
-  const encoded = ethers.AbiCoder.defaultAbiCoder().encode(
+  const leaf = ethers.solidityPackedKeccak256(
     ['address', 'uint8', 'uint8'],
     [address, prizeTier, prizeIndex]
   );
-  const leaf = ethers.keccak256(encoded);
   
   // Verify proof
   return MerkleTree.verify(proof, leaf, root, ethers.keccak256, { sortPairs: true });

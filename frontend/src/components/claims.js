@@ -11,8 +11,12 @@ import { showTransactionStatus } from '../ui.js';
  * @param {number} roundId - Round ID
  */
 export async function displayClaimablePrizes(contract, userAddress, roundId) {
+  console.log('🎯 displayClaimablePrizes called:', { userAddress, roundId });
   const claimsContainer = document.getElementById('claims-container');
-  if (!claimsContainer) return;
+  if (!claimsContainer) {
+    console.error('❌ claims-container not found in DOM');
+    return;
+  }
   
   try {
     // Get round data
@@ -56,6 +60,7 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     
     // Find prizes for this user
     const userPrizes = getPrizesForAddress(winnersFile.winners, userAddress);
+    console.log('🎁 User prizes found:', userPrizes.length, userPrizes);
     
     if (userPrizes.length === 0) {
       claimsContainer.innerHTML = '<p class="info">No prizes won in this round</p>';
@@ -63,13 +68,22 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     }
     
     // Display claimable prizes
+    console.log('🎨 Building HTML for prizes...');
     let html = '<h3>🎁 Your Prizes</h3>';
     html += '<div class="prizes-grid">';
     
     for (const prize of userPrizes) {
+      console.log('🔍 Checking claim status for prize:', prize.prizeIndex);
       // Check if already claimed
-      const claimStatus = await contract.claims(roundId, prize.prizeIndex);
-      const isClaimed = claimStatus !== ethers.ZeroAddress;
+      let isClaimed = false;
+      try {
+        const claimStatus = await contract.claims(roundId, prize.prizeIndex);
+        isClaimed = claimStatus !== ethers.ZeroAddress;
+        console.log('✅ Claim status:', { prizeIndex: prize.prizeIndex, isClaimed, claimStatus });
+      } catch (error) {
+        console.error('❌ Error checking claim status:', error);
+        isClaimed = false; // Default to not claimed if error
+      }
       
       html += `
         <div class="prize-card ${isClaimed ? 'claimed' : ''}">
@@ -85,7 +99,17 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     }
     
     html += '</div>';
+    console.log('🎨 Setting innerHTML and showing claims...');
     claimsContainer.innerHTML = html;
+    
+    // Show the claims section
+    const claimsSection = document.getElementById('claims-section');
+    if (claimsSection) {
+      console.log('✅ Showing claims section');
+      claimsSection.style.display = 'block';
+    } else {
+      console.error('❌ claims-section not found');
+    }
     
     // Add event listeners to claim buttons
     const claimButtons = claimsContainer.querySelectorAll('.claim-btn');

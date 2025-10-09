@@ -80,7 +80,7 @@ PINATA_JWT=your_pinata_jwt_here
 
 **PowerShell**:
 ```powershell
-cd contracts
+cd Z:\Projects\pepedawn\contracts
 Get-Content .env | ForEach-Object { 
     if ($_ -match '^([^=]+)=(.*)$') {
         [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
@@ -90,7 +90,7 @@ Get-Content .env | ForEach-Object {
 
 **Git Bash**:
 ```bash
-cd contracts
+cd Z:\Projects\pepedawn\contracts
 set -a; source .env; set +a
 ```
 
@@ -107,9 +107,8 @@ echo $env:PRIVATE_KEY
 ### 0.4 Install CLI Dependencies
 
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 npm install
-cd ../..
 ```
 
 **Expected**: Dependencies installed in `contracts/scripts/cli/node_modules/`
@@ -150,6 +149,7 @@ forge test --gas-report
 ### 1.3 Deploy to Sepolia
 
 ```powershell
+cd Z:\Projects\pepedawn\contracts
 forge script scripts/forge/Deploy.s.sol --rpc-url $env:SEPOLIA_RPC_URL --broadcast --verify
 ```
 
@@ -186,18 +186,18 @@ Waiting for etherscan to detect contract deployment...
 If automatic verification failed:
 
 ```powershell
-# From project root
+# Insert new contract to replace <NEW_CONTRACT>
+cd Z:\Projects\pepedawn\contracts
+# First try this
 node scripts/verify-contract.js
+# If it fails, then do this
+forge verify-contract <NEW_CONTRACT> src/PepedawnRaffle.sol:PepedawnRaffle --chain sepolia --watch --constructor-args $(cast abi-encode "constructor(address,uint256,bytes32,address,address)" $env:VRF_COORDINATOR $env:VRF_SUBSCRIPTION_ID $env:VRF_KEY_HASH $env:CREATORS_ADDRESS $env:EMBLEM_VAULT_ADDRESS)
 ```
 
 Or use forge directly:
 
 ```powershell
-forge verify-contract $env:CONTRACT_ADDRESS \
-    src/PepedawnRaffle.sol:PepedawnRaffle \
-    --chain sepolia \
-    --watch \
-    --constructor-args $(cast abi-encode "constructor(address,uint256,bytes32,address,address)" $env:VRF_COORDINATOR $env:VRF_SUBSCRIPTION_ID $env:VRF_KEY_HASH $env:CREATORS_ADDRESS $env:EMBLEM_VAULT_ADDRESS)
+forge verify-contract $env:CONTRACT_ADDRESS src/PepedawnRaffle.sol:PepedawnRaffle --chain sepolia --watch --constructor-args $(cast abi-encode "constructor(address,uint256,bytes32,address,address)" $env:VRF_COORDINATOR $env:VRF_SUBSCRIPTION_ID $env:VRF_KEY_HASH $env:CREATORS_ADDRESS $env:EMBLEM_VAULT_ADDRESS)
 ```
 
 **Verify Success**: Go to `https://sepolia.etherscan.io/address/YOUR_CONTRACT_ADDRESS`
@@ -255,7 +255,7 @@ Then reload environment (repeat step 0.2)
 ### 2.1 Check Initial Contract State
 
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 0
 ```
 
@@ -278,7 +278,7 @@ This is normal - no rounds exist yet!
 ### 2.2 Create Round 1
 
 ```powershell
-cd ../.. # Back to contracts/
+cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
@@ -347,7 +347,7 @@ status                  1 (success)
 ### 2.7 Verify Round is Open
 
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -381,7 +381,7 @@ Perfect! Round 1 is ready for betting.
 
 **Update ABI (If Contract Code Changed)**
 ```powershell
-cd ../../.. # To project root
+cd Z:\Projects\pepedawn
 node scripts/update-abi.js
 ```
 
@@ -402,7 +402,7 @@ node scripts/update-abi.js
 ### 3.2 Install Frontend Dependencies (First Time Only)
 
 ```powershell
-cd frontend
+cd Z:\Projects\pepedawn\frontend
 npm install
 ```
 
@@ -509,7 +509,7 @@ VITE v5.x.x  ready in XXX ms
 
 **Open new terminal**:
 ```powershell
-cd contracts/scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -529,7 +529,7 @@ Should match UI display!
 ### 4.1 Close Round
 
 ```powershell
-cd ../../ # To contracts/
+cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "closeRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
@@ -541,7 +541,7 @@ cast send $env:CONTRACT_ADDRESS "closeRound(uint256)" 1 --private-key $env:PRIVA
 
 **Verify**:
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -550,7 +550,7 @@ Should show: `Status: Closed (2)`
 ### 4.2 Take Snapshot
 
 ```powershell
-cd ../..
+cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
@@ -558,7 +558,7 @@ cast send $env:CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $env:PR
 
 **Verify**:
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -630,7 +630,6 @@ node upload-to-ipfs.js participants-round-1.json
 📝 Next Step - Commit on-chain: (GRAB THIS CMD FROM TERMINAL OUTPUT)
 ─────────────────────────────────────────────────
 cast send 0xYourContract "commitParticipantsRoot(uint256,bytes32,string)" 1 0x282f034a... "bafybeiabc123..." --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
-cd ../..
 
 ✅ File uploaded and ready to commit!
 ```
@@ -644,8 +643,7 @@ cd ../..
 **Copy the cast command from the upload output** and run it.
 
 ```powershell
-cd ../..
-# Replace MERKLE_ROOT and IPFS_CID with your actual values
+cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "commitParticipantsRoot(uint256,bytes32,string)" 1 0xYOUR_MERKLE_ROOT "YOUR_IPFS_CID" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
@@ -653,7 +651,7 @@ cast send $env:CONTRACT_ADDRESS "commitParticipantsRoot(uint256,bytes32,string)"
 
 **Verify**:
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -670,7 +668,7 @@ Participants CID: QmX1234... ✅
 ### 6.1 Request VRF Randomness
 
 ```powershell
-cd ../..
+cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "requestVrf(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
@@ -678,7 +676,7 @@ cast send $env:CONTRACT_ADDRESS "requestVrf(uint256)" 1 --private-key $env:PRIVA
 
 **Verify**:
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -779,19 +777,13 @@ cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" 1 0x... 
 ### 7.4 Submit Winners Root On-Chain
 
 ```powershell
-cd ../..
-cast send $env:CONTRACT_ADDRESS \
-    "submitWinnersRoot(uint256,bytes32,string)" \
-    1 \
-    0xYOUR_MERKLE_ROOT \
-    "YOUR_IPFS_CID" \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cd Z:\Projects\pepedawn\contracts
+cast send $env:CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" 1 0xYOUR_MERKLE_ROOT "YOUR_IPFS_CID" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Verify**:
 ```powershell
-cd scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -913,7 +905,7 @@ This verifies claims work for multiple users!
 ### 9.1 Verify Round Completion
 
 ```powershell
-cd contracts/scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js status 1
 ```
 
@@ -1027,7 +1019,7 @@ Status: ✅ ALL SYSTEMS OPERATIONAL
 ### 10.1 Clean Up Test Files
 
 ```powershell
-cd contracts/scripts/cli
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 rm participants-round-1.json
 rm winners-round-1.json
 ```
@@ -1053,10 +1045,8 @@ Should show `WinnersCommitted (6) ✅`
 
 **Create Round 2**:
 ```powershell
-cd ../..
-cast send $env:CONTRACT_ADDRESS "createRound()" \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cd Z:\Projects\pepedawn\contracts
+cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 ---

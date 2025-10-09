@@ -197,6 +197,7 @@ async function generateWinnersFile(roundId, outputPath) {
   
   // Create output file structure
   const outputData = {
+    version: "1.0",
     roundId: roundId.toString(),
     vrfSeed: round.vrfSeed,
     vrfRequestId: round.vrfRequestId.toString(),

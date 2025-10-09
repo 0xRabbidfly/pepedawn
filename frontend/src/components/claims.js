@@ -182,6 +182,134 @@ async function claimPrize(contract, userAddress, roundId, prizeIndex, prizeTier,
 }
 
 /**
+ * Display all winners for a round (for leaderboard view)
+ * @param {ethers.Contract} contract - Contract instance
+ * @param {number} roundId - Round ID
+ */
+export async function displayWinners(contract, roundId) {
+  const winnersSection = document.getElementById('winners-section');
+  const winnersList = document.getElementById('winners-list');
+  const winnersTitle = document.getElementById('winners-title');
+  
+  if (!winnersSection || !winnersList) return;
+  
+  try {
+    // Get round data
+    const roundData = await contract.getRound(roundId);
+    const status = Number(roundData.status);
+    
+    // Only show winners if round is Distributed (6)
+    if (status !== 6) {
+      winnersSection.style.display = 'none';
+      return;
+    }
+    
+    // Check if winners root is set
+    if (!roundData.winnersRoot || roundData.winnersRoot === ethers.ZeroHash) {
+      winnersSection.style.display = 'none';
+      return;
+    }
+    
+    // Get winners CID
+    const winnersCID = await contract.winnersCIDs(roundId);
+    if (!winnersCID || winnersCID === '') {
+      winnersSection.style.display = 'none';
+      return;
+    }
+    
+    // Fetch winners file
+    const winnersFile = await fetchWinnersFile(winnersCID, roundId);
+    
+    // Update title
+    if (winnersTitle) {
+      winnersTitle.textContent = `Winners - Round ${roundId}`;
+    }
+    
+    // Group winners by tier
+    const tier1Winners = winnersFile.winners.filter(w => w.prizeTier === 1); // Fake Pack
+    const tier2Winners = winnersFile.winners.filter(w => w.prizeTier === 2); // Kek Pack
+    const tier3Winners = winnersFile.winners.filter(w => w.prizeTier === 3); // Pepe Packs
+    
+    // Build podium HTML
+    let html = '<div class="winners-podium">';
+    
+    // Tier 1 - Fake Pack (Gold/1st place)
+    if (tier1Winners.length > 0) {
+      html += `
+        <div class="podium-tier tier-1">
+          <div class="podium-tier-header">
+            <div class="tier-icon">🥇</div>
+            <div class="tier-text">
+              <div class="tier-label">Fake Pack</div>
+              <div class="tier-subtitle">Grand Prize</div>
+            </div>
+          </div>
+          <div class="tier-winners">
+            ${tier1Winners.map(w => `
+              <div class="winner-item" title="${w.address}">
+                ${w.address.slice(0, 6)}...${w.address.slice(-4)}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Tier 2 - Kek Pack (Silver/2nd place)
+    if (tier2Winners.length > 0) {
+      html += `
+        <div class="podium-tier tier-2">
+          <div class="podium-tier-header">
+            <div class="tier-icon">🥈</div>
+            <div class="tier-text">
+              <div class="tier-label">Kek Pack</div>
+              <div class="tier-subtitle">Second Prize</div>
+            </div>
+          </div>
+          <div class="tier-winners">
+            ${tier2Winners.map(w => `
+              <div class="winner-item" title="${w.address}">
+                ${w.address.slice(0, 6)}...${w.address.slice(-4)}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    // Tier 3 - Pepe Packs (Bronze/3rd place)
+    if (tier3Winners.length > 0) {
+      html += `
+        <div class="podium-tier tier-3">
+          <div class="podium-tier-header">
+            <div class="tier-icon">🥉</div>
+            <div class="tier-text">
+              <div class="tier-label">Pepe Packs</div>
+              <div class="tier-subtitle">${tier3Winners.length} Winners</div>
+            </div>
+          </div>
+          <div class="tier-winners">
+            ${tier3Winners.map(w => `
+              <div class="winner-item" title="${w.address}">
+                ${w.address.slice(0, 6)}...${w.address.slice(-4)}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    html += '</div>';
+    winnersList.innerHTML = html;
+    winnersSection.style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error displaying winners:', error);
+    winnersSection.style.display = 'none';
+  }
+}
+
+/**
  * Display refund button if user has refund available
  * @param {ethers.Contract} contract - Contract instance
  * @param {string} userAddress - User's address

@@ -354,23 +354,27 @@ async function setupWalletConnection(showSuccessToast = true) {
     showSecurityStatus(contract, userAddress);
     await updateButtonStates(); // Update button states after connecting
     
-    // Update claims and refunds (only on leaderboard page)
+    // Update claims and refunds (only on main page)
     const currentRoundId = await contract.currentRoundId();
     console.log('🔍 Current page:', window.location.pathname);
     console.log('🔍 Current round ID:', currentRoundId.toString());
     if (currentRoundId.toString() !== '0') {
-      if (window.location.pathname.includes('leaderboard.html')) {
-        console.log('🎯 On leaderboard page - calling displayClaimablePrizes');
-        await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
-      }
+      // Show claims and refunds only on main page
       if (window.location.pathname.includes('main.html')) {
+        console.log('🎯 Calling displayClaimablePrizes');
+        await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
         await displayRefundButton(contract, userAddress);
       }
     }
     
-    // Populate round selector if on leaderboard page
+    // Populate round selector and show winners if on leaderboard page
     if (window.location.pathname.includes('leaderboard.html')) {
       await populateRoundSelector(contract);
+      // Display all winners
+      if (currentRoundId.toString() !== '0') {
+        const { displayWinners } = await import('./components/claims.js');
+        await displayWinners(contract, Number(currentRoundId));
+      }
     }
   }
   

@@ -174,12 +174,12 @@ export function getPrizesForAddress(winners, address) {
  */
 export function getPrizeTierName(prizeTier) {
   switch (prizeTier) {
-    case 3:
-      return 'Fake Pack (3 PEPEDAWN cards)';
-    case 2:
-      return 'Kek Pack (2 PEPEDAWN cards)';
     case 1:
-      return 'Pepe Pack (1 PEPEDAWN card)';
+      return 'Fake Pack';
+    case 2:
+      return 'Kek Pack';
+    case 3:
+      return 'Pepe Pack';
     default:
       return `Unknown tier (${prizeTier})`;
   }

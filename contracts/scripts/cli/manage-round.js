@@ -28,7 +28,9 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 // ABI for the functions we need
 const RAFFLE_ABI = [
   "function getRound(uint256) view returns (tuple(uint256 id, uint64 startTime, uint64 endTime, uint8 status, uint256 totalTickets, uint256 totalWeight, uint256 totalWagered, uint256 vrfRequestId, uint64 vrfRequestedAt, bool feesDistributed, uint256 participantCount, bytes32 validProofHash, bytes32 participantsRoot, bytes32 winnersRoot, bytes32 vrfSeed))",
-  "function currentRoundId() view returns (uint256)"
+  "function currentRoundId() view returns (uint256)",
+  "function getParticipantsData(uint256) view returns (bytes32, string)",
+  "function getWinnersData(uint256) view returns (bytes32, string)"
 ];
 
 // Round status enum
@@ -87,7 +89,30 @@ async function displayStatus(roundId) {
   
   console.log(`\nMerkle Data:`);
   console.log(`  Participants Root: ${round.participantsRoot === ethers.ZeroHash ? 'Not set' : round.participantsRoot}`);
+  
+  // Fetch participants CID if root is set
+  if (round.participantsRoot !== ethers.ZeroHash) {
+    try {
+      const data = await contract.getParticipantsData(roundId);
+      const cid = data[1]; // getParticipantsData returns (bytes32 root, string cid)
+      console.log(`  Participants CID: ${cid || 'Not set'}`);
+    } catch (error) {
+      console.log(`  Participants CID: Unable to fetch (${error.message.split(':')[0]})`);
+    }
+  }
+  
   console.log(`  Winners Root: ${round.winnersRoot === ethers.ZeroHash ? 'Not set' : round.winnersRoot}`);
+  
+  // Fetch winners CID if root is set
+  if (round.winnersRoot !== ethers.ZeroHash) {
+    try {
+      const data = await contract.getWinnersData(roundId);
+      const cid = data[1]; // getWinnersData returns (bytes32 root, string cid)
+      console.log(`  Winners CID: ${cid || 'Not set'}`);
+    } catch (error) {
+      console.log(`  Winners CID: Unable to fetch (${error.message.split(':')[0]})`);
+    }
+  }
   
   console.log(`\nVRF Data:`);
   console.log(`  VRF Request ID: ${round.vrfRequestId === 0n ? 'Not requested' : round.vrfRequestId}`);

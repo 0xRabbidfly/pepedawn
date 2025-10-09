@@ -62,6 +62,10 @@ EMBLEM_VAULT_ADDRESS=0x82FbD1c8fBe0a8f6Eb684dd49a4D7D2e62b2d7Fc
 
 # Contract Address (filled after deployment)
 CONTRACT_ADDRESS=
+
+# IPFS Configuration (Optional - enables automatic uploads)
+# Get Pinata JWT from: https://app.pinata.cloud/ → API Keys → New Key
+PINATA_JWT=your_pinata_jwt_here
 ```
 
 **Important Notes**:
@@ -69,6 +73,8 @@ CONTRACT_ADDRESS=
 - Get VRF Subscription ID from [Chainlink VRF Dashboard](https://vrf.chain.link/)
 - Fund your VRF subscription with at least 5 LINK tokens
 - `CREATORS_ADDRESS` receives 20% of each round's proceeds
+- Get Pinata JWT from [Pinata](https://app.pinata.cloud/) → API Keys → New Key → Copy JWT
+- With `PINATA_JWT` set, IPFS uploads are fully automated!
 
 ### 0.2 Load Environment Variables
 
@@ -595,70 +601,52 @@ cat participants-round-1.json | ConvertFrom-Json | ConvertTo-Json -Depth 10
 - Weight calculations (Wallet 2 should have +40% bonus)
 - Merkle root
 
-### 5.3 Upload to IPFS
+### 5.3 Upload to IPFS (Automated!)
 
 ```powershell
 node upload-to-ipfs.js participants-round-1.json
 ```
 
-**Expected Output**:
+**Expected Output (with PINATA_JWT set)**:
 ```
-📁 File: participants-round-1.json (XXX bytes)
-✅ Valid JSON format
-✅ Contains required fields
+✅ Valid participants file
+   Round ID: 1
+   Merkle Root: 0x282f034a...
+   Participants: 5
+   Total Weight: 22
 
-🌐 IPFS Upload Options:
-   1. NFT.Storage (Recommended)
-   2. Web3.Storage
-   3. Pinata
-   ...
+✅ Pinata API key detected - uploading automatically...
 
-📋 Instructions for NFT.Storage:
-   1. Go to https://nft.storage/
-   2. Create account / login
-   3. Upload participants-round-1.json
-   4. Copy CID (starts with 'Qm...' or 'bafy...')
+🚀 Uploading to Pinata IPFS...
+
+✅ Upload successful!
+
+📋 IPFS CID: bafybeiabc123...
+
+🔗 Access file at:
+   https://nftstorage.link/ipfs/bafybeiabc123...
+   https://ipfs.io/ipfs/bafybeiabc123...
+
+📝 Next Step - Commit on-chain: (GRAB THIS CMD FROM TERMINAL OUTPUT)
+─────────────────────────────────────────────────
+cast send 0xYourContract "commitParticipantsRoot(uint256,bytes32,string)" 1 0x282f034a... "bafybeiabc123..." --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cd ../..
+
+✅ File uploaded and ready to commit!
 ```
 
-**Action Required**:
-1. Go to https://nft.storage/
-2. Login with email or wallet
-3. Click "Upload" → Select `participants-round-1.json`
-4. **Copy the CID** (example: `QmX1234...` or `bafybeiabc123...`)
+**If API key not set**: You'll get manual upload instructions instead.
 
-**Verify IPFS Upload**:
-```
-https://ipfs.io/ipfs/YOUR_CID
-```
-Should display the JSON file in browser.
+**Verify Upload**: Click any of the URLs shown to confirm the file is accessible.
 
 ### 5.4 Commit Participants Root On-Chain
 
-**From the `participants-round-1.json` file, you need:**
-- Merkle root (from `merkle.root` field)
-- IPFS CID (from upload step)
+**Copy the cast command from the upload output** and run it.
 
 ```powershell
 cd ../..
 # Replace MERKLE_ROOT and IPFS_CID with your actual values
-cast send $env:CONTRACT_ADDRESS \
-    "commitParticipantsRoot(uint256,bytes32,string)" \
-    1 \
-    0xYOUR_MERKLE_ROOT \
-    "YOUR_IPFS_CID" \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
-```
-
-**Example**:
-```powershell
-cast send $env:CONTRACT_ADDRESS \
-    "commitParticipantsRoot(uint256,bytes32,string)" \
-    1 \
-    0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb7 \
-    "QmX1234abcd..." \
-    --private-key $env:PRIVATE_KEY \
-    --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "commitParticipantsRoot(uint256,bytes32,string)" 1 0xYOUR_MERKLE_ROOT "YOUR_IPFS_CID" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Expected**: Transaction succeeds
@@ -793,27 +781,31 @@ cat winners-round-1.json | ConvertFrom-Json | ConvertTo-Json -Depth 10
 
 **Note**: Same wallet can win multiple times (lottery with replacement)
 
-### 7.3 Upload Winners to IPFS
+### 7.3 Upload Winners to IPFS (Automated!)
 
 ```powershell
 node upload-to-ipfs.js winners-round-1.json
 ```
 
-**Action Required**:
-1. Go to https://nft.storage/
-2. Upload `winners-round-1.json`
-3. **Copy the CID**
+**Expected Output**:
+```
+✅ NFT.Storage API key detected - uploading automatically...
 
-**Verify Upload**:
+🚀 Uploading to NFT.Storage...
+✅ Upload successful!
+
+📋 IPFS CID: bafybeixyz789...
+
+📝 Next Step - Commit on-chain:
+─────────────────────────────────────────────────
+cast send 0xYourContract "commitWinners(uint256,bytes32,string)" 1 0x8a2d35C... "bafybeixyz789..." --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
-https://ipfs.io/ipfs/YOUR_WINNERS_CID
-```
+
+**Verify Upload**: Click the URLs in the output to confirm file is accessible.
 
 ### 7.4 Commit Winners Root On-Chain
 
-**From `winners-round-1.json`, get:**
-- Merkle root (from `merkle.root`)
-- IPFS CID (from upload)
+**Copy the cast command from the upload output** and run it.
 
 ```powershell
 cd ../..

@@ -17,6 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import https from 'https';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,6 +62,79 @@ function validateFile(filePath) {
   }
   
   return { data, isParticipants, isWinners };
+}
+
+/**
+ * Upload file to Pinata automatically using v3 API
+ */
+async function uploadToPinata(filePath, jwt) {
+  console.log('\n🚀 Uploading to Pinata IPFS...');
+  
+  const fileContent = fs.readFileSync(filePath);
+  const fileName = path.basename(filePath);
+  
+  return new Promise((resolve, reject) => {
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+    
+    const parts = [];
+    
+    // Add file part
+    parts.push(`--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n`);
+    parts.push('Content-Type: application/json\r\n\r\n');
+    parts.push(fileContent);
+    parts.push('\r\n');
+    
+    // Add name part
+    parts.push(`--${boundary}\r\n`);
+    parts.push('Content-Disposition: form-data; name="name"\r\n\r\n');
+    parts.push(fileName);
+    parts.push('\r\n');
+    
+    // End boundary
+    parts.push(`--${boundary}--\r\n`);
+    
+    const body = Buffer.concat(parts.map(p => Buffer.isBuffer(p) ? p : Buffer.from(p, 'utf8')));
+
+    const options = {
+      hostname: 'uploads.pinata.cloud',
+      path: '/v3/files',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${jwt}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': body.length
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let responseData = '';
+
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            const result = JSON.parse(responseData);
+            resolve(result.data.cid); // Pinata v3 returns data.cid
+          } catch (error) {
+            reject(new Error('Failed to parse Pinata response: ' + responseData));
+          }
+        } else {
+          reject(new Error(`Upload failed with status ${res.statusCode}: ${responseData}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.write(body);
+    req.end();
+  });
 }
 
 /**
@@ -143,17 +217,21 @@ Usage: node upload-to-ipfs.js <file-path>
 Arguments:
   <file-path>    Path to the participants or winners JSON file
 
+Environment Variables:
+  PINATA_JWT           Optional: Enables automatic upload to Pinata (recommended)
+  PINATA_API_KEY       Optional: Alternative Pinata auth (JWT preferred)
+
 Example:
   node upload-to-ipfs.js participants-round-1.json
   node upload-to-ipfs.js winners-round-1.json
 
 Description:
-  This script validates your file and provides instructions for uploading
-  to IPFS using free pinning services (NFT.Storage, Web3.Storage, Pinata)
-  or local IPFS.
+  This script validates your file and uploads it to IPFS.
+  
+  If NFT_STORAGE_API_KEY is set, it will automatically upload to NFT.Storage.
+  Otherwise, it displays manual upload instructions for various IPFS services.
 
-  After upload, you'll receive a CID (Content Identifier) that you must
-  commit on-chain using the contract's commit functions.
+  After upload, you'll receive a CID and the ready-to-run cast command.
     `);
     process.exit(0);
   }
@@ -164,11 +242,55 @@ Description:
     // Validate file
     const { data, isParticipants, isWinners } = validateFile(filePath);
     
-    // Display upload instructions
-    displayInstructions(filePath, data, isParticipants);
+    // Check for Pinata API key (preferred) or NFT.Storage
+    const pinataKey = process.env.PINATA_JWT || process.env.PINATA_API_KEY;
+    const nftStorageKey = process.env.NFT_STORAGE_API_KEY;
     
-    console.log('\n✅ File is ready for upload!');
-    console.log('\nFollow the instructions above to upload to your preferred IPFS service.');
+    if (pinataKey) {
+      // Automatic upload to Pinata
+      console.log('\n✅ Pinata API key detected - uploading automatically...');
+      
+      try {
+        const cid = await uploadToPinata(filePath, pinataKey);
+        
+        console.log('\n✅ Upload successful!');
+        console.log(`\n📋 IPFS CID: ${cid}`);
+        console.log(`\n🔗 Access file at:`);
+        console.log(`   https://gateway.pinata.cloud/ipfs/${cid}`);
+        console.log(`   https://ipfs.io/ipfs/${cid}`);
+        console.log(`   https://cloudflare-ipfs.com/ipfs/${cid}`);
+        
+        // Generate commit command
+        const contractAddress = process.env.CONTRACT_ADDRESS || '$CONTRACT_ADDRESS';
+        const privateKey = process.env.PRIVATE_KEY ? '--private-key $PRIVATE_KEY' : '--private-key $PRIVATE_KEY';
+        const rpcUrl = process.env.SEPOLIA_RPC_URL || '$SEPOLIA_RPC_URL';
+        
+        console.log(`\n📝 Next Step - Commit on-chain:`);
+        console.log('─────────────────────────────────────────────────');
+        
+        if (isParticipants) {
+          console.log(`cast send ${contractAddress} "commitParticipantsRoot(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "${cid}" ${privateKey} --rpc-url ${rpcUrl}`);
+        } else {
+          console.log(`cast send ${contractAddress} "commitWinners(uint256,bytes32,string)" ${data.roundId} ${data.merkle.root} "${cid}" ${privateKey} --rpc-url ${rpcUrl}`);
+        }
+        
+        console.log('\n✅ File uploaded and ready to commit!');
+        
+      } catch (uploadError) {
+        console.error('\n❌ Automatic upload failed:', uploadError.message);
+        console.log('\n⚠️  Falling back to manual upload instructions...\n');
+        displayInstructions(filePath, data, isParticipants);
+      }
+      
+    } else {
+      // Manual upload instructions
+      console.log('\n💡 Tip: Set PINATA_JWT environment variable for automatic uploads!');
+      console.log('   Get a free Pinata account and JWT at: https://pinata.cloud/');
+      displayInstructions(filePath, data, isParticipants);
+      
+      console.log('\n✅ File is ready for upload!');
+      console.log('\nFollow the instructions above to upload to your preferred IPFS service.');
+    }
     
   } catch (error) {
     console.error('\n❌ Error:', error.message);

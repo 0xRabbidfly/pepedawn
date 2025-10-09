@@ -281,6 +281,19 @@ function setupLeaderboardRoundSelector() {
       }
     });
   }
+  
+  const winnersRoundSelect = document.getElementById('winners-round-select');
+  if (winnersRoundSelect) {
+    winnersRoundSelect.addEventListener('change', async function() {
+      const selectedValue = this.value;
+      
+      // Update winners with selected round
+      if (contract) {
+        const { displayWinners } = await import('./components/claims.js');
+        await displayWinners(contract, Number(selectedValue));
+      }
+    });
+  }
 }
 
 // Connect to wallet with enhanced security validations

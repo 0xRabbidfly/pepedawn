@@ -318,32 +318,54 @@ async function getWinnersData(contract, roundId) {
 export async function populateRoundSelector(contract) {
   try {
     const roundSelect = document.getElementById('round-select');
-    if (!roundSelect || !contract) return;
+    const winnersRoundSelect = document.getElementById('winners-round-select');
+    if (!contract) return;
     
     // Get current round ID
     const currentRoundId = await contract.currentRoundId();
     const currentRoundNum = Number(currentRoundId);
     
-    // Clear existing options
-    roundSelect.innerHTML = '';
-    
-    // Add options for previous rounds (if any)
-    for (let i = Math.max(1, currentRoundNum - 5); i <= currentRoundNum; i++) {
-      const option = document.createElement('option');
-      option.value = i.toString();
-      option.textContent = `Round ${i}`;
-      if (i === currentRoundNum) {
-        option.textContent += ' (Current)';
-        option.selected = true;
+    // Populate leaderboard selector
+    if (roundSelect) {
+      // Clear existing options
+      roundSelect.innerHTML = '';
+      
+      // Add options for previous rounds (if any)
+      for (let i = Math.max(1, currentRoundNum - 5); i <= currentRoundNum; i++) {
+        const option = document.createElement('option');
+        option.value = i.toString();
+        option.textContent = `Round ${i}`;
+        if (i === currentRoundNum) {
+          option.textContent += ' (Current)';
+          option.selected = true;
+        }
+        roundSelect.appendChild(option);
       }
-      roundSelect.appendChild(option);
+      
+      // Add future round option
+      const futureOption = document.createElement('option');
+      futureOption.value = (currentRoundNum + 1).toString();
+      futureOption.textContent = `Round ${currentRoundNum + 1} (Future)`;
+      roundSelect.appendChild(futureOption);
     }
     
-    // Add future round option
-    const futureOption = document.createElement('option');
-    futureOption.value = (currentRoundNum + 1).toString();
-    futureOption.textContent = `Round ${currentRoundNum + 1} (Future)`;
-    roundSelect.appendChild(futureOption);
+    // Populate winners selector
+    if (winnersRoundSelect) {
+      // Clear existing options
+      winnersRoundSelect.innerHTML = '';
+      
+      // Add options for all rounds (winners can be viewed for any round)
+      for (let i = Math.max(1, currentRoundNum - 5); i <= currentRoundNum; i++) {
+        const option = document.createElement('option');
+        option.value = i.toString();
+        option.textContent = `Round ${i}`;
+        if (i === currentRoundNum) {
+          option.textContent += ' (Current)';
+          option.selected = true;
+        }
+        winnersRoundSelect.appendChild(option);
+      }
+    }
     
   } catch (error) {
     console.error('Error populating round selector:', error);

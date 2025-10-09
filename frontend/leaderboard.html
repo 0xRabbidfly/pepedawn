@@ -20,8 +20,16 @@
       </header>
 
       <main>
-        <section id="winners-section" style="display: none;">
-          <h2 id="winners-title">Winners - Round 1</h2>
+        <section id="winners-section">
+          <div class="leaderboard-header-section">
+            <h2 id="winners-title">Winners</h2>
+            <div class="round-selector">
+              <label for="winners-round-select">Round:</label>
+              <select id="winners-round-select">
+                <option value="">Loading...</option>
+              </select>
+            </div>
+          </div>
           <div id="winners-list">
             <p>Loading winners...</p>
           </div>

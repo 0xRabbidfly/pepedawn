@@ -198,32 +198,29 @@ export async function displayWinners(contract, roundId) {
     const roundData = await contract.getRound(roundId);
     const status = Number(roundData.status);
     
-    // Only show winners if round is Distributed (6)
-    if (status !== 6) {
-      winnersSection.style.display = 'none';
-      return;
+    // Update title
+    if (winnersTitle) {
+      winnersTitle.textContent = `Winners - Round ${roundId}`;
     }
+    
+    // Always show winners section (even if no winners yet)
+    winnersSection.style.display = 'block';
     
     // Check if winners root is set
     if (!roundData.winnersRoot || roundData.winnersRoot === ethers.ZeroHash) {
-      winnersSection.style.display = 'none';
+      winnersList.innerHTML = '<p class="info">Winners not yet determined for this round</p>';
       return;
     }
     
     // Get winners CID
     const winnersCID = await contract.winnersCIDs(roundId);
     if (!winnersCID || winnersCID === '') {
-      winnersSection.style.display = 'none';
+      winnersList.innerHTML = '<p class="info">Winners file not yet published for this round</p>';
       return;
     }
     
     // Fetch winners file
     const winnersFile = await fetchWinnersFile(winnersCID, roundId);
-    
-    // Update title
-    if (winnersTitle) {
-      winnersTitle.textContent = `Winners - Round ${roundId}`;
-    }
     
     // Group winners by tier
     const tier1Winners = winnersFile.winners.filter(w => w.prizeTier === 1); // Fake Pack

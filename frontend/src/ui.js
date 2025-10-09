@@ -181,6 +181,16 @@ export async function updateRoundStatus(contract) {
       }
     });
     
+    // Show Merkle badge when winners are drawn (status 2+)
+    const merkleBadge = document.getElementById('merkle-badge');
+    if (merkleBadge) {
+      if (currentStatus >= 2) {
+        merkleBadge.classList.add('visible');
+      } else {
+        merkleBadge.classList.remove('visible');
+      }
+    }
+    
     // Update countdown
     const timeRemaining = document.getElementById('time-remaining');
     if (timeRemaining) {

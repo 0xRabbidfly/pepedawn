@@ -510,37 +510,104 @@ section h2 {
   color: var(--text-color);
 }
 
-.info-column {
+.merkle-badge {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(139, 195, 74, 0.2));
+  border: 2px solid var(--primary-color);
+  border-radius: 20px;
+  margin: 8px 0;
+  animation: badge-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+}
+
+.merkle-badge.visible {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
+}
+
+.badge-icon {
+  font-size: 1.2em;
+  animation: rotate-lock 3s ease-in-out infinite;
+}
+
+.badge-text {
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@keyframes badge-glow {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(76, 175, 80, 0.6);
+  }
+}
+
+@keyframes rotate-lock {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+.info-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  align-self: start;
 }
 
 .info-item {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-md) var(--spacing-lg);
   background-color: var(--background-color);
   border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-}
-
-.info-icon {
-  font-size: 1.2em;
-  min-width: 24px;
+  border: 2px solid var(--border-color);
+  text-align: center;
+  height: fit-content;
+  min-width: 160px;
 }
 
 .info-text {
-  flex: 1;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.info-icon {
+  font-size: 1em;
+}
+
+.info-text {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.85em;
 }
 
 .info-value {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-color);
   font-family: monospace;
+  font-size: 0.95em;
+  padding: 2px var(--spacing-xs);
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: var(--border-radius);
 }
 
 /* Betting Section */
@@ -1359,21 +1426,33 @@ section h2 {
     font-size: 1.3em;
   }
   
+  .info-column {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
   .info-item {
     padding: var(--spacing-sm);
   }
   
+  .merkle-badge {
+    padding: var(--spacing-xs);
+  }
+  
+  .badge-text {
+    font-size: 0.55em;
+  }
+  
   .info-icon {
     font-size: 1em;
-    min-width: 20px;
   }
   
   .info-text {
-    font-size: var(--font-size-sm);
+    font-size: 0.8em;
   }
   
   .info-value {
-    font-size: var(--font-size-sm);
+    font-size: 0.95em;
   }
   
   /* Mobile winners section */

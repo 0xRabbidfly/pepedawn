@@ -1148,7 +1148,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     
     /**
      * @notice Assign winners based on VRF randomness and distribute prizes using optimized weighted lottery
-     * @dev 1st place: Fake Pack, 2nd place: Kek Pack, 3rd-10th place: Pepe Packs
+     * @dev Prize tiers randomly assigned: 10% Fake Pack, 20% Kek Pack, 70% Pepe Pack
      * @dev Same wallet can win multiple prizes (weighted lottery, not raffle)
      * @dev Uses batch processing for gas efficiency with large participant counts
      * @param roundId The round to process
@@ -1188,12 +1188,20 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
                 uint256 globalIndex = batchStart + i;
                 uint8 prizeTier;
                 
-                if (globalIndex == 0) {
-                    prizeTier = FAKE_PACK_TIER;  // 1st place: Fake Pack
-                } else if (globalIndex == 1) {
-                    prizeTier = KEK_PACK_TIER;   // 2nd place: Kek Pack
+                // Generate truly random prize tier assignment for ALL winners
+                // Use winner address and position to ensure uniqueness and prevent manipulation
+                uint256 tierRandom = uint256(keccak256(abi.encode(randomSeed, "tier", globalIndex, batchWinners[i], block.timestamp))) % 100;
+                
+                // Randomized prize distribution:
+                // 10% chance for Fake Pack (1 expected winner)
+                // 20% chance for Kek Pack (2 expected winners)  
+                // 70% chance for Pepe Pack (7 expected winners)
+                if (tierRandom < 10) {
+                    prizeTier = FAKE_PACK_TIER;  // 10% chance - Best prize
+                } else if (tierRandom < 30) {
+                    prizeTier = KEK_PACK_TIER;   // 20% chance - Mid prize
                 } else {
-                    prizeTier = PEPE_PACK_TIER;  // 3rd-10th place: Pepe Packs
+                    prizeTier = PEPE_PACK_TIER;  // 70% chance - Common prize
                 }
                 
                 allWinners[winnerIndex] = batchWinners[i];

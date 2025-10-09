@@ -31,23 +31,28 @@
         </section>
 
         <section id="round-status">
-          <h2 id="current-round-title">Current Round</h2>
-          <div class="info-column-wrapper">
-            <div class="info-column">
-              <div class="info-item">
-                <div class="info-header">
-                  <span class="info-icon">⏰</span>
-                  <span class="info-text">Time Remaining</span>
-                </div>
-                <span class="info-value" id="time-remaining">--</span>
+          <div class="round-header">
+            <h2 id="current-round-title">Current Round</h2>
+            <div class="merkle-badge" id="merkle-badge">
+              <div class="badge-icon">🔐</div>
+              <div class="badge-text">Merkle Proof<br>Verified</div>
+            </div>
+          </div>
+          <hr>
+          <div class="info-section">
+            <div class="info-item">
+              <div class="info-header">
+                <span class="info-icon">⏰</span>
+                <span class="info-text">Time Remaining</span>
               </div>
-              <div class="info-item">
-                <div class="info-header">
-                  <span class="info-icon">🎫</span>
-                  <span class="info-text">Total Tickets</span>
-                </div>
-                <span class="info-value" id="total-tickets">--</span>
+              <span class="info-value" id="time-remaining">--</span>
+            </div>
+            <div class="info-item">
+              <div class="info-header">
+                <span class="info-icon">🎫</span>
+                <span class="info-text">Total Tickets</span>
               </div>
+              <span class="info-value" id="total-tickets">--</span>
             </div>
           </div>
           <div class="status-flow">
@@ -64,10 +69,6 @@
             <div class="status-item claim-phase" data-status="6">
               <span class="status-icon">🐸</span>
               <span class="status-text">Winners Claiming</span>
-            </div>
-            <div class="merkle-badge" id="merkle-badge">
-              <div class="badge-icon">🔐</div>
-              <div class="badge-text">Merkle Proof<br>Verified</div>
             </div>
           </div>
         </section>

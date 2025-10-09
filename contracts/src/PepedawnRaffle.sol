@@ -895,7 +895,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Security check: Prevent too frequent VRF requests
         // Allow immediate requests if lastVrfRequestTime is 0 (for testing)
         require(
-            lastVrfRequestTime == 0 || block.timestamp >= lastVrfRequestTime + 1 minutes,
+            lastVrfRequestTime == 0 || block.timestamp >= lastVrfRequestTime + 30 seconds,
             "VRF request too frequent"
         );
         
@@ -1192,9 +1192,13 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
                 uint256 globalIndex = batchStart + i;
                 uint8 prizeTier;
                 
+                // Security check: Validate winner address
+                address winner = batchWinners[i];
+                require(winner != address(0), "Invalid winner: zero address");
+                
                 // Generate truly random prize tier assignment for ALL winners
                 // Use winner address and position to ensure uniqueness and prevent manipulation
-                uint256 tierRandom = uint256(keccak256(abi.encode(randomSeed, "tier", globalIndex, batchWinners[i], block.timestamp))) % 100;
+                uint256 tierRandom = uint256(keccak256(abi.encode(randomSeed, "tier", globalIndex, winner, block.timestamp))) % 100;
                 
                 // Randomized prize distribution:
                 // 10% chance for Fake Pack (1 expected winner)
@@ -1208,13 +1212,13 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
                     prizeTier = PEPE_PACK_TIER;  // 70% chance - Common prize
                 }
                 
-                allWinners[winnerIndex] = batchWinners[i];
+                allWinners[winnerIndex] = winner;
                 allPrizeTiers[winnerIndex] = prizeTier;
                 
                 // Store winner assignment
                 roundWinners[roundId].push(WinnerAssignment({
                     roundId: roundId,
-                    wallet: batchWinners[i],
+                    wallet: winner,
                     prizeTier: prizeTier,
                     vrfRequestId: round.vrfRequestId,
                     blockNumber: block.number

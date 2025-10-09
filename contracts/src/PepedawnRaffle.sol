@@ -661,7 +661,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         require(claims[roundId][prizeIndex] == address(0), "Prize already claimed");
         
         // Verify Merkle proof
-        bytes32 leaf = keccak256(abi.encode(msg.sender, prizeTier, prizeIndex));
+        bytes32 leaf = keccak256(abi.encodePacked(msg.sender, prizeTier, prizeIndex));
         require(
             MerkleProof.verify(proof, round.winnersRoot, leaf),
             "Invalid Merkle proof"
@@ -1472,7 +1472,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         bytes32 root = rounds[roundId].winnersRoot;
         if (root == bytes32(0)) return false;
         
-        bytes32 leaf = keccak256(abi.encode(user, prizeTier, prizeIndex));
+        bytes32 leaf = keccak256(abi.encodePacked(user, prizeTier, prizeIndex));
         return MerkleProof.verify(proof, root, leaf);
     }
 }

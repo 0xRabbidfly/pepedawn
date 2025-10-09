@@ -15,6 +15,7 @@ class ConfigurationUpdater {
     this.contractPath = 'contracts/src/PepedawnRaffle.sol';
     this.abiPath = 'contracts/out/PepedawnRaffle.sol/PepedawnRaffle.json';
     this.addressesPath = 'deploy/artifacts/addresses.json';
+    this.envPath = 'contracts/.env';
     this.frontendConfigPath = 'frontend/src/contract-config.js';
     this.frontendAddressesPath = 'frontend/public/deploy/artifacts/addresses.json';
     this.frontendAbiPath = 'frontend/public/deploy/PepedawnRaffle-abi.json';
@@ -42,7 +43,7 @@ class ConfigurationUpdater {
       fs.mkdirSync(frontendArtifactsDir, { recursive: true });
     }
     fs.writeFileSync(this.frontendAddressesPath, JSON.stringify(addressesJson, null, 2));
-    console.log('✅ Frontend addresses updated');
+    console.log(`✅ Frontend addresses updated - ${this.frontendAddressesPath}`);
 
     // Update frontend config with latest address
     if (fs.existsSync(this.frontendConfigPath) && latestAddress) {
@@ -53,7 +54,7 @@ class ConfigurationUpdater {
       if (cfgAddrRegex.test(content)) {
         content = content.replace(cfgAddrRegex, newCfgAddr);
         fs.writeFileSync(this.frontendConfigPath, content);
-        console.log('✅ Frontend contract-config address updated');
+        console.log(`✅ Frontend contract-config updated - ${this.frontendConfigPath}`);
       } else {
         console.warn('⚠️  Could not find address field in frontend contract-config.js');
       }
@@ -94,7 +95,7 @@ class ConfigurationUpdater {
     
     // Write updated addresses
     fs.writeFileSync(this.addressesPath, JSON.stringify(addressesJson, null, 2));
-    console.log('✅ Contract address updated in addresses.json');
+    console.log(`✅ Contract address updated - ${this.addressesPath}`);
     
     return addressesJson;
   }
@@ -157,6 +158,33 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
   }
 
   /**
+   * Update .env file with new contract address
+   */
+  async updateEnvFile(newAddress) {
+    // Script runs from project root, envPath is relative to project root
+    const fullEnvPath = path.resolve(this.envPath);
+    if (!fs.existsSync(fullEnvPath)) {
+      console.log('⚠️  .env file not found at:', fullEnvPath);
+      return;
+    }
+    
+    let envContent = fs.readFileSync(fullEnvPath, 'utf8');
+    
+    // Update or add CONTRACT_ADDRESS
+    if (envContent.includes('CONTRACT_ADDRESS=')) {
+      envContent = envContent.replace(
+        /CONTRACT_ADDRESS=.*/,
+        `CONTRACT_ADDRESS=${newAddress}`
+      );
+    } else {
+      envContent += `\nCONTRACT_ADDRESS=${newAddress}\n`;
+    }
+    
+    fs.writeFileSync(fullEnvPath, envContent);
+    console.log(`✅ .env file updated - ${this.envPath}`);
+  }
+
+  /**
    * Update VRF configuration
    */
   async updateVRFConfig() {
@@ -179,7 +207,7 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
     }
 
     fs.writeFileSync(vrfConfigPath, JSON.stringify(vrfConfig, null, 2));
-    console.log('✅ VRF configuration updated');
+    console.log(`✅ VRF configuration updated - ${vrfConfigPath}`);
   }
 }
 
@@ -229,7 +257,10 @@ Chain IDs:
     // 1. Update addresses.json
     await updater.updateContractAddress(contractAddress, chainId);
     
-    // 2. Update all frontend configs
+    // 2. Update .env file
+    await updater.updateEnvFile(contractAddress);
+    
+    // 3. Update all frontend configs
     await updater.updateAddresses();
     await updater.updateFrontendConfig();
     await updater.updateVRFConfig();

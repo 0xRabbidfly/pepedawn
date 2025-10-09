@@ -77,10 +77,10 @@ contract ClaimsTest is Test {
         // Generate Merkle tree for winners
         // Alice wins prize 0 (tier 1), Bob wins prize 1 (tier 2)
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
-        leaves[1] = keccak256(abi.encode(bob, uint8(2), uint8(1)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
+        leaves[1] = keccak256(abi.encodePacked(bob, uint8(2), uint8(1)));
         for (uint8 i = 2; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(charlie, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(charlie, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
@@ -116,9 +116,9 @@ contract ClaimsTest is Test {
         
         // Setup winners (Alice wins prize 0)
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
         for (uint8 i = 1; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(bob, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(bob, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
@@ -142,9 +142,9 @@ contract ClaimsTest is Test {
         
         // Setup winners
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
         for (uint8 i = 1; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(bob, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(bob, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
@@ -198,10 +198,10 @@ contract ClaimsTest is Test {
         
         // Commit winners where Alice "wins" prizes 0 and 1
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
-        leaves[1] = keccak256(abi.encode(alice, uint8(2), uint8(1)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
+        leaves[1] = keccak256(abi.encodePacked(alice, uint8(2), uint8(1)));
         for (uint8 i = 2; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(bob, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(bob, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
@@ -228,9 +228,9 @@ contract ClaimsTest is Test {
         
         // Setup winners
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
         for (uint8 i = 1; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(bob, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(bob, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
@@ -256,9 +256,9 @@ contract ClaimsTest is Test {
         uint256 roundId = _setupCompletedRound();
         
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
         for (uint8 i = 1; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(bob, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(bob, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);
@@ -324,11 +324,11 @@ contract ClaimsTest is Test {
         
         // Alice wins prizes 0, 1, 2
         bytes32[] memory leaves = new bytes32[](10);
-        leaves[0] = keccak256(abi.encode(alice, uint8(1), uint8(0)));
-        leaves[1] = keccak256(abi.encode(alice, uint8(2), uint8(1)));
-        leaves[2] = keccak256(abi.encode(alice, uint8(3), uint8(2)));
+        leaves[0] = keccak256(abi.encodePacked(alice, uint8(1), uint8(0)));
+        leaves[1] = keccak256(abi.encodePacked(alice, uint8(2), uint8(1)));
+        leaves[2] = keccak256(abi.encodePacked(alice, uint8(3), uint8(2)));
         for (uint8 i = 3; i < 10; i++) {
-            leaves[i] = keccak256(abi.encode(bob, uint8(3), i));
+            leaves[i] = keccak256(abi.encodePacked(bob, uint8(3), i));
         }
         
         winnersRoot = _calculateMerkleRoot(leaves);

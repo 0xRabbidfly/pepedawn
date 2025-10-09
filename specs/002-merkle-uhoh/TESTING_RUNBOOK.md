@@ -204,11 +204,11 @@ forge verify-contract $env:CONTRACT_ADDRESS src/PepedawnRaffle.sol:PepedawnRaffl
 - Should show green ✓ "Contract Source Code Verified"
 - Can see "Read Contract" and "Write Contract" tabs
 
-### 1.5 Update Contract Address in All Configs
+### 1.5 Update Contract Address & VRF Consumer (Automated!)
 
-**Automated Method (Recommended):**
+**Update All Configs:**
 ```powershell
-# From project root - updates addresses.json and all frontend configs
+cd Z:\Projects\pepedawn
 node scripts/update-contract-address.js 0xYourNewContractAddress
 ```
 
@@ -220,33 +220,32 @@ Contract: 0xYourNewContractAddress
 Chain ID: 11155111 (Sepolia)
 
 📝 Updating contract address to: 0xYourNewContractAddress
-✅ Contract address updated in addresses.json
-✅ Frontend addresses updated
-✅ Frontend contract-config address updated
-✅ Frontend configuration updated
-✅ VRF configuration updated
+✅ Contract address updated - deploy/artifacts/addresses.json
+✅ .env file updated - contracts/.env
+✅ Frontend addresses updated - frontend/public/deploy/artifacts/addresses.json
+✅ Frontend contract-config updated - frontend/src/contract-config.js
+✅ VRF configuration updated - deploy/artifacts/vrf-config.json
 
 ✅ Contract address update complete!
 ```
 
-**Manual Method (Backup):**
-If the automated script fails, manually edit `contracts/.env`:
-```bash
-CONTRACT_ADDRESS=0xYourNewContractAddress
+**Add VRF Consumer:**
+```powershell
+cd Z:\Projects\pepedawn\contracts
+cast send $env:VRF_COORDINATOR "addConsumer(uint256,address)" $env:VRF_SUBSCRIPTION_ID 0xYourNewContractAddress --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
-Then reload environment (repeat step 0.2)
+**Expected**: Transaction succeeds with `status 1 (success)`
 
-### 1.6 Add Contract as VRF Consumer
+**Verify on Chainlink**:
+- Go to [Chainlink VRF Dashboard](https://vrf.chain.link/)
+- Your contract should appear in "Consumers" list
 
-1. Go to [Chainlink VRF Dashboard](https://vrf.chain.link/)
-2. Connect your wallet
-3. Select your subscription
-4. Click "Add consumer"
-5. Paste your `CONTRACT_ADDRESS`
-6. Confirm transaction in MetaMask
-
-**Verify**: Contract address appears in "Consumers" list
+**Manual Method (Backup):**
+If automated methods fail, manually:
+1. Edit `contracts/.env`: `CONTRACT_ADDRESS=0xYourNewContractAddress`
+2. Reload environment (repeat step 0.2)
+3. Add VRF consumer through Chainlink dashboard UI
 
 ---
 
@@ -604,6 +603,7 @@ cat participants-round-1.json | ConvertFrom-Json | ConvertTo-Json -Depth 10
 ### 5.3 Upload to IPFS (Automated!)
 
 ```powershell
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node upload-to-ipfs.js participants-round-1.json
 ```
 

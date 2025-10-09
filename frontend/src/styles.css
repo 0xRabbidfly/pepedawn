@@ -365,19 +365,35 @@ section h2 {
 .status-column {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  align-items: center;
+  gap: 0;
+}
+
+.status-arrow {
+  font-size: 2em;
+  color: var(--primary-color);
+  opacity: 0.7;
+  margin: 8px 0;
+  transition: all 0.3s ease;
+  line-height: 1;
+  font-weight: bold;
 }
 
 .status-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
   background-color: var(--background-color);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
   transition: all 0.3s ease;
   opacity: 0.5;
+  width: 120px;
+  height: 120px;
+  text-align: center;
 }
 
 .status-item.active {
@@ -387,16 +403,42 @@ section h2 {
   transform: scale(1.02);
 }
 
+.status-item.open-phase.active {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.3), rgba(3, 169, 244, 0.3));
+  border: 2px solid #2196F3;
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.5), 0 0 40px rgba(33, 150, 243, 0.3);
+  animation: pulse-glow-blue 2s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+.status-item.open-phase.active .status-icon {
+  font-size: 2.8em;
+  animation: pulse-target 1.5s ease-in-out infinite;
+}
+
+.status-item.drawing-phase.active {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.3), rgba(255, 193, 7, 0.3));
+  border: 2px solid #FF9800;
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.5), 0 0 40px rgba(255, 152, 0, 0.3);
+  animation: pulse-glow-orange 2s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+.status-item.drawing-phase.active .status-icon {
+  font-size: 2.8em;
+  animation: spin-dice 2s ease-in-out infinite;
+}
+
 .status-item.claim-phase.active {
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.3), rgba(139, 195, 74, 0.3));
   border: 2px solid #4CAF50;
   box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3);
-  animation: pulse-glow 2s ease-in-out infinite;
+  animation: pulse-glow-green 2s ease-in-out infinite;
   transform: scale(1.05);
 }
 
 .status-item.claim-phase.active .status-icon {
-  font-size: 1.5em;
+  font-size: 2.8em;
   animation: bounce 1s ease-in-out infinite;
 }
 
@@ -414,13 +456,57 @@ section h2 {
   50% { transform: translateY(-5px); }
 }
 
+@keyframes pulse-glow-blue {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(33, 150, 243, 0.5), 0 0 40px rgba(33, 150, 243, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(33, 150, 243, 0.8), 0 0 60px rgba(33, 150, 243, 0.5);
+  }
+}
+
+@keyframes pulse-glow-orange {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.5), 0 0 40px rgba(255, 152, 0, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(255, 152, 0, 0.8), 0 0 60px rgba(255, 152, 0, 0.5);
+  }
+}
+
+@keyframes pulse-glow-green {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.5);
+  }
+}
+
+@keyframes pulse-target {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+@keyframes spin-dice {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
 .status-icon {
-  font-size: 1.2em;
-  min-width: 24px;
+  font-size: 2em;
+  line-height: 1;
 }
 
 .status-text {
-  font-weight: 500;
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.2;
+  max-width: 100px;
+  word-wrap: break-word;
   color: var(--text-color);
 }
 
@@ -1251,20 +1337,26 @@ section h2 {
   }
   
   .status-column {
-    gap: var(--spacing-xs);
+    gap: 0;
   }
   
   .status-item {
-    padding: var(--spacing-xs) var(--spacing-sm);
+    width: 100px;
+    height: 100px;
+    padding: var(--spacing-sm);
   }
   
   .status-icon {
-    font-size: 1em;
-    min-width: 20px;
+    font-size: 1.8em;
   }
   
   .status-text {
-    font-size: var(--font-size-sm);
+    font-size: 0.75em;
+    max-width: 85px;
+  }
+  
+  .status-arrow {
+    font-size: 1.3em;
   }
   
   .info-item {

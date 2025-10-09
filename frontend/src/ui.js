@@ -113,7 +113,9 @@ export async function updateRoundStatus(contract) {
       const statusItems = document.querySelectorAll('.status-item');
       statusItems.forEach(item => {
         item.classList.remove('active');
-        if (Number(item.dataset.status) === 1) { // Mock as "Open"
+        const dataStatus = item.dataset.status;
+        // Handle both single status and collapsed statuses
+        if (dataStatus === '1' || (dataStatus.includes(',') && dataStatus.split(',').includes('1'))) {
           item.classList.add('active');
         }
       });
@@ -157,11 +159,24 @@ export async function updateRoundStatus(contract) {
       currentRoundTitle.textContent = `Current Round: ${currentRoundId}`;
     }
     
-    // Update status highlighting
+    // Update status highlighting (collapsed statuses 2-5 into "Drawing Winners")
     const statusItems = document.querySelectorAll('.status-item');
+    const currentStatus = Number(roundData.status);
+    
     statusItems.forEach(item => {
       item.classList.remove('active');
-      if (Number(item.dataset.status) === Number(roundData.status)) {
+      
+      const dataStatus = item.dataset.status;
+      
+      // Handle collapsed statuses (2,3,4,5 = Drawing Winners)
+      if (dataStatus.includes(',')) {
+        const statuses = dataStatus.split(',').map(s => Number(s.trim()));
+        if (statuses.includes(currentStatus)) {
+          item.classList.add('active');
+        }
+      }
+      // Handle single status
+      else if (Number(dataStatus) === currentStatus) {
         item.classList.add('active');
       }
     });

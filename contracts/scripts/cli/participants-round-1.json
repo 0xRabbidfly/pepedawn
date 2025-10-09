@@ -1,9 +1,9 @@
 {
   "roundId": "1",
-  "totalWeight": "10",
-  "totalTickets": "10",
-  "participantCount": 1,
-  "generatedAt": "2025-10-09T13:58:37.074Z",
+  "totalWeight": "11",
+  "totalTickets": "11",
+  "participantCount": 2,
+  "generatedAt": "2025-10-09T20:32:37.595Z",
   "participants": [
     {
       "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
@@ -11,10 +11,17 @@
       "tickets": "10",
       "wagered": "0.04",
       "hasProof": false
+    },
+    {
+      "address": "0xaA18892B069b04aE23F37B60a06aFa3C015Ad6e2",
+      "weight": "1",
+      "tickets": "1",
+      "wagered": "0.005",
+      "hasProof": true
     }
   ],
   "merkle": {
-    "root": "0x592249c54a0bc8a2996ff9265b4c8240f4febfa588e83ea8a971a6e11bb825d6",
+    "root": "0x88ecc0c51baf62bb02c0c06f929e2dbbc86efaba2b7af6968969375d41f048cb",
     "leafFormat": "keccak256(abi.encode(address, uint128 weight))"
   }
 }

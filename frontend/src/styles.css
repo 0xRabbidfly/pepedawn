@@ -1150,8 +1150,8 @@ section h2 {
 /* Claims Section */
 .prizes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--spacing-md);
   margin-top: var(--spacing-md);
 }
 
@@ -1159,7 +1159,7 @@ section h2 {
   background: linear-gradient(145deg, var(--surface-color), #1a1a1a);
   border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -1210,9 +1210,9 @@ section h2 {
 }
 
 .prize-tier {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: 700;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
   background: linear-gradient(135deg, #4CAF50, #8BC34A);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1221,9 +1221,9 @@ section h2 {
 }
 
 .prize-index {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   color: var(--accent-color);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1232,7 +1232,7 @@ section h2 {
 .prize-token {
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
   font-family: monospace;
   padding: var(--spacing-xs) var(--spacing-sm);
   background: rgba(255, 255, 255, 0.05);
@@ -1242,18 +1242,18 @@ section h2 {
 
 .claim-btn {
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: linear-gradient(135deg, #4CAF50, #66BB6A);
   color: white;
   border: none;
-  border-radius: 20px;
-  font-size: var(--font-size-base);
+  border-radius: 16px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  letter-spacing: 0.8px;
+  box-shadow: 0 3px 12px rgba(76, 175, 80, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -1289,9 +1289,10 @@ section h2 {
 
 .claim-status {
   text-align: center;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   border-radius: var(--border-radius);
   font-weight: 600;
+  font-size: var(--font-size-sm);
 }
 
 .claim-status.claimed {

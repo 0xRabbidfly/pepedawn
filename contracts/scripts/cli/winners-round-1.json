@@ -5,7 +5,7 @@
   "vrfRequestId": "100155927772409411222046421422928207682181038941743094147620830921949884926522",
   "totalWeight": "25",
   "winnerCount": 10,
-  "generatedAt": "2025-10-09T02:22:54.919Z",
+  "generatedAt": "2025-10-09T02:59:30.615Z",
   "derivation": "Winners selected OFF-CHAIN using VRF seed (deterministic, verifiable)",
   "selectionMethod": "Weighted lottery with cumulative weights (matches on-chain algorithm)",
   "winners": [

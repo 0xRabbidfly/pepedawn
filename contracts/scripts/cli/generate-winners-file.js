@@ -38,7 +38,7 @@ const PEPE_PACK_TIER = 3;
 
 /**
  * Generate Merkle tree leaf for a winner
- * Leaf format: keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))
+ * Leaf format: keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))
  */
 function generateLeaf(address, prizeTier, prizeIndex) {
   return ethers.solidityPackedKeccak256(

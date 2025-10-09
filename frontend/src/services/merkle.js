@@ -39,7 +39,7 @@ export function buildWinnersTree(winners) {
     throw new Error('Cannot build tree: no winners provided');
   }
   
-  // Generate leaves: keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))
+  // Generate leaves: keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))
   const leaves = winners.map(w => {
     return ethers.solidityPackedKeccak256(
       ['address', 'uint8', 'uint8'],

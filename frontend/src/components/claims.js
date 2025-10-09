@@ -92,7 +92,7 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
           <div class="prize-token">NFT ID: ${prize.emblemVaultTokenId || 'TBD'}</div>
           ${isClaimed 
             ? '<div class="claim-status claimed">✓ Claimed</div>'
-            : `<button class="claim-btn" data-round="${roundId}" data-prize-index="${prize.prizeIndex}" data-prize-tier="${prize.prizeTier}">Claim Prize</button>`
+            : `<button class="claim-btn" data-round="${roundId}" data-prize-index="${prize.prizeIndex}" data-prize-tier="${prize.prizeTier}">🐸 Claim Prize</button>`
           }
         </div>
       `;

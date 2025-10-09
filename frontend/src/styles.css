@@ -362,18 +362,40 @@ section h2 {
   gap: var(--spacing-lg);
 }
 
-.status-column {
+#round-status {
+  position: relative;
+}
+
+.info-column-wrapper {
+  position: absolute;
+  top: 0;
+  right: var(--spacing-md);
+  padding: var(--spacing-sm);
+}
+
+.info-column {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+#current-round-title {
+  margin: var(--spacing-md) 0;
+  padding-left: 0;
+}
+
+.status-flow {
+  display: flex;
   align-items: center;
-  gap: 0;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .status-arrow {
   font-size: 2em;
   color: var(--primary-color);
   opacity: 0.7;
-  margin: 8px 0;
   transition: all 0.3s ease;
   line-height: 1;
   font-weight: bold;
@@ -518,7 +540,7 @@ section h2 {
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(139, 195, 74, 0.2));
   border: 2px solid var(--primary-color);
   border-radius: 20px;
-  margin: 8px 0;
+  margin-left: var(--spacing-md);
   animation: badge-glow 2s ease-in-out infinite;
   box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
 }
@@ -566,14 +588,14 @@ section h2 {
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: var(--spacing-md) var(--spacing-lg);
+  gap: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--background-color);
   border-radius: var(--border-radius);
   border: 2px solid var(--border-color);
   text-align: center;
   height: fit-content;
-  min-width: 160px;
+  min-width: 140px;
 }
 
 .info-text {
@@ -1398,13 +1420,30 @@ section h2 {
     grid-template-columns: 1fr;
   }
   
-  #round-info {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
+  #round-status {
+    position: static;
   }
   
-  .status-column {
-    gap: 0;
+  .info-column-wrapper {
+    position: static;
+    right: auto;
+    padding: 0;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .info-column {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--spacing-sm) !important;
+  }
+  
+  .info-item {
+    min-width: auto !important;
+    width: 100% !important;
+  }
+  
+  .status-flow {
+    gap: var(--spacing-xs);
   }
   
   .status-item {
@@ -1426,12 +1465,8 @@ section h2 {
     font-size: 1.3em;
   }
   
-  .info-column {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
-  }
-  
   .info-item {
+    min-width: auto;
     padding: var(--spacing-sm);
   }
   

@@ -29,11 +29,20 @@ export default defineConfig({
   // Additional static file serving for deploy artifacts
   define: {
     // Enable development mode features
-    __DEV__: true
+    __DEV__: true,
+    // Fix for buffer polyfill
+    global: 'globalThis'
   },
   
   // Optimize dependencies to handle platform issues
   optimizeDeps: {
-    include: ['ethers']
+    include: ['ethers', 'buffer']
+  },
+  
+  // Resolve buffer polyfill for browser compatibility
+  resolve: {
+    alias: {
+      buffer: 'buffer'
+    }
   }
 })

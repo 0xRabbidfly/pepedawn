@@ -3,6 +3,12 @@
 
 import { ethers } from 'ethers';
 import { MerkleTree } from 'merkletreejs';
+import { Buffer } from 'buffer';
+
+// Make Buffer available globally for merkletreejs
+if (typeof window !== 'undefined') {
+  window.Buffer = Buffer;
+}
 
 /**
  * Build Merkle tree from participants data

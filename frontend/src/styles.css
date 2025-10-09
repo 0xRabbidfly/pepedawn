@@ -393,7 +393,7 @@ section h2 {
 .round-content {
   display: grid;
   grid-template-columns: 55% 45%;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
   margin: var(--spacing-lg) 0;
   align-items: start;
 }
@@ -417,7 +417,7 @@ section h2 {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  padding: var(--spacing-md);
+  padding: var(--spacing-xl);
 }
 
 .info-section-vertical {

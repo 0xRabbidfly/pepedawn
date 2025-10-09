@@ -581,7 +581,7 @@ section h2 {
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-xs);
   background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(3, 169, 244, 0.2));
-  border: 2px solid #2196F3;
+  border: 1px solid #2196F3;
   border-radius: var(--border-radius);
   width: 85px;
   height: 85px;

@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PEPEDAWN - Mainnet Deployment Plan</title>
+    <style>
+        @media print {
+            @page {
+                margin: 0.75in;
+                size: letter;
+            }
+            body {
+                font-size: 10pt;
+            }
+            h1 {
+                page-break-before: always;
+                font-size: 18pt;
+            }
+            h1:first-of-type {
+                page-break-before: avoid;
+            }
+            h2 {
+                page-break-after: avoid;
+                font-size: 14pt;
+            }
+            h3 {
+                page-break-after: avoid;
+                font-size: 12pt;
+            }
+            pre, code {
+                page-break-inside: avoid;
+            }
+            table {
+                page-break-inside: avoid;
+            }
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+            background: #fff;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 8px;
+            margin-top: 30px;
+        }
+        
+        h3 {
+            color: #7f8c8d;
+            margin-top: 20px;
+        }
+        
+        h4 {
+            color: #95a5a6;
+            margin-top: 15px;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-left: 4px solid #3498db;
+            padding: 12px;
+            overflow-x: auto;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin: 5px 0;
+        }
+        
+        blockquote {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 15px 0;
+            color: #856404;
+        }
+        
+        .critical {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 10px 15px;
+            margin: 15px 0;
+            color: #721c24;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 10px 15px;
+            margin: 15px 0;
+            color: #155724;
+        }
+        
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            margin: 8px 0;
+        }
+        
+        .toc a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px solid #ecf0f1;
+            margin: 30px 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            border: none;
+            margin: 10px 0;
+        }
+        
+        .metadata {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>MAINNET DEPLOYMENT PLAN</h1>
+    <div class="metadata">
+        <p><strong>Project</strong>: PEPEDAWN - Skill-Weighted Decentralized Raffle</p>
+        <p><strong>Target</strong>: Ethereum Mainnet Launch</p>
+        <p><strong>Status</strong>: Pre-Deployment Preparation</p>
+        <p><strong>Last Updated</strong>: 2025-10-09</p>
+    </div>
+</div>
+
+<blockquote>
+    <strong>⚠️ CRITICAL</strong>: This is a one-shot deployment. All items must be completed and verified before mainnet launch.
+</blockquote>
+
+<hr>
+
+<div class="toc">
+    <h2>TABLE OF CONTENTS</h2>
+    <ol>
+        <li><a href="#executive-summary">Executive Summary</a></li>
+        <li><a href="#contract-code-review">Contract Code Review</a></li>
+        <li><a href="#configuration-changes">Configuration Changes</a></li>
+        <li><a href="#gas-cost-analysis">Gas Cost Analysis</a></li>
+        <li><a href="#mainnet-vs-sepolia">Mainnet vs Sepolia Differences</a></li>
+        <li><a href="#deployment-preparation">Deployment Preparation</a></li>
+        <li><a href="#website-deployment">Website Deployment</a></li>
+        <li><a href="#security-checklist">Security Checklist</a></li>
+        <li><a href="#testing-validation">Testing & Validation</a></li>
+        <li><a href="#deployment-procedure">Deployment Procedure</a></li>
+        <li><a href="#post-deployment">Post-Deployment</a></li>
+        <li><a href="#emergency-procedures">Emergency Procedures</a></li>
+    </ol>
+</div>
+
+<hr>
+
+<h1 id="executive-summary">EXECUTIVE SUMMARY</h1>
+
+<h3>Critical Path Items</h3>
+<ul>
+    <li><input type="checkbox"> <strong>Security audit</strong> of PepedawnRaffle.sol</li>
+    <li><input type="checkbox"> <strong>Gas optimization</strong> review and testing</li>
+    <li><input type="checkbox"> <strong>Mainnet wallet</strong> setup with multi-sig</li>
+    <li><input type="checkbox"> <strong>Emblem Vault</strong> mainnet contract integration</li>
+    <li><input type="checkbox"> <strong>Chainlink VRF</strong> mainnet subscription setup</li>
+    <li><input type="checkbox"> <strong>Website</strong> deployment to pepedawn.art (Namecheap)</li>
+    <li><input type="checkbox"> <strong>Emergency procedures</strong> documentation</li>
+    <li><input type="checkbox"> <strong>Monitoring systems</strong> setup</li>
+</ul>
+
+<h3>Estimated Timeline</h3>
+<ul>
+    <li><strong>Preparation</strong>: 2-3 weeks</li>
+    <li><strong>Audit</strong>: 1-2 weeks</li>
+    <li><strong>Deployment Day</strong>: 1 day</li>
+    <li><strong>Monitoring</strong>: Continuous</li>
+</ul>
+
+<h3>Budget Estimates</h3>
+<ul>
+    <li><strong>Gas Costs</strong>: 0.5-1.5 ETH (deployment + initial setup)</li>
+    <li><strong>Chainlink LINK</strong>: 10-20 LINK (VRF subscription)</li>
+    <li><strong>Audit</strong>: $5K-15K (if external audit used)</li>
+    <li><strong>Contingency</strong>: 2 ETH</li>
+</ul>
+
+<hr>
+
+<h1 id="contract-code-review">CONTRACT CODE REVIEW</h1>
+
+<h2>1. REMOVE TEST/DEBUG FUNCTIONS</h2>
+
+<div class="critical">
+    <h4>❌ MUST REMOVE: resetVrfTiming()</h4>
+    <p><strong>Location</strong>: contracts/src/PepedawnRaffle.sol:409-411</p>
+</div>
+
+<pre><code>/**
+ * @notice Reset VRF timing for testing purposes
+ * @dev Only available for testing - should be removed in production
+ */
+function resetVrfTiming() external onlyOwner {
+    lastVrfRequestTime = 0;
+}</code></pre>
+
+<p><strong>Action</strong>: Delete this function entirely before mainnet deployment.</p>
+<p><strong>Reason</strong>: Test function that bypasses security timing checks.</p>
+<p><strong>Impact</strong>: Security vulnerability if left in production.</p>
+
+<hr>
+
+<h2>2. REVIEW CIRCUIT BREAKER LIMITS</h2>
+
+<p><strong>Current Settings</strong>:</p>
+<pre><code>uint256 public constant MAX_PARTICIPANTS_PER_ROUND = 10000; // Line 41
+uint256 public constant MAX_TOTAL_WAGER_PER_ROUND = 1000 ether; // Line 42</code></pre>
+
+<p><strong>Questions to Answer</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Is 1000 ETH per round reasonable for mainnet? (Worth $3-4M at current prices)</li>
+    <li><input type="checkbox"> Should we start with lower limits (e.g., 100 ETH) for first few rounds?</li>
+    <li><input type="checkbox"> Do we need dynamic adjustment based on ETH price?</li>
+</ul>
+
+<p><strong>Recommendation</strong>:</p>
+<ul>
+    <li>Start with <strong>100 ETH limit</strong> for Round 1-3</li>
+    <li>Increase to <strong>500 ETH</strong> for Rounds 4-10</li>
+    <li>Use full <strong>1000 ETH</strong> after proven stable</li>
+</ul>
+
+<hr>
+
+<h2>3. GAS OPTIMIZATION REVIEW</h2>
+
+<h4>VRF Gas Estimation Constants</h4>
+<pre><code>uint32 public constant VRF_MIN_CALLBACK_GAS = 400000; // Line 46
+uint32 public constant VRF_MAX_CALLBACK_GAS = 2500000; // Line 49</code></pre>
+
+<p><strong>Mainnet Considerations</strong>:</p>
+<ul>
+    <li>Base fee on mainnet is typically <strong>10-50 gwei</strong> (vs 1-5 gwei Sepolia)</li>
+    <li>Priority fees add <strong>1-5 gwei</strong> during normal times</li>
+    <li>During congestion: <strong>100-500 gwei</strong> possible</li>
+</ul>
+
+<p><strong>Action Items</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Test callback gas usage with 100+ participants</li>
+    <li><input type="checkbox"> Test with 1000+ participants (max scenario)</li>
+    <li><input type="checkbox"> Verify gas estimation logic works at mainnet gas prices</li>
+    <li><input type="checkbox"> Consider adding max gas price safety check</li>
+</ul>
+
+<hr>
+
+<h2>4. EMBLEM VAULT INTEGRATION</h2>
+
+<p><strong>Current Implementation</strong> (Lines 125-127, 330, 621-638):</p>
+<pre><code>address public emblemVaultAddress;
+IERC721 public emblemVault;</code></pre>
+
+<div class="critical">
+    <h4>CRITICAL CHANGES NEEDED</h4>
+</div>
+
+<h4>Issue 1: Wrong Contract Address</h4>
+<p><strong>Current</strong>: Uses test/mock Emblem Vault address on Sepolia<br>
+<strong>Required</strong>: Must use <strong>mainnet Emblem Vault contract</strong></p>
+
+<p><strong>Action</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Get official Emblem Vault mainnet contract address</li>
+    <li><input type="checkbox"> Verify contract supports ERC721 interface</li>
+    <li><input type="checkbox"> Test NFT custody and transfer functions</li>
+    <li><input type="checkbox"> Document which Emblem Vault version/contract is used</li>
+</ul>
+
+<h4>Issue 2: Prize Assignment Logic</h4>
+<pre><code>function _getPrizeAssetId(uint8 prizeTier, uint256 roundId, uint256 winnerIndex) 
+    internal pure returns (uint256) 
+{
+    // Lines 1322-1331 - Simple mapping for 133 assets
+    // Fake: 1-10, Kek: 11-50, Pepe: 51-133
+}</code></pre>
+
+<p><strong>Questions</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Do you actually have 133 Emblem Vault NFTs ready?</li>
+    <li><input type="checkbox"> Are NFTs minted on mainnet with correct token IDs?</li>
+    <li><input type="checkbox"> How will NFTs be transferred to contract before each round?</li>
+    <li><input type="checkbox"> What happens if we run out of NFTs?</li>
+</ul>
+
+<hr>
+
+<h2>5. CONSTANTS VALIDATION</h2>
+
+<h4>Wager Amounts (Realistic for Mainnet?)</h4>
+<pre><code>uint256 public constant MIN_WAGER = 0.005 ether; // ~$12-18 at current prices
+uint256 public constant BUNDLE_5_PRICE = 0.0225 ether; // ~$60-80
+uint256 public constant BUNDLE_10_PRICE = 0.04 ether; // ~$100-150</code></pre>
+
+<p><strong>Consider</strong>:</p>
+<ul>
+    <li>Is $12 minimum too high/low for participation?</li>
+    <li>Gas costs on mainnet: $5-50+ per transaction during congestion</li>
+    <li>Users need to factor in: bet cost + gas + proof submission gas + claim gas</li>
+</ul>
+
+<p><strong>Recommendation</strong>: Monitor first round closely and be ready to adjust in v2.</p>
+
+<h4>Round Duration</h4>
+<pre><code>uint256 public constant ROUND_DURATION = 2 weeks;</code></pre>
+
+<p><strong>Considerations</strong>:</p>
+<ul>
+    <li>Marketing time: Is 2 weeks enough to build hype?</li>
+    <li>Too short: Not enough participation</li>
+    <li>Too long: Users lose interest</li>
+    <li>Consider 3-4 weeks for first rounds on mainnet</li>
+</ul>
+
+<hr>
+
+<h2>6. SECURITY ENHANCEMENTS</h2>
+
+<h4>Add Version Tracking</h4>
+<pre><code>// Add to contract
+string public constant VERSION = "1.0.0-mainnet";
+uint256 public immutable DEPLOYMENT_TIMESTAMP;
+
+constructor(...) {
+    DEPLOYMENT_TIMESTAMP = block.timestamp;
+    // ... rest of constructor
+}</code></pre>
+
+<h4>Add Contract Pause Reason</h4>
+<pre><code>string public pauseReason; // Add state variable
+
+function pause(string calldata reason) external onlyOwner {
+    pauseReason = reason;
+    _pause();
+    emit ContractPaused(reason, block.timestamp);
+}</code></pre>
+
+<h4>Improve Emergency Withdrawal</h4>
+<pre><code>// Current: 24-hour wait (Line 1388-1392)
+require(
+    block.timestamp >= lastVrfRequestTime + 24 hours, 
+    "Must wait 24 hours after last activity"
+);</code></pre>
+
+<p><strong>Consider</strong>: Should mainnet have <strong>7-day timelock</strong> for emergency withdrawals?</p>
+
+<hr>
+
+<h1 id="configuration-changes">CONFIGURATION CHANGES</h1>
+
+<h2>1. NETWORK CONFIGURATION</h2>
+
+<h4>Current (Sepolia)</h4>
+<pre><code>// frontend/src/contract-config.js
+export const CONTRACT_CONFIG = {
+  address: "0x7Be07bE03603a44c64A81bcEFDe2Bedc38b1f5d0",
+  network: 'sepolia',
+  chainId: 11155111,
+}</code></pre>
+
+<h4>Required (Mainnet)</h4>
+<pre><code>export const CONTRACT_CONFIG = {
+  address: "0x__DEPLOY_TO_MAINNET__", // Will be filled on deployment
+  network: 'mainnet',
+  chainId: 1,
+}</code></pre>
+
+<p><strong>Files to Update</strong>:</p>
+<ul>
+    <li><input type="checkbox"> frontend/src/contract-config.js</li>
+    <li><input type="checkbox"> deploy/artifacts/addresses.json</li>
+    <li><input type="checkbox"> frontend/public/deploy/artifacts/addresses.json</li>
+    <li><input type="checkbox"> contracts/.env (add MAINNET_RPC_URL)</li>
+    <li><input type="checkbox"> All README/documentation</li>
+</ul>
+
+<hr>
+
+<h2>2. CHAINLINK VRF CONFIGURATION</h2>
+
+<h4>Current VRF Settings (Sepolia)</h4>
+<pre><code>{
+  "coordinator": "0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625",
+  "subscriptionId": 1,
+  "keyHash": "0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c"
+}</code></pre>
+
+<h4>Mainnet VRF Requirements</h4>
+
+<p><strong>VRF Coordinator Address</strong>: <code>0x271682DEB8C4E0901D1a1550aD2e64D568E69909</code> (VRF v2.5)</p>
+<p><strong>Key Hash (500 gwei)</strong>: <code>0x8af398995b04c28e9951adb9721ef74c74f93e6a478f39e7e0777be13527e7ef</code></p>
+<p><strong>Key Hash (200 gwei)</strong>: <code>0xff8dedfbfa60af186cf3c830acbc32c05aae823045ae5ea7da1e45fbfaba4f92</code></p>
+<p><strong>Key Hash (100 gwei)</strong>: <code>0x9fe0eebf5e446e3c998ec9bb19951541aee00bb90ea201ae456421a2ded86805</code></p>
+
+<p><strong>Action Items</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Create new VRF subscription on mainnet via https://vrf.chain.link</li>
+    <li><input type="checkbox"> Fund subscription with <strong>20-50 LINK</strong> minimum</li>
+    <li><input type="checkbox"> Add deployed contract as consumer</li>
+    <li><input type="checkbox"> Choose appropriate key hash based on gas requirements</li>
+    <li><input type="checkbox"> Update deploy/artifacts/vrf-config.json</li>
+    <li><input type="checkbox"> Test VRF on mainnet with small transaction first</li>
+</ul>
+
+<p><strong>Cost Estimation</strong>:</p>
+<pre><code>VRF Cost = 0.25 LINK + gas * LINK/ETH exchange rate
+Gas for 500k callback ~= 0.02-0.1 ETH worth of LINK
+Total per round: ~0.35-0.5 LINK
+20 LINK = ~40-60 rounds of operation</code></pre>
+
+<hr>
+
+<h2>3. WALLET SETUP</h2>
+
+<h4>Owner Wallet (Critical)</h4>
+
+<p><strong>Current Setup</strong>: Single EOA (Externally Owned Account)<br>
+<strong>Mainnet Requirement</strong>: <strong>MULTI-SIG WALLET</strong></p>
+
+<p><strong>Recommended</strong>: Gnosis Safe with 2-of-3 or 3-of-5 configuration</p>
+
+<p><strong>Action Items</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Deploy Gnosis Safe on mainnet</li>
+    <li><input type="checkbox"> Add 2-5 signers (trusted team members)</li>
+    <li><input type="checkbox"> Set threshold (e.g., 2-of-3 required for transactions)</li>
+    <li><input type="checkbox"> Test Safe operation on Sepolia first</li>
+    <li><input type="checkbox"> Document all signer addresses</li>
+    <li><input type="checkbox"> Store recovery phrases in separate secure locations</li>
+</ul>
+
+<p><strong>Alternative</strong>: If staying with EOA:</p>
+<ul>
+    <li><input type="checkbox"> Use hardware wallet (Ledger/Trezor)</li>
+    <li><input type="checkbox"> Never expose private key</li>
+    <li><input type="checkbox"> Have backup hardware wallet</li>
+    <li><input type="checkbox"> Use separate "hot wallet" for small operations</li>
+</ul>
+
+<h4>Creators Address</h4>
+<pre><code>address public creatorsAddress; // Receives 80% of wagers</code></pre>
+
+<p><strong>Current</strong>: Likely same as owner</p>
+<p><strong>Mainnet Consideration</strong>:</p>
+<ul>
+    <li>Should this be a payment splitter contract?</li>
+    <li>Multi-sig for fund management?</li>
+    <li>Consider tax/legal implications</li>
+</ul>
+
+<hr>
+
+<h2>4. IPFS CONFIGURATION</h2>
+
+<p><strong>Current Setup</strong> (contracts/scripts/cli/upload-to-ipfs.js):</p>
+<ul>
+    <li>Uses Pinata or similar service</li>
+    <li>API keys in environment variables</li>
+</ul>
+
+<p><strong>Mainnet Requirements</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Production Pinata account (or Infura IPFS)</li>
+    <li><input type="checkbox"> Separate API keys for mainnet</li>
+    <li><input type="checkbox"> Backup IPFS provider</li>
+    <li><input type="checkbox"> Monitor pin status</li>
+    <li><input type="checkbox"> Have fallback hosting (S3/CDN) for critical files</li>
+</ul>
+
+<p><strong>Files that need IPFS</strong>:</p>
+<ul>
+    <li>Participants JSON (each round)</li>
+    <li>Winners JSON (each round)</li>
+    <li>Prize metadata</li>
+    <li>Round documentation</li>
+</ul>
+
+<hr>
+
+<h2>5. ENVIRONMENT VARIABLES</h2>
+
+<h4>New .env Structure</h4>
+
+<pre><code># Mainnet Configuration
+MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+MAINNET_PRIVATE_KEY=0x... # USE HARDWARE WALLET OR ENCRYPTED
+CONTRACT_ADDRESS_MAINNET=0x... # Filled after deployment
+
+# Chainlink VRF Mainnet
+VRF_COORDINATOR_MAINNET=0x271682DEB8C4E0901D1a1550aD2e64D568E69909
+VRF_SUBSCRIPTION_ID_MAINNET=TBD
+VRF_KEY_HASH_MAINNET=0x8af398995b04c28e9951adb9721ef74c74f93e6a478f39e7e0777be13527e7ef
+
+# Addresses
+CREATORS_ADDRESS=0x... # Multi-sig or payment splitter
+EMBLEM_VAULT_ADDRESS_MAINNET=0x... # Real Emblem Vault contract
+
+# IPFS (Production)
+PINATA_API_KEY_PROD=...
+PINATA_SECRET_KEY_PROD=...
+
+# Security
+PAUSE_ENABLED=false # Only enable if needed
+EMERGENCY_CONTACT=email@domain.com</code></pre>
+
+<p><strong>Security Notes</strong>:</p>
+<ul>
+    <li>Never commit mainnet private keys to git</li>
+    <li>Use encrypted environment variable storage</li>
+    <li>Consider using secret management service (AWS Secrets Manager, HashiCorp Vault)</li>
+</ul>
+
+<hr>
+
+<h1 id="gas-cost-analysis">GAS COST ANALYSIS</h1>
+
+<h2>Deployment Costs</h2>
+
+<h4>Contract Deployment</h4>
+<pre><code>Contract Size: ~24kb (below 24.576kb limit ✓)
+Deployment Gas: ~4,000,000 - 5,000,000 gas
+
+At different gas prices:
+- 30 gwei: ~0.12-0.15 ETH ($350-500)
+- 50 gwei: ~0.20-0.25 ETH ($600-850)
+- 100 gwei: ~0.40-0.50 ETH ($1,200-1,700)</code></pre>
+
+<p><strong>Optimization Opportunities</strong>:</p>
+<ul>
+    <li>Current: Uses <code>via_ir = true</code> (IR-based compilation)</li>
+    <li>Consider: Deploy with <code>optimizer_runs = 999999</code> for gas-efficient runtime</li>
+</ul>
+
+<p><strong>Action</strong>: Deploy during low-gas period (weekends, 2-6 AM EST)</p>
+
+<h4>Initial Setup (Post-Deployment)</h4>
+<pre><code>1. Add VRF consumer: ~46,000 gas
+2. Create first round: ~150,000 gas  
+3. Set prizes: ~500,000 gas (10 NFTs)
+4. Open round: ~50,000 gas
+
+Total Setup: ~750,000 gas
+At 30 gwei: ~0.0225 ETH ($70-80)
+At 50 gwei: ~0.0375 ETH ($110-130)</code></pre>
+
+<p><strong>Total Deployment Budget</strong>: 0.5 - 1.5 ETH depending on gas prices</p>
+
+<hr>
+
+<h2>Per-Round Operation Costs</h2>
+
+<h4>Owner Operations</h4>
+<pre><code>1. createRound(): ~150,000 gas
+2. setValidProof(): ~43,000 gas
+3. openRound(): ~50,000 gas
+4. closeRound(): ~100,000 gas (+ refund gas if <10 tickets)
+5. snapshotRound(): ~30,000 gas
+6. commitParticipantsRoot(): ~70,000 gas
+7. requestVrf(): ~200,000 gas (+ Chainlink fee)
+8. submitWinnersRoot(): ~100,000 gas (+ fee distribution)
+
+Total per round: ~750,000 gas
+At 30 gwei: ~0.0225 ETH ($70)
+At 50 gwei: ~0.0375 ETH ($110)</code></pre>
+
+<p><strong>Plus Chainlink VRF</strong>: 0.35-0.5 LINK (~$5-10)</p>
+
+<hr>
+
+<h2>User Operation Costs</h2>
+
+<h4>Place Bet</h4>
+<pre><code>First bet (new participant): ~180,000 gas
+Subsequent bets: ~100,000 gas
+
+At 30 gwei: 0.003-0.0054 ETH ($9-16)
+At 50 gwei: 0.005-0.009 ETH ($15-27)
+At 100 gwei: 0.01-0.018 ETH ($30-54)</code></pre>
+
+<div class="critical">
+    <p><strong>Problem</strong>: During high gas, users pay more in gas than minimum bet (0.005 ETH)!</p>
+</div>
+
+<p><strong>Solutions</strong>:</p>
+<ol>
+    <li>Recommend betting during low-gas periods</li>
+    <li>UI shows estimated gas costs before bet</li>
+    <li>Consider Layer 2 deployment in future (Arbitrum/Optimism)</li>
+</ol>
+
+<h4>Submit Proof</h4>
+<pre><code>Gas: ~120,000 gas
+At 30 gwei: ~0.0036 ETH ($11)
+At 50 gwei: ~0.006 ETH ($18)</code></pre>
+
+<h4>Claim Prize</h4>
+<pre><code>Gas: ~150,000 gas (NFT transfer + verification)
+At 30 gwei: ~0.0045 ETH ($13)
+At 50 gwei: ~0.0075 ETH ($22)</code></pre>
+
+<hr>
+
+<h1 id="mainnet-vs-sepolia">MAINNET VS SEPOLIA DIFFERENCES</h1>
+
+<h2>1. Network Parameters</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Aspect</th>
+            <th>Sepolia</th>
+            <th>Mainnet</th>
+            <th>Impact</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Gas Price</strong></td>
+            <td>1-5 gwei</td>
+            <td>10-500 gwei</td>
+            <td><strong>50-500x higher costs</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Block Time</strong></td>
+            <td>~12s</td>
+            <td>~12s</td>
+            <td>Same</td>
+        </tr>
+        <tr>
+            <td><strong>Finality</strong></td>
+            <td>~15 min</td>
+            <td>~15 min</td>
+            <td>Same</td>
+        </tr>
+        <tr>
+            <td><strong>LINK Price</strong></td>
+            <td>Free (faucet)</td>
+            <td>~$12-20</td>
+            <td>Need to buy LINK</td>
+        </tr>
+        <tr>
+            <td><strong>ETH Value</strong></td>
+            <td>$0 (testnet)</td>
+            <td>$3,000-4,000</td>
+            <td><strong>Real money at risk</strong></td>
+        </tr>
+        <tr>
+            <td><strong>VRF Coordinator</strong></td>
+            <td>Test coordinator</td>
+            <td>Prod coordinator</td>
+            <td>Different addresses</td>
+        </tr>
+        <tr>
+            <td><strong>Etherscan</strong></td>
+            <td>sepolia.etherscan.io</td>
+            <td>etherscan.io</td>
+            <td>Different block explorers</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>2. Chainlink VRF Differences</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Sepolia</th>
+            <th>Mainnet</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Coordinator</strong></td>
+            <td>0x8103B0A8...</td>
+            <td>0x271682DE...</td>
+        </tr>
+        <tr>
+            <td><strong>LINK Funding</strong></td>
+            <td>Faucet</td>
+            <td>Purchase required</td>
+        </tr>
+        <tr>
+            <td><strong>Fulfillment Time</strong></td>
+            <td>30s - 5min</td>
+            <td>30s - 5min</td>
+        </tr>
+        <tr>
+            <td><strong>Cost per Request</strong></td>
+            <td>Free/negligible</td>
+            <td>0.35-0.5 LINK + gas</td>
+        </tr>
+        <tr>
+            <td><strong>Request Limits</strong></td>
+            <td>Relaxed</td>
+            <td>Production limits apply</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="critical">
+    <p><strong>Key Difference</strong>: On mainnet, if subscription runs out of LINK, VRF requests <strong>will fail</strong>!</p>
+</div>
+
+<p><strong>Mitigation</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Set up LINK balance monitoring</li>
+    <li><input type="checkbox"> Alert when balance < 5 LINK</li>
+    <li><input type="checkbox"> Auto-top-up system (consider Chainlink Automation)</li>
+    <li><input type="checkbox"> Have emergency LINK reserve ready</li>
+</ul>
+
+<hr>
+
+<h2>3. Smart Contract Behavior</h2>
+
+<h4>Sepolia: More Forgiving</h4>
+<ul>
+    <li>Can redeploy easily if bugs found</li>
+    <li>Test network, less scrutiny</li>
+    <li>Failed transactions = wasted test ETH (no real cost)</li>
+</ul>
+
+<h4>Mainnet: Unforgiving</h4>
+<ul>
+    <li><strong>Contract is immutable</strong> after deployment</li>
+    <li>All bugs are public and permanent</li>
+    <li>Failed transactions = lost real ETH</li>
+    <li>MEV bots may exploit any vulnerabilities</li>
+    <li>Front-running is common</li>
+</ul>
+
+<hr>
+
+<h2>4. User Experience Differences</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Aspect</th>
+            <th>Sepolia Testing</th>
+            <th>Mainnet Reality</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>User Errors</strong></td>
+            <td>Easy to fix</td>
+            <td>Costly to fix</td>
+        </tr>
+        <tr>
+            <td><strong>Transaction Speed</strong></td>
+            <td>Users tolerant</td>
+            <td>Users expect speed</td>
+        </tr>
+        <tr>
+            <td><strong>Gas Costs</strong></td>
+            <td>Ignored</td>
+            <td>Primary concern</td>
+        </tr>
+        <tr>
+            <td><strong>Support Burden</strong></td>
+            <td>Minimal</td>
+            <td>High (real money)</td>
+        </tr>
+        <tr>
+            <td><strong>Scam Risk</strong></td>
+            <td>Low</td>
+            <td>High (phishing, fake sites)</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>5. Emblem Vault Integration</h2>
+
+<p><strong>Sepolia</strong>:</p>
+<ul>
+    <li>Using mock/test Emblem Vault or no NFTs</li>
+    <li>NFT transfers not tested with real vault</li>
+</ul>
+
+<p><strong>Mainnet</strong>:</p>
+<ul>
+    <li>Must use real Emblem Vault contract</li>
+    <li>Real NFTs with real value</li>
+    <li>NFT custody is critical security concern</li>
+</ul>
+
+<div class="critical">
+    <p><strong>CRITICAL ACTION ITEMS</strong>:</p>
+    <ul>
+        <li><input type="checkbox"> Verify Emblem Vault mainnet contract address</li>
+        <li><input type="checkbox"> Test NFT custody and transfer flow</li>
+        <li><input type="checkbox"> Document NFT token ID allocation strategy</li>
+        <li><input type="checkbox"> Have emergency NFT recovery procedure</li>
+        <li><input type="checkbox"> Ensure contract can receive and hold ERC721s</li>
+    </ul>
+</div>
+
+<hr>
+
+<h1 id="deployment-preparation">DEPLOYMENT PREPARATION</h1>
+
+<h2>PHASE 1: SECURITY AUDIT (2-3 weeks)</h2>
+
+<h4>Option A: Professional Audit (Recommended)</h4>
+<p><strong>Firms to Consider</strong>:</p>
+<ul>
+    <li>OpenZeppelin ($10K-30K)</li>
+    <li>Consensys Diligence ($15K-50K)</li>
+    <li>Trail of Bits ($20K-60K)</li>
+    <li>Cyfrin (Competitive pricing)</li>
+</ul>
+
+<p><strong>Deliverables</strong>:</p>
+<ul>
+    <li>Comprehensive security report</li>
+    <li>Severity-rated findings</li>
+    <li>Recommendations for fixes</li>
+    <li>Re-audit after fixes</li>
+</ul>
+
+<h4>Option B: Community Audit (Budget-Friendly)</h4>
+<p><strong>Platforms</strong>:</p>
+<ul>
+    <li>Code4rena (competitive audits)</li>
+    <li>Sherlock (audit contests)</li>
+    <li>Immunefi (bug bounties)</li>
+</ul>
+
+<p><strong>Cost</strong>: $2K-10K in bug bounties</p>
+
+<h4>Option C: Self-Audit (Minimum Viable)</h4>
+<ul>
+    <li><input type="checkbox"> Run Slither static analysis</li>
+    <li><input type="checkbox"> Run Mythril symbolic execution</li>
+    <li><input type="checkbox"> Run Echidna fuzzing (extended)</li>
+    <li><input type="checkbox"> Manual review by 2+ experienced Solidity devs</li>
+    <li><input type="checkbox"> Document all potential risks</li>
+</ul>
+
+<p><strong>Command</strong>:</p>
+<pre><code>cd contracts
+
+# Slither
+slither src/PepedawnRaffle.sol --solc-remaps "@chainlink=lib/chainlink-brownie-contracts" "@openzeppelin=lib/openzeppelin-contracts"
+
+# Mythril (requires Docker)
+myth analyze src/PepedawnRaffle.sol
+
+# Echidna (requires Echidna installed)
+echidna-test . --contract PepedawnRaffle --config echidna.config.yml</code></pre>
+
+<hr>
+
+<h2>PHASE 2: GAS OPTIMIZATION (1 week)</h2>
+
+<h4>Action Items</h4>
+<ul>
+    <li><input type="checkbox"> Profile gas usage with realistic scenarios
+        <ul>
+            <li>100 participants</li>
+            <li>1000 participants</li>
+            <li>5000 participants</li>
+        </ul>
+    </li>
+    <li><input type="checkbox"> Test VRF callback gas with max participants</li>
+    <li><input type="checkbox"> Optimize hot paths (placeBet, submitProof)</li>
+    <li><input type="checkbox"> Run gas reporter: <code>forge test --gas-report</code></li>
+    <li><input type="checkbox"> Compare optimized vs current version</li>
+</ul>
+
+<h4>Target Metrics</h4>
+<ul>
+    <li>Deployment: < 5M gas</li>
+    <li>placeBet (first): < 150k gas</li>
+    <li>placeBet (repeat): < 80k gas</li>
+    <li>VRF callback: < 2M gas (with 1000 participants)</li>
+</ul>
+
+<hr>
+
+<h2>PHASE 3: MAINNET TESTING (1 week)</h2>
+
+<h4>Fork Testing</h4>
+<pre><code># Mainnet fork testing
+anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+
+# Deploy to fork
+forge script scripts/forge/Deploy.s.sol --fork-url http://localhost:8545</code></pre>
+
+<p><strong>Test Scenarios</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Full round lifecycle with fork</li>
+    <li><input type="checkbox"> VRF request/fulfillment on mainnet fork</li>
+    <li><input type="checkbox"> Emblem Vault NFT custody</li>
+    <li><input type="checkbox"> Emergency pause/unpause</li>
+    <li><input type="checkbox"> Fee distribution</li>
+    <li><input type="checkbox"> Refund scenarios</li>
+</ul>
+
+<h4>Shadow Testing</h4>
+<ul>
+    <li><input type="checkbox"> Deploy to mainnet (without announcing)</li>
+    <li><input type="checkbox"> Run 1-2 private test rounds with team</li>
+    <li><input type="checkbox"> Verify all operations work as expected</li>
+    <li><input type="checkbox"> Test gas costs in production</li>
+    <li><input type="checkbox"> Validate monitoring/alerts</li>
+</ul>
+
+<p><strong>Cost</strong>: ~0.5 ETH for shadow testing</p>
+
+<hr>
+
+<h2>PHASE 4: INFRASTRUCTURE SETUP (1 week)</h2>
+
+<h4>Monitoring Systems</h4>
+
+<p><strong>Required Tools</strong>:</p>
+<ol>
+    <li><strong>Tenderly</strong>: Transaction monitoring and debugging
+        <ul>
+            <li><input type="checkbox"> Create account and add contract</li>
+            <li><input type="checkbox"> Set up alerts for failed transactions</li>
+            <li><input type="checkbox"> Monitor contract state changes</li>
+        </ul>
+    </li>
+    <li><strong>OpenZeppelin Defender</strong>: Contract operations and security
+        <ul>
+            <li><input type="checkbox"> Set up Relayer for owner operations</li>
+            <li><input type="checkbox"> Configure automated tasks (monitoring)</li>
+            <li><input type="checkbox"> Set up security notifications</li>
+        </ul>
+    </li>
+    <li><strong>Chainlink VRF Monitoring</strong>:
+        <ul>
+            <li><input type="checkbox"> Subscribe to VRF alerts</li>
+            <li><input type="checkbox"> Monitor subscription balance</li>
+            <li><input type="checkbox"> Track fulfillment times</li>
+        </ul>
+    </li>
+</ol>
+
+<h4>Alert Configuration</h4>
+<ul>
+    <li><input type="checkbox"> Email alerts for: contract paused, VRF failure, low LINK balance</li>
+    <li><input type="checkbox"> Telegram bot for: new rounds, winners, issues</li>
+    <li><input type="checkbox"> Dashboard for: participants, wagered amounts, gas costs</li>
+</ul>
+
+<hr>
+
+<h2>PHASE 5: LEGAL & COMPLIANCE (Ongoing)</h2>
+
+<h4>Regulatory Considerations</h4>
+
+<p><strong>Gambling Laws</strong>:</p>
+<ul>
+    <li>Online gambling is heavily regulated in most jurisdictions</li>
+    <li>"Skill-based" vs "chance-based" distinction matters</li>
+    <li>Some jurisdictions may classify this as illegal gambling</li>
+</ul>
+
+<p><strong>Securities Laws</strong>:</p>
+<ul>
+    <li>Could ETH prizes be considered securities?</li>
+    <li>Are you running an unregistered lottery?</li>
+</ul>
+
+<p><strong>Tax Implications</strong>:</p>
+<ul>
+    <li>Winnings may be taxable income</li>
+    <li>Creator fees may be taxable revenue</li>
+    <li>International tax considerations</li>
+</ul>
+
+<p><strong>Data Privacy</strong>:</p>
+<ul>
+    <li>GDPR compliance (if EU users)</li>
+    <li>Privacy policy</li>
+    <li>Terms of service</li>
+</ul>
+
+<p><strong>Action Items</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Consult with crypto-focused lawyer</li>
+    <li><input type="checkbox"> Create Terms of Service</li>
+    <li><input type="checkbox"> Create Privacy Policy</li>
+    <li><input type="checkbox"> Add disclaimers to website</li>
+    <li><input type="checkbox"> Consider geo-blocking restricted jurisdictions</li>
+    <li><input type="checkbox"> Document "skill-based" aspects prominently</li>
+</ul>
+
+<p><strong>Budget</strong>: $5K-20K for legal review</p>
+
+<hr>
+
+<h1 id="website-deployment">WEBSITE DEPLOYMENT</h1>
+
+<h2>1. NAMECHEAP HOSTING SETUP</h2>
+
+<h4>Current Setup</h4>
+<ul>
+    <li><strong>Domain</strong>: pepedawn.art (presumably registered)</li>
+    <li><strong>Hosting</strong>: Namecheap shared/VPS hosting</li>
+    <li><strong>Current Deployment</strong>: GitHub Actions via FTP</li>
+</ul>
+
+<h4>Production Requirements</h4>
+
+<p><strong>Server Requirements</strong>:</p>
+<ul>
+    <li>Static file hosting (HTML/CSS/JS)</li>
+    <li>HTTPS/SSL (free with Let's Encrypt)</li>
+    <li>CDN for global distribution</li>
+    <li>DDoS protection</li>
+    <li>Uptime monitoring</li>
+</ul>
+
+<p><strong>Namecheap Options</strong>:</p>
+<ol>
+    <li><strong>Stellar</strong> (shared hosting): $2.99/mo - Suitable if low traffic</li>
+    <li><strong>Stellar Plus</strong>: $4.49/mo - Better for moderate traffic</li>
+    <li><strong>VPS</strong>: $6.88+/mo - Best for high traffic and control</li>
+</ol>
+
+<p><strong>Recommendation</strong>: Start with Stellar Plus, upgrade to VPS if >10k visits/day</p>
+
+<hr>
+
+<h2>2. FRONTEND CONFIGURATION FOR MAINNET</h2>
+
+<h4>Update All Mainnet References</h4>
+
+<p><strong>File: frontend/src/contract-config.js</strong></p>
+<pre><code>export const CONTRACT_CONFIG = {
+  address: "0x_MAINNET_CONTRACT_ADDRESS_", // Update on deployment
+  network: 'mainnet',
+  chainId: 1,
+  
+  abi: [/* ABI array */]
+};
+
+export const VRF_CONFIG = {
+  coordinator: "0x271682DEB8C4E0901D1a1550aD2e64D568E69909",
+  subscriptionId: YOUR_MAINNET_SUB_ID, // Update after creating subscription
+  keyHash: "0x8af398995b04c28e9951adb9721ef74c74f93e6a478f39e7e0777be13527e7ef",
+};
+
+export const NETWORKS = {
+  mainnet: {
+    name: 'Ethereum Mainnet',
+    chainId: 1,
+    rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/',
+    blockExplorer: 'https://etherscan.io'
+  }
+};</code></pre>
+
+<hr>
+
+<h2>3. DEPLOYMENT CHECKLIST</h2>
+
+<h4>Pre-Deployment</h4>
+<ul>
+    <li><input type="checkbox"> Test build locally: <code>npm run build && npm run preview</code></li>
+    <li><input type="checkbox"> Test on mobile devices (iOS Safari, Android Chrome)</li>
+    <li><input type="checkbox"> Test with MetaMask, WalletConnect, Coinbase Wallet</li>
+    <li><input type="checkbox"> Verify all links work</li>
+    <li><input type="checkbox"> Check HTTPS is enforced</li>
+    <li><input type="checkbox"> Verify contract address is correct</li>
+    <li><input type="checkbox"> Test network switching</li>
+    <li><input type="checkbox"> Verify terms of service and privacy policy links</li>
+</ul>
+
+<h4>Deployment</h4>
+<ul>
+    <li><input type="checkbox"> Build production version</li>
+    <li><input type="checkbox"> Upload to Namecheap via FTP/GitHub Actions</li>
+    <li><input type="checkbox"> Verify files uploaded correctly</li>
+    <li><input type="checkbox"> Clear browser cache and test</li>
+    <li><input type="checkbox"> Test from multiple locations (US, EU, Asia)</li>
+    <li><input type="checkbox"> Verify SSL certificate is valid</li>
+    <li><input type="checkbox"> Check mobile responsiveness</li>
+</ul>
+
+<h4>Post-Deployment</h4>
+<ul>
+    <li><input type="checkbox"> Set up uptime monitoring</li>
+    <li><input type="checkbox"> Configure analytics</li>
+    <li><input type="checkbox"> Test all user flows end-to-end</li>
+    <li><input type="checkbox"> Monitor error logs</li>
+    <li><input type="checkbox"> Have rollback plan ready (previous version backup)</li>
+</ul>
+
+<hr>
+
+<h1 id="security-checklist">SECURITY CHECKLIST</h1>
+
+<h2>CONTRACT SECURITY</h2>
+
+<h4>Pre-Deployment Audit</h4>
+<ul>
+    <li><input type="checkbox"> Remove all test/debug functions (<code>resetVrfTiming</code>)</li>
+    <li><input type="checkbox"> Run Slither with no high/medium findings</li>
+    <li><input type="checkbox"> Run Mythril with no critical issues</li>
+    <li><input type="checkbox"> Fuzz test with Echidna (1M+ iterations)</li>
+    <li><input type="checkbox"> Professional audit completed (if budget allows)</li>
+    <li><input type="checkbox"> All audit findings addressed</li>
+    <li><input type="checkbox"> Re-audit after fixes</li>
+</ul>
+
+<h4>Access Control Review</h4>
+<ul>
+    <li><input type="checkbox"> Owner functions are protected with <code>onlyOwner</code></li>
+    <li><input type="checkbox"> No public functions that should be restricted</li>
+    <li><input type="checkbox"> Consider using multi-sig for owner</li>
+    <li><input type="checkbox"> Emergency pause mechanism tested</li>
+    <li><input type="checkbox"> Owner transfer uses two-step process</li>
+</ul>
+
+<h4>Reentrancy Review</h4>
+<ul>
+    <li><input type="checkbox"> All external calls use checks-effects-interactions</li>
+    <li><input type="checkbox"> ReentrancyGuard applied to sensitive functions</li>
+    <li><input type="checkbox"> No hidden reentrancy vectors</li>
+</ul>
+
+<h4>Integer Overflow/Underflow</h4>
+<ul>
+    <li><input type="checkbox"> Using Solidity 0.8.20 (built-in overflow checks ✓)</li>
+    <li><input type="checkbox"> No unsafe math operations</li>
+    <li><input type="checkbox"> Verify calculations don't overflow in edge cases</li>
+</ul>
+
+<h4>External Call Safety</h4>
+<ul>
+    <li><input type="checkbox"> Emblem Vault NFT transfers are safe</li>
+    <li><input type="checkbox"> VRF coordinator calls are validated</li>
+    <li><input type="checkbox"> ETH transfers use <code>call</code> with return value check</li>
+    <li><input type="checkbox"> No delegatecall to untrusted contracts</li>
+</ul>
+
+<hr>
+
+<h2>OPERATIONAL SECURITY</h2>
+
+<h4>Key Management</h4>
+<ul>
+    <li><input type="checkbox"> Owner key stored in hardware wallet</li>
+    <li><input type="checkbox"> No private keys in code or configs</li>
+    <li><input type="checkbox"> Environment variables secured</li>
+    <li><input type="checkbox"> Backup keys stored separately</li>
+    <li><input type="checkbox"> Key access documented and limited</li>
+</ul>
+
+<h4>Infrastructure Security</h4>
+<ul>
+    <li><input type="checkbox"> RPC endpoints use API keys</li>
+    <li><input type="checkbox"> API keys rotated regularly</li>
+    <li><input type="checkbox"> GitHub secrets secured</li>
+    <li><input type="checkbox"> FTP password is strong and unique</li>
+    <li><input type="checkbox"> 2FA enabled on all accounts</li>
+</ul>
+
+<h4>Monitoring & Alerts</h4>
+<ul>
+    <li><input type="checkbox"> Tenderly alerts configured</li>
+    <li><input type="checkbox"> Email alerts for critical events</li>
+    <li><input type="checkbox"> Telegram bot for real-time updates</li>
+    <li><input type="checkbox"> VRF balance monitoring</li>
+    <li><input type="checkbox"> Contract pause detection</li>
+</ul>
+
+<hr>
+
+<h1 id="deployment-procedure">DEPLOYMENT PROCEDURE</h1>
+
+<h2>D-DAY CHECKLIST</h2>
+
+<h4>T-minus 7 days</h4>
+<ul>
+    <li><input type="checkbox"> All audits complete</li>
+    <li><input type="checkbox"> All tests passing</li>
+    <li><input type="checkbox"> Mainnet wallets ready (owner, creators, etc.)</li>
+    <li><input type="checkbox"> VRF subscription created and funded</li>
+    <li><input type="checkbox"> Emblem Vault NFTs ready</li>
+    <li><input type="checkbox"> Website deployment tested</li>
+    <li><input type="checkbox"> Monitoring systems ready</li>
+    <li><input type="checkbox"> Emergency procedures documented</li>
+    <li><input type="checkbox"> Support team briefed</li>
+</ul>
+
+<h4>T-minus 24 hours</h4>
+<ul>
+    <li><input type="checkbox"> Final code review</li>
+    <li><input type="checkbox"> Gas price monitoring (aim for <30 gwei)</li>
+    <li><input type="checkbox"> Check mainnet RPC endpoints working</li>
+    <li><input type="checkbox"> Verify all accounts funded</li>
+    <li><input type="checkbox"> Backup all data</li>
+    <li><input type="checkbox"> Alert team deployment is happening</li>
+</ul>
+
+<h4>T-minus 1 hour</h4>
+<ul>
+    <li><input type="checkbox"> Double-check deployment script</li>
+    <li><input type="checkbox"> Verify environment variables</li>
+    <li><input type="checkbox"> Clear confirmation on all addresses</li>
+    <li><input type="checkbox"> Team on standby</li>
+</ul>
+
+<hr>
+
+<h2>DEPLOYMENT SEQUENCE</h2>
+
+<h4>Step 1: Deploy Contract (Owner)</h4>
+
+<pre><code>cd contracts
+
+# Ensure environment is set
+source .env # or set variables manually
+
+# Verify all variables are set
+echo $MAINNET_RPC_URL
+echo $VRF_COORDINATOR_MAINNET
+echo $CREATORS_ADDRESS
+echo $EMBLEM_VAULT_ADDRESS_MAINNET
+
+# Deploy
+forge script scripts/forge/Deploy.s.sol \
+  --rpc-url $MAINNET_RPC_URL \
+  --broadcast \
+  --verify \
+  --etherscan-api-key $ETHERSCAN_API_KEY \
+  --slow # Use slow mode for better gas price
+
+# Save deployment address
+export CONTRACT_ADDRESS=<deployed_address></code></pre>
+
+<p><strong>Expected Output</strong>:</p>
+<pre><code>✅ Contract deployed at: 0x...
+✅ Transaction: 0x...
+✅ Gas used: ~4.5M
+✅ Cost: ~0.15 ETH (at 30 gwei)</code></pre>
+
+<p><strong>Immediately After</strong>:</p>
+<ol>
+    <li>Save contract address securely</li>
+    <li>Verify on Etherscan it deployed correctly</li>
+    <li>Update all config files</li>
+</ol>
+
+<hr>
+
+<h4>Step 2: Verify Contract (If auto-verify failed)</h4>
+
+<pre><code>forge verify-contract \
+  $CONTRACT_ADDRESS \
+  PepedawnRaffle \
+  --chain mainnet \
+  --etherscan-api-key $ETHERSCAN_API_KEY \
+  --watch</code></pre>
+
+<p><strong>Verify Success</strong>:</p>
+<ul>
+    <li><input type="checkbox"> Green checkmark on Etherscan</li>
+    <li><input type="checkbox"> Source code matches deployed bytecode</li>
+    <li><input type="checkbox"> All imports resolved correctly</li>
+</ul>
+
+<hr>
+
+<h4>Step 3: Add VRF Consumer</h4>
+
+<pre><code># Via Cast
+cast send $VRF_COORDINATOR_MAINNET \
+  "addConsumer(uint256,address)" \
+  $VRF_SUBSCRIPTION_ID \
+  $CONTRACT_ADDRESS \
+  --private-key $PRIVATE_KEY \
+  --rpc-url $MAINNET_RPC_URL
+
+# OR via Chainlink UI: https://vrf.chain.link
+# 1. Go to your subscription
+# 2. Click "Add Consumer"
+# 3. Enter CONTRACT_ADDRESS
+# 4. Confirm transaction</code></pre>
+
+<hr>
+
+<h1 id="emergency-procedures">EMERGENCY PROCEDURES</h1>
+
+<h2>EMERGENCY CONTACTS</h2>
+
+<p><strong>Team Members</strong>:</p>
+<pre><code>Owner 1: [Name] - [Phone] - [Email] - [Telegram]
+Owner 2: [Name] - [Phone] - [Email] - [Telegram]
+Developer: [Name] - [Phone] - [Email] - [Telegram]</code></pre>
+
+<p><strong>External</strong>:</p>
+<pre><code>Chainlink Support: https://docs.chain.link/resources/support
+Etherscan Support: support@etherscan.io
+Audit Firm: [If ongoing relationship]
+Legal Counsel: [Contact info]</code></pre>
+
+<hr>
+
+<h2>EMERGENCY SCENARIOS</h2>
+
+<h4>Scenario 1: Critical Bug Discovered</h4>
+
+<p><strong>Indicators</strong>:</p>
+<ul>
+    <li>Funds at risk</li>
+    <li>Incorrect winner selection</li>
+    <li>Reentrancy vulnerability</li>
+    <li>Front-running issue</li>
+</ul>
+
+<p><strong>Response</strong> (execute in order):</p>
+<ol>
+    <li><strong>Pause contract immediately</strong>:
+        <pre><code>cast send $CONTRACT_ADDRESS "pause()" \
+  --private-key $PRIVATE_KEY \
+  --rpc-url $MAINNET_RPC_URL</code></pre>
+    </li>
+    <li><strong>Announce on all channels</strong>:
+        <pre><code>🚨 URGENT: Contract has been paused due to a critical issue.
+
+Your funds are safe. We are investigating and will provide updates.
+
+DO NOT interact with the contract until further notice.</code></pre>
+    </li>
+    <li><strong>Assess damage</strong>:
+        <ul>
+            <li>How much ETH is at risk?</li>
+            <li>Have any funds been stolen?</li>
+            <li>How many users affected?</li>
+        </ul>
+    </li>
+    <li><strong>Determine fix</strong>:
+        <ul>
+            <li>Can issue be resolved operationally?</li>
+            <li>Need new contract deployment?</li>
+            <li>Can we refund users?</li>
+        </ul>
+    </li>
+    <li><strong>Execute fix</strong>:
+        <ul>
+            <li>Deploy new contract if needed</li>
+            <li>Migrate state if possible</li>
+            <li>Process refunds if necessary</li>
+        </ul>
+    </li>
+    <li><strong>Communication</strong>:
+        <ul>
+            <li>Transparent about what happened</li>
+            <li>Explain fix</li>
+            <li>Timeline for resolution</li>
+            <li>Compensation plan (if applicable)</li>
+        </ul>
+    </li>
+</ol>
+
+<hr>
+
+<h4>Scenario 2: VRF Request Timeout</h4>
+
+<p><strong>Indicators</strong>:</p>
+<ul>
+    <li>VRF request made >1 hour ago</li>
+    <li>No fulfillment event</li>
+    <li>Round stuck in VRFRequested state</li>
+</ul>
+
+<p><strong>Response</strong>:</p>
+<ol>
+    <li><strong>Check VRF subscription</strong>:
+        <pre><code># Visit https://vrf.chain.link
+# Check subscription balance
+# Check consumer is added</code></pre>
+    </li>
+    <li><strong>Contact Chainlink</strong>:
+        <ul>
+            <li>Create support ticket</li>
+            <li>Provide request ID</li>
+            <li>Wait for response (usually < 1 hour)</li>
+        </ul>
+    </li>
+    <li><strong>If Chainlink confirms issue</strong>:
+        <ul>
+            <li>May need to re-request VRF</li>
+            <li>Chainlink may refund LINK</li>
+        </ul>
+    </li>
+    <li><strong>Communication</strong>:
+        <pre><code>⏳ VRF fulfillment is taking longer than expected.
+
+This is a Chainlink infrastructure issue, not with our contract.
+
+We are in contact with Chainlink support. Round will continue once resolved.</code></pre>
+    </li>
+</ol>
+
+<hr>
+
+<h4>Scenario 3: Owner Key Compromise</h4>
+
+<p><strong>Indicators</strong>:</p>
+<ul>
+    <li>Unexpected transactions from owner address</li>
+    <li>Key has been exposed</li>
+    <li>Suspicious activity</li>
+</ul>
+
+<p><strong>Response</strong> (IMMEDIATE):</p>
+<ol>
+    <li><strong>If you still have access</strong>:
+        <pre><code># Transfer ownership to new safe address
+cast send $CONTRACT_ADDRESS \
+  "transferOwnership(address)" \
+  $NEW_SAFE_ADDRESS \
+  --private-key $CURRENT_KEY \
+  --rpc-url $MAINNET_RPC_URL
+
+# Pause contract from new address
+cast send $CONTRACT_ADDRESS "pause()" \
+  --private-key $NEW_KEY \
+  --rpc-url $MAINNET_RPC_URL</code></pre>
+    </li>
+    <li><strong>If you don't have access</strong>:
+        <ul>
+            <li>Announce publicly</li>
+            <li>Contract may need to be abandoned</li>
+            <li>Work with community on refund plan</li>
+            <li>Consider using <code>emergencyWithdrawETH</code> if available</li>
+        </ul>
+    </li>
+    <li><strong>Communication</strong>:
+        <pre><code>🚨 SECURITY ALERT: Owner key may be compromised.
+
+Contract is paused. DO NOT send any funds.
+
+We are working on a solution. Updates to follow.</code></pre>
+    </li>
+</ol>
+
+<hr>
+
+<h1 id="conclusion">CONCLUSION</h1>
+
+<div class="success">
+    <h3>This deployment plan covers:</h3>
+    <ul>
+        <li>✅ <strong>Contract Code</strong>: Review, changes needed, security hardening</li>
+        <li>✅ <strong>Configuration</strong>: All network configs, wallet setup, environment variables</li>
+        <li>✅ <strong>Gas Costs</strong>: Detailed analysis and optimization</li>
+        <li>✅ <strong>Mainnet Differences</strong>: Comprehensive comparison with Sepolia</li>
+        <li>✅ <strong>Deployment</strong>: Step-by-step procedure with commands</li>
+        <li>✅ <strong>Website</strong>: Namecheap deployment, CDN, monitoring</li>
+        <li>✅ <strong>Security</strong>: Audits, monitoring, emergency procedures</li>
+        <li>✅ <strong>Operations</strong>: Runbooks, support, ongoing maintenance</li>
+        <li>✅ <strong>Legal</strong>: Compliance, terms of service, risk management</li>
+        <li>✅ <strong>Marketing</strong>: Launch strategy, community building</li>
+    </ul>
+</div>
+
+<div class="critical">
+    <h3>Most Critical Items:</h3>
+    <ol>
+        <li>❌ Remove <code>resetVrfTiming()</code> function (SECURITY)</li>
+        <li>✅ Professional security audit (HIGHLY RECOMMENDED)</li>
+        <li>✅ Multi-sig wallet for owner (CRITICAL)</li>
+        <li>✅ Emblem Vault mainnet integration testing</li>
+        <li>✅ VRF subscription setup and funding</li>
+        <li>✅ Comprehensive monitoring and alerts</li>
+        <li>✅ Emergency procedures documentation</li>
+        <li>✅ Legal review (terms, privacy, disclaimers)</li>
+    </ol>
+</div>
+
+<blockquote>
+    <strong>You have one shot at this. Take your time, follow this plan, and you'll be ready for a successful mainnet launch. 🚀</strong>
+</blockquote>
+
+<hr>
+
+<h3>Next Steps:</h3>
+<ol>
+    <li>Read through this entire document</li>
+    <li>Create project board with all checklist items</li>
+    <li>Assign responsibilities to team members</li>
+    <li>Set timeline for each phase</li>
+    <li>Begin Phase 1 (Security Audit)</li>
+</ol>
+
+<p><strong>Estimated Total Timeline</strong>: 4-6 weeks from start to launch<br>
+<strong>Estimated Total Budget</strong>: $10K-50K (audit, legal, infrastructure, contingency)</p>
+
+<p style="text-align: center; margin-top: 40px;"><strong>Good luck with your mainnet deployment! 🐸</strong></p>
+
+</body>
+</html>
+

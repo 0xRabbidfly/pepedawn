@@ -218,6 +218,19 @@ async function generateWinnersFile(roundId, outputPath) {
   fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
   console.log('✅ File written successfully!');
   
+  // Auto-copy to frontend for local testing
+  try {
+    const frontendWinnersDir = path.join(__dirname, '../../../frontend/public/winners');
+    if (!fs.existsSync(frontendWinnersDir)) {
+      fs.mkdirSync(frontendWinnersDir, { recursive: true });
+    }
+    const frontendWinnersPath = path.join(frontendWinnersDir, `winners-round-${roundId}.json`);
+    fs.copyFileSync(outputPath, frontendWinnersPath);
+    console.log(`✅ Copied to frontend: ${frontendWinnersPath}`);
+  } catch (error) {
+    console.warn('⚠️  Could not copy to frontend:', error.message);
+  }
+  
   // Display summary and next steps
   console.log('\n=== Summary ===');
   console.log(`Round ID: ${roundId}`);

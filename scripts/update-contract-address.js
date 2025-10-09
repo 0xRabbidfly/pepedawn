@@ -37,6 +37,15 @@ class ConfigurationUpdater {
     const mainnet = addressesJson['1'] || {};
     const latestAddress = sepolia.PepedawnRaffle || mainnet.PepedawnRaffle || null;
     
+    // Also update contracts/deploy/artifacts/addresses.json
+    const contractsAddressesPath = 'contracts/deploy/artifacts/addresses.json';
+    const contractsAddressesDir = path.dirname(contractsAddressesPath);
+    if (!fs.existsSync(contractsAddressesDir)) {
+      fs.mkdirSync(contractsAddressesDir, { recursive: true });
+    }
+    fs.writeFileSync(contractsAddressesPath, JSON.stringify(addressesJson, null, 2));
+    console.log(`✅ Contracts addresses updated - ${contractsAddressesPath}`);
+    
     // Update frontend addresses
     const frontendArtifactsDir = path.dirname(this.frontendAddressesPath);
     if (!fs.existsSync(frontendArtifactsDir)) {
@@ -209,6 +218,63 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
     fs.writeFileSync(vrfConfigPath, JSON.stringify(vrfConfig, null, 2));
     console.log(`✅ VRF configuration updated - ${vrfConfigPath}`);
   }
+
+  /**
+   * Register contract as VRF consumer
+   */
+  async addVRFConsumer(contractAddress) {
+    console.log('\n📡 Registering contract as VRF consumer...');
+    
+    try {
+      // Load environment variables
+      const envPath = path.resolve(this.envPath);
+      if (!fs.existsSync(envPath)) {
+        throw new Error('.env file not found at: ' + envPath);
+      }
+      
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const env = {};
+      envContent.split(/\r?\n/).forEach(line => {
+        line = line.trim();
+        if (!line || line.startsWith('#')) return;
+        const match = line.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          const key = match[1].trim();
+          const value = match[2].trim();
+          env[key] = value;
+        }
+      });
+      
+      const vrfCoordinator = env.VRF_COORDINATOR || '0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625';
+      const subscriptionId = env.VRF_SUBSCRIPTION_ID;
+      const privateKey = env.PRIVATE_KEY;
+      const rpcUrl = env.SEPOLIA_RPC_URL;
+      
+      if (!subscriptionId || !privateKey || !rpcUrl) {
+        throw new Error('Missing required env vars: VRF_SUBSCRIPTION_ID, PRIVATE_KEY, SEPOLIA_RPC_URL');
+      }
+      
+      // Execute cast command
+      const { execSync } = require('child_process');
+      const cmd = `cast send ${vrfCoordinator} "addConsumer(uint256,address)" ${subscriptionId} ${contractAddress} --private-key ${privateKey} --rpc-url ${rpcUrl}`;
+      
+      execSync(cmd, { 
+        stdio: 'inherit', 
+        cwd: path.join(__dirname, '..'),
+        env: { ...process.env, ...env }
+      });
+      console.log('✅ Contract registered as VRF consumer');
+      
+      return true;
+    } catch (error) {
+      console.log(`⚠️  Auto-registration failed: ${error.message}`);
+      console.log('\n📋 Manual registration command:');
+      console.log(`cd Z:\\Projects\\pepedawn\\contracts`);
+      console.log(`cast send $env:VRF_COORDINATOR "addConsumer(uint256,address)" $env:VRF_SUBSCRIPTION_ID ${contractAddress} --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL`);
+      
+      return false;
+    }
+  }
 }
 
 async function main() {
@@ -265,11 +331,13 @@ Chain IDs:
     await updater.updateFrontendConfig();
     await updater.updateVRFConfig();
     
+    // 4. Add as VRF consumer
+    await updater.addVRFConsumer(contractAddress);
+    
     console.log('\n✅ Contract address update complete!');
     console.log('\n📋 Next steps:');
     console.log('1. Refresh your frontend (F5)');
     console.log('2. Verify the new contract on Etherscan');
-    console.log('3. Add contract as VRF consumer (if using VRF)');
     
   } catch (error) {
     console.error('❌ Update failed:', error.message);

@@ -127,11 +127,17 @@ export async function updateRoundStatus(contract) {
     const currentRoundId = await contract.currentRoundId();
     
     if (currentRoundId.toString() === '0') {
-      // No rounds created yet
-      const roundNumber = document.getElementById('round-number');
-      if (roundNumber) {
-        roundNumber.textContent = '';
+      // No rounds opened yet
+      const currentRoundTitle = document.getElementById('current-round-title');
+      if (currentRoundTitle) {
+        currentRoundTitle.textContent = 'Current Round: Being Created...';
       }
+      
+      const timeRemaining = document.getElementById('time-remaining');
+      if (timeRemaining) timeRemaining.textContent = 'Coming Soon';
+      
+      const totalTickets = document.getElementById('total-tickets');
+      if (totalTickets) totalTickets.textContent = '0';
       
       // Clear all status highlights
       const statusItems = document.querySelectorAll('.status-item');

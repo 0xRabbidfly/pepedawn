@@ -163,6 +163,19 @@ async function generateParticipantsFile(roundId, outputPath) {
   fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
   console.log('✅ File written successfully!');
   
+  // Auto-copy to frontend for local testing
+  try {
+    const frontendParticipantsDir = path.join(__dirname, '../../../frontend/public/participants');
+    if (!fs.existsSync(frontendParticipantsDir)) {
+      fs.mkdirSync(frontendParticipantsDir, { recursive: true });
+    }
+    const frontendParticipantsPath = path.join(frontendParticipantsDir, `participants-round-${roundId}.json`);
+    fs.copyFileSync(outputPath, frontendParticipantsPath);
+    console.log(`✅ Copied to frontend: ${frontendParticipantsPath}`);
+  } catch (error) {
+    console.warn('⚠️  Could not copy to frontend:', error.message);
+  }
+  
   // Display summary and next steps
   console.log('\n=== Summary ===');
   console.log(`Round ID: ${roundId}`);

@@ -193,6 +193,7 @@ async function commitParticipantsAndRequestVRF(contractAddress, roundId = 1) {
   const participantsRoot = participantsData.merkle.root;
   
   console.log(`\n📋 Participants Root: ${participantsRoot}`);
+  console.log('💡 File auto-copied to frontend/public/participants/ for local testing');
   
   // For testing, use a mock CID (in production, upload to IPFS first)
   const mockCID = `bafkrei-test-participants-${roundId}-${Date.now()}`;
@@ -271,14 +272,7 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
   const winnersRoot = winnersData.merkle.root;
   
   console.log(`\n📋 Winners Root: ${winnersRoot}`);
-  
-  // Copy to frontend for local testing
-  console.log('📂 Copying winners file to frontend...');
-  const frontendWinnersDir = path.join(__dirname, '../frontend/public/winners');
-  if (!fs.existsSync(frontendWinnersDir)) {
-    fs.mkdirSync(frontendWinnersDir, { recursive: true });
-  }
-  fs.copyFileSync(winnersFile, path.join(frontendWinnersDir, `winners-round-${roundId}.json`));
+  console.log('💡 File auto-copied to frontend/public/winners/ for local testing');
   
   // For testing, use a mock CID
   const mockCID = `bafkrei-test-winners-${roundId}-${Date.now()}`;

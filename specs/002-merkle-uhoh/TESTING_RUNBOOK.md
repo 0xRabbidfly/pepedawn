@@ -3,7 +3,7 @@
 **Purpose**: Step-by-step guide for testing the complete PepedawnRaffle lifecycle  
 **Last Updated**: October 9, 2025  
 **Target Network**: Sepolia Testnet  
-**Expected Duration**: 45-60 minutes (including VRF wait time)
+**Expected Duration**: 50-70 minutes first time (including VRF wait time & NFT setup)
 
 ---
 
@@ -11,8 +11,10 @@
 
 This runbook walks you through a complete round test:
 
-1. **Deploy & Verify** - Deploy contract to Sepolia, verify on Etherscan
-2. **Round Setup** - Create and open Round 1
+0. **Environment Setup** - Configure tools and credentials
+0.5. **Test NFTs (Sepolia)** - Deploy test NFT contract for prize testing
+1. **Deploy & Verify** - Deploy raffle contract to Sepolia, verify on Etherscan
+2. **Round Setup** - Transfer NFTs, set prizes, create and open Round 1
 3. **User Testing (UI)** - Place bets and submit proofs via frontend
 4. **Close & Snapshot** - Close round and take participants snapshot
 5. **Merkle Participants** - Generate participants file, upload to IPFS, commit root
@@ -34,7 +36,7 @@ Before starting, verify:
 - [ ] **Multiple test wallets** - At least 3 wallets in MetaMask for realistic testing
 - [ ] **Sepolia RPC URL** - From drpc.org, Alchemy, or Infura
 - [ ] **Chainlink VRF Subscription** - Created and funded at vrf.chain.link
-- [ ] **Emblem Vault NFTs** - 10 test NFTs ready to transfer to contract
+- [ ] **Test NFTs** - Will deploy in Phase 0.5 (Sepolia) OR use real Emblem Vault NFTs (mainnet)
 
 ---
 
@@ -58,7 +60,8 @@ VRF_KEY_HASH=0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae
 
 # Contract Addresses
 CREATORS_ADDRESS=your_creators_wallet_address
-EMBLEM_VAULT_ADDRESS=0x82FbD1c8fBe0a8f6Eb684dd49a4D7D2e62b2d7Fc
+# Using our custom NFT address on Sepolia for testing only
+EMBLEM_VAULT_ADDRESS=0xd8b3f0b3f35226ee624966b4d8f5e44ebc0fb1c9
 
 # Contract Address (filled after deployment)
 CONTRACT_ADDRESS=
@@ -112,6 +115,29 @@ npm install
 ```
 
 **Expected**: Dependencies installed in `contracts/scripts/cli/node_modules/`
+
+---
+
+## Phase 0.5: Test NFTs (Sepolia Only - FIRST TIME)
+
+**Skip if you already have**: Test NFT at `0xD8B3f0B3f35226eE624966b4d8F5E44EBc0FB1c9` - just update your `.env`
+
+```powershell
+cd Z:\Projects\pepedawn\contracts
+forge script scripts/forge/MintTestNFTs.s.sol:MintTestNFTs --rpc-url $env:SEPOLIA_RPC_URL --private-key $env:PRIVATE_KEY --broadcast
+```
+
+Update `contracts/.env`:
+```bash
+EMBLEM_VAULT_ADDRESS=0xYourTestNFTAddress
+```
+
+**Reload environment** (repeat step 0.2)
+
+**Note**: Deploy once, reuse forever. Mint more NFTs as needed with:
+```bash
+cast send $EMBLEM_VAULT_ADDRESS "mint(address)" $CREATORS_ADDRESS --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+```
 
 ---
 
@@ -229,7 +255,7 @@ Chain ID: 11155111 (Sepolia)
 ✅ Contract address update complete!
 ```
 
-**Add VRF Consumer:**
+**If VRF registration fails**, run manually:
 ```powershell
 cd Z:\Projects\pepedawn\contracts
 cast send $env:VRF_COORDINATOR "addConsumer(uint256,address)" $env:VRF_SUBSCRIPTION_ID 0xYourNewContractAddress --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -292,9 +318,35 @@ transactionHash         0x...
 
 **Verify**: Check Etherscan for `RoundCreated` event
 
-### 2.3 Transfer Prize NFTs to Contract
+### 2.3 Transfer & Map Prize NFTs
 
-**⚠️ REQUIRED**: Contract needs 10 Emblem Vault NFTs to award as prizes
+**If NFTs already used, mint 10 more**:
+```powershell
+cast send $env:EMBLEM_VAULT_ADDRESS "mint(address,uint256)" $env:CREATORS_ADDRESS 10 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+```
+
+**Transfer & Map** (use IDs 1-10, or 11-20 if you minted more):
+```powershell
+cd Z:\Projects\pepedawn\contracts
+# Approve
+cast send $env:EMBLEM_VAULT_ADDRESS "setApprovalForAll(address,bool)" $env:CONTRACT_ADDRESS true --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+Start-Sleep -Seconds 10
+
+# Transfer NFTs 1-10 (modify iterator 1..10 at start if NFT #s changed range)
+1..10 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
+
+# Map prizes
+cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+```
+
+**Git Bash**:
+```bash
+cd /z/Projects/pepedawn/contracts
+set -a; source .env; set +a
+cast send $EMBLEM_VAULT_ADDRESS "setApprovalForAll(address,bool)" $CONTRACT_ADDRESS true --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+for i in {1..10}; do cast send $EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $CREATORS_ADDRESS $CONTRACT_ADDRESS $i --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL; sleep 2; done
+cast send $CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+```
 
 **Using Emblem Vault Interface**:
 1. Go to your Emblem Vault holdings
@@ -304,22 +356,11 @@ transactionHash         0x...
 **Verify**: Check contract balance on Etherscan:
 ```powershell
 cast call $env:CONTRACT_ADDRESS "balanceOf(address)" $env:CONTRACT_ADDRESS --rpc-url $env:SEPOLIA_RPC_URL
+# Map prizes (BEFORE opening round!)
+cast send $CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
-Should return `10` (0x000...00a in hex)
 
-### 2.4 Map Prize NFTs to Round 1
-
-Map the 10 NFTs you transferred as prizes:
-
-```powershell
-# Example with token IDs 1-10
-cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
-```
-**Replace `[1,2,3,4,5,6,7,8,9,10]`** with your actual token IDs!
-
-**Expected**: Transaction succeeds
-
-### 2.5 Set Valid Proof (Optional)
+### 2.4 Set Valid Proof (Optional)
 
 Set a proof puzzle for +40% weight bonus:
 
@@ -332,7 +373,7 @@ cast send $env:CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 $(cast keccak
 
 **Note**: Users who submit `pepedawn2025` get +40% to their weight!
 
-### 2.6 Open Round for Betting
+### 2.5 Open Round for Betting
 
 ```powershell
 cast send $env:CONTRACT_ADDRESS "openRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -570,6 +611,7 @@ Should show: `Status: Snapshot (3)`
 ### 5.1 Generate Participants File
 
 ```powershell
+cd Z:\Projects\pepedawn\contracts\scripts\cli
 node manage-round.js snapshot 1
 ```
 
@@ -1146,6 +1188,7 @@ cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY -
 | Phase | Task | Estimated Time |
 |-------|------|----------------|
 | 0 | Environment Setup | 10 min (one-time) |
+| 0.5 | Create Test NFTs (Sepolia) | 5 min (first-time only) |
 | 1 | Deploy & Verify | 5-7 min |
 | 2 | Round Setup | 5 min |
 | 3 | Frontend Testing | 10-15 min |
@@ -1155,7 +1198,7 @@ cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY -
 | 7 | Merkle Winners | 5 min |
 | 8 | Claims Testing | 10 min |
 | 9 | Verification | 5 min |
-| **Total** | **45-60 minutes** | |
+| **Total** | **50-65 minutes** (60-70 first time) | |
 
 ---
 
@@ -1163,8 +1206,11 @@ cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY -
 
 This test is successful if:
 
+- ✅ Test NFTs deployed and minted (Sepolia only)
 - ✅ Contract deploys and verifies on Sepolia
-- ✅ Round 1 created and opened
+- ✅ Contract configured with correct test NFT address
+- ✅ Round 1 created with prizes set
+- ✅ Round 1 opened for betting
 - ✅ 3+ wallets successfully placed bets (10+ total tickets)
 - ✅ Proof submission works (both correct and incorrect)
 - ✅ Round closes and snapshot succeeds

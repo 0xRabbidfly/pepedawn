@@ -8,7 +8,7 @@
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
-  address: "0x394906CcEeeEBED332795A8Fc2Fb8b589A3Bd8AD", // Deployed on 2025-02-06 - Binary search optimization
+  address: "0x7Be07bE03603a44c64A81bcEFDe2Bedc38b1f5d0", // Deployed on 2025-02-06 - Binary search optimization
   
   // Sepolia testnet configuration
   network: 'sepolia',

@@ -59,7 +59,7 @@ function formatAddress(address) {
 // Update button states based on round status and user state
 async function updateButtonStates(roundState = null) {
   const submitProofBtn = document.getElementById('submit-proof');
-  const placeBetBtn = document.getElementById('place-bet');
+  const buyTicketsBtn = document.getElementById('buy-tickets');
   const ticketCards = document.querySelectorAll('.ticket-option-card');
   const proofInput = document.getElementById('proof-input');
   
@@ -69,9 +69,9 @@ async function updateButtonStates(roundState = null) {
       submitProofBtn.disabled = true;
       submitProofBtn.title = 'Contract not available';
     }
-    if (placeBetBtn) {
-      placeBetBtn.disabled = true;
-      placeBetBtn.title = 'Contract not available';
+    if (buyTicketsBtn) {
+      buyTicketsBtn.disabled = true;
+      buyTicketsBtn.title = 'Contract not available';
     }
     ticketCards.forEach(card => {
       card.style.pointerEvents = 'none';
@@ -103,15 +103,15 @@ async function updateButtonStates(roundState = null) {
     // Check if round is open for betting (status 1 = Open)
     const isRoundOpen = currentRoundStatus === 1;
     
-    // Update betting buttons
-    if (placeBetBtn) {
-      placeBetBtn.disabled = !isRoundOpen || !userAddress;
+    // Update ticket purchase buttons
+    if (buyTicketsBtn) {
+      buyTicketsBtn.disabled = !isRoundOpen || !userAddress;
       if (!userAddress) {
-        placeBetBtn.title = 'Connect wallet to place bets';
+        buyTicketsBtn.title = 'Connect wallet to purchase tickets';
       } else if (!isRoundOpen) {
-        placeBetBtn.title = 'Round is not open for betting';
+        buyTicketsBtn.title = 'Round is not open for ticket purchases';
       } else {
-        placeBetBtn.title = '';
+        buyTicketsBtn.title = '';
       }
     }
     
@@ -149,7 +149,7 @@ async function updateButtonStates(roundState = null) {
           
           if (userStats.tickets.toString() === '0') {
             proofDisabled = true;
-            proofTooltip = 'Place a bet before submitting proof';
+            proofTooltip = 'Purchase tickets before submitting proof';
           } else if (userStats.hasProof) {
             proofDisabled = true;
             proofTooltip = 'Proof already submitted for this round';
@@ -181,9 +181,9 @@ async function updateButtonStates(roundState = null) {
       submitProofBtn.disabled = true;
       submitProofBtn.title = 'Error checking round status';
     }
-    if (placeBetBtn) {
-      placeBetBtn.disabled = true;
-      placeBetBtn.title = 'Error checking round status';
+    if (buyTicketsBtn) {
+      buyTicketsBtn.disabled = true;
+      buyTicketsBtn.title = 'Error checking round status';
     }
     ticketCards.forEach(card => {
       card.style.pointerEvents = 'none';
@@ -273,9 +273,9 @@ function setupEventListeners() {
     });
   }
   
-  const placeBetBtn = document.getElementById('place-bet');
-  if (placeBetBtn) {
-    placeBetBtn.addEventListener('click', placeBet);
+  const buyTicketsBtn = document.getElementById('buy-tickets');
+  if (buyTicketsBtn) {
+    buyTicketsBtn.addEventListener('click', buyTickets);
   }
   
   const submitProofBtn = document.getElementById('submit-proof');
@@ -1321,8 +1321,8 @@ function hideTicketConnector() {
   path.classList.remove('animated');
 }
 
-// Place bet with enhanced security validations
-async function placeBet() {
+// Buy tickets with enhanced security validations
+async function buyTickets() {
   try {
     if (!contract || !signer || !userAddress) {
       showTransactionStatus('Please connect your wallet first', 'error');
@@ -1387,7 +1387,7 @@ async function placeBet() {
       showTransactionStatus('Submitting bet transaction...', 'info');
       
       // Call contract method (enhanced version uses tickets parameter)
-      const tx = await contract.placeBet(tickets, { value: amountWei });
+      const tx = await contract.buyTickets(tickets, { value: amountWei });
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);
@@ -1413,7 +1413,7 @@ async function placeBet() {
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
-      handleTransactionError(contractError, 'Place Bet');
+      handleTransactionError(contractError, 'Buy Tickets');
     }
     
   } catch (error) {
@@ -1650,6 +1650,6 @@ window.pepedawn = {
   contract,
   userAddress,
   connectWallet,
-  placeBet,
+  buyTickets,
   submitProof
 };

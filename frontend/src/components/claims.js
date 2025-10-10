@@ -313,15 +313,16 @@ export async function displayWinners(contract, roundId) {
  * @param {string} userAddress - User's address
  */
 export async function displayRefundButton(contract, userAddress) {
+  const refundSection = document.getElementById('refund-section');
   const refundContainer = document.getElementById('refund-container');
-  if (!refundContainer) return;
+  if (!refundContainer || !refundSection) return;
   
   try {
     // Check refund balance
     const refundBalance = await contract.refunds(userAddress);
     
     if (refundBalance === 0n) {
-      refundContainer.style.display = 'none';
+      refundSection.style.display = 'none';
       return;
     }
     
@@ -335,7 +336,7 @@ export async function displayRefundButton(contract, userAddress) {
         <button id="withdraw-refund-btn" class="btn btn-primary">Withdraw Refund</button>
       </div>
     `;
-    refundContainer.style.display = 'block';
+    refundSection.style.display = 'block';
     
     // Add event listener
     const withdrawBtn = document.getElementById('withdraw-refund-btn');

@@ -393,19 +393,13 @@ async function checkUnclaimedPrizes(contract, userAddress) {
 
 // Display unclaimed prizes notification
 async function displayUnclaimedPrizesNotification(contract, userAddress) {
-  console.log('🎁 displayUnclaimedPrizesNotification called:', { contract: !!contract, userAddress });
   const notificationElement = document.getElementById('unclaimed-prizes-notification');
-  if (!notificationElement) {
-    console.warn('⚠️ Notification element not found');
-    return;
-  }
+  if (!notificationElement) return;
   
   try {
     const result = await checkUnclaimedPrizes(contract, userAddress);
-    console.log('🎁 Unclaimed prizes check result:', result);
     
     if (result.count > 0) {
-      console.log('✅ Showing unclaimed prizes notification');
       notificationElement.innerHTML = `
         <a href="/claim.html" class="unclaimed-link">
           <span class="unclaimed-icon">🎁</span>
@@ -414,7 +408,6 @@ async function displayUnclaimedPrizesNotification(contract, userAddress) {
       `;
       notificationElement.style.display = 'block';
     } else {
-      console.log('ℹ️ No unclaimed prizes to show');
       notificationElement.style.display = 'none';
     }
   } catch (error) {

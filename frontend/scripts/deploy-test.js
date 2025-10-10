@@ -49,6 +49,18 @@ try {
   copyDirectory(DIST_DIR, DEPLOY_DIR);
   console.log('✅ Files copied to deploy-test directory');
   
+  // Verify critical PNG files are included
+  const pngFiles = ['counterparty.png', 'raven_cutout_800.png', 'PEPEDAWN_thumbnail.png'];
+  console.log('\n🖼️  Verifying PNG files:');
+  pngFiles.forEach(file => {
+    const filePath = path.join(DEPLOY_DIR, file);
+    if (fs.existsSync(filePath)) {
+      console.log(`   ✅ ${file}`);
+    } else {
+      console.log(`   ❌ ${file} - MISSING!`);
+    }
+  });
+  
   // List copied files
   const files = fs.readdirSync(DEPLOY_DIR, { recursive: true });
   console.log('📋 Copied files:');

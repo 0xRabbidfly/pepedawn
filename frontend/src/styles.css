@@ -953,7 +953,7 @@ section h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('../public/raven_cutout_800.png');
+  background-image: url('/raven_cutout_800.png');
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center right;
@@ -2481,5 +2481,93 @@ section h2 {
   
   .tier-label {
     font-size: var(--font-size-lg);
+  }
+}
+
+/* Gambling Warning Section */
+.gambling-warning {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(255, 193, 7, 0.1));
+  border: 2px solid var(--warning-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.warning-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.gambling-warning h3 {
+  color: var(--warning-color);
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-xl);
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gambling-warning p {
+  margin: var(--spacing-sm) 0;
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.gambling-warning p strong {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.gambling-warning code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
+  color: var(--accent-color);
+  word-break: break-all;
+}
+
+.gambling-warning a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.gambling-warning a:hover {
+  color: #1976D2;
+  text-decoration: underline;
+}
+
+.gambling-warning .risk-notice {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 152, 0, 0.3);
+  font-weight: 600;
+  color: var(--warning-color);
+  font-size: var(--font-size-base);
+}
+
+/* Mobile responsive for gambling warning */
+@media (max-width: 768px) {
+  .gambling-warning {
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+  }
+  
+  .gambling-warning h3 {
+    font-size: var(--font-size-lg);
+  }
+  
+  .gambling-warning p {
+    font-size: var(--font-size-sm);
+  }
+  
+  .gambling-warning code {
+    font-size: 0.7rem;
+    padding: 1px 4px;
   }
 }

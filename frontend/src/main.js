@@ -217,6 +217,46 @@ window.closeTicketOffice = function() {
   hideTicketConnector();
 }
 
+// Detect mobile device
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Get the best available provider (handles multiple wallet scenarios)
+function detectProvider() {
+  // Check for MetaMask specifically (preferred)
+  if (window.ethereum?.isMetaMask) {
+    console.log('✅ MetaMask detected');
+    return window.ethereum;
+  }
+  
+  // Check for Coinbase Wallet
+  if (window.ethereum?.isCoinbaseWallet) {
+    console.log('✅ Coinbase Wallet detected');
+    return window.ethereum;
+  }
+  
+  // If multiple providers exist (e.g., Brave + MetaMask), prefer MetaMask
+  if (window.ethereum?.providers?.length > 0) {
+    const metamask = window.ethereum.providers.find(p => p.isMetaMask);
+    if (metamask) {
+      console.log('✅ MetaMask detected in multi-wallet environment');
+      return metamask;
+    }
+    console.log('✅ Using first available provider in multi-wallet environment');
+    return window.ethereum.providers[0];
+  }
+  
+  // Standard ethereum provider
+  if (window.ethereum) {
+    console.log('✅ Web3 provider detected');
+    return window.ethereum;
+  }
+  
+  console.log('❌ No Web3 provider detected');
+  return null;
+}
+
 // Initialize the application
 async function init() {
   console.log('Initializing PEPEDAWN application...');
@@ -232,10 +272,13 @@ async function init() {
     setupLeaderboardRoundSelector();
   }
   
+  // Detect the best provider
+  const detectedProvider = detectProvider();
+  
   // Check if wallet is already connected (with conflict protection)
-  if (window.ethereum) {
+  if (detectedProvider) {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      const accounts = await detectedProvider.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
         await connectWalletSilent(); // Silent connection - no toast
       }
@@ -246,9 +289,11 @@ async function init() {
         console.log('Wallet extension conflict detected - user should disable conflicting extensions');
       }
     }
+  } else if (isMobileDevice()) {
+    console.log('📱 Mobile device detected without wallet - loading read-only mode');
   }
   
-  // Load contract if available
+  // Load contract (will use fallback provider if needed)
   await loadContract();
   
   // Start periodic updates
@@ -506,31 +551,66 @@ window.copyToClipboard = copyToClipboard;
 // Connect to wallet with enhanced security validations
 async function connectWallet() {
   try {
-    if (!window.ethereum) {
+    // Detect the best available provider
+    const detectedProvider = detectProvider();
+    
+    if (!detectedProvider) {
+      // On mobile, provide deep link to MetaMask
+      if (isMobileDevice()) {
+        const currentUrl = window.location.href;
+        const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+        
+        showTransactionStatus('Opening MetaMask app...', 'info');
+        
+        // Try to open MetaMask app
+        setTimeout(() => {
+          window.location.href = metamaskDeepLink;
+        }, 500);
+        
+        // Show instructions after a delay
+        setTimeout(() => {
+          showTransactionStatus('If MetaMask doesn\'t open, please use the MetaMask app browser to visit this site', 'warning');
+        }, 3000);
+        
+        return;
+      }
+      
       showTransactionStatus('Please install MetaMask or another Web3 wallet', 'error');
       return;
     }
     
     showTransactionStatus('Connecting to wallet...', 'info');
     
-    // Request account access
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    // Request account access using the detected provider
+    await detectedProvider.request({ method: 'eth_requestAccounts' });
+    
+    // Create provider from detected wallet
+    provider = new ethers.BrowserProvider(detectedProvider);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
     
     await setupWalletConnection(true); // true = show success toast
     
   } catch (error) {
     console.error('Error connecting wallet:', error);
-    showTransactionStatus('Failed to connect wallet: ' + error.message, 'error');
+    
+    // Handle user rejection
+    if (error.code === 4001) {
+      showTransactionStatus('Connection cancelled by user', 'warning');
+    } else {
+      showTransactionStatus('Failed to connect wallet: ' + error.message, 'error');
+    }
   }
 }
 
 // Silent wallet connection for auto-connection on page load
 async function connectWalletSilent() {
   try {
-    if (!window.ethereum) return;
+    const detectedProvider = detectProvider();
+    if (!detectedProvider) return;
     
     // Create provider and signer without requesting permission
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(detectedProvider);
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
     
@@ -556,10 +636,11 @@ async function setupWalletConnection(showSuccessToast = true) {
     showTransactionStatus(networkError.message, 'warning');
   }
   
-  // Set up network change listener
-  if (window.ethereum.on) {
-    window.ethereum.on('chainChanged', handleNetworkChange);
-    window.ethereum.on('accountsChanged', handleAccountChange);
+  // Set up network change listener with detected provider
+  const detectedProvider = detectProvider();
+  if (detectedProvider && detectedProvider.on) {
+    detectedProvider.on('chainChanged', handleNetworkChange);
+    detectedProvider.on('accountsChanged', handleAccountChange);
   }
   
   // Update UI
@@ -694,8 +775,14 @@ async function reconnectWallet(newAddress) {
     // Update global state
     userAddress = newAddress;
     
-    // Create new provider and signer
-    provider = new ethers.BrowserProvider(window.ethereum);
+    // Detect provider and create new provider and signer
+    const detectedProvider = detectProvider();
+    if (!detectedProvider) {
+      console.error('No provider detected during reconnection');
+      return;
+    }
+    
+    provider = new ethers.BrowserProvider(detectedProvider);
     signer = await provider.getSigner();
     
     // Reset event listeners flag
@@ -743,6 +830,19 @@ async function reconnectWallet(newAddress) {
   }
 }
 
+// Create fallback public provider for read-only access
+function createFallbackProvider() {
+  try {
+    // Use Sepolia public RPC endpoint
+    const rpcUrl = 'https://rpc.sepolia.org';
+    console.log('📡 Creating fallback provider for read-only access:', rpcUrl);
+    return new ethers.JsonRpcProvider(rpcUrl);
+  } catch (error) {
+    console.error('Failed to create fallback provider:', error);
+    return null;
+  }
+}
+
 // Load contract from configuration with enhanced security
 async function loadContract() {
   try {
@@ -754,8 +854,21 @@ async function loadContract() {
       return;
     }
     
-    // Check if we're on the correct network
-    if (provider) {
+    let providerToUse = null;
+    let isReadOnly = false;
+    
+    // Determine which provider to use
+    if (signer) {
+      // User has signed in - use signer for write operations
+      providerToUse = signer;
+      console.log('✅ Using signer for read/write access');
+    } else if (provider) {
+      // Provider available but no signer - use provider for read-only
+      providerToUse = provider;
+      isReadOnly = true;
+      console.log('✅ Using provider for read-only access');
+      
+      // Check if we're on the correct network
       try {
         const network = await provider.getNetwork();
         validateNetwork(network.chainId);
@@ -763,35 +876,77 @@ async function loadContract() {
       } catch (networkError) {
         console.warn('⚠️ Network validation failed:', networkError.message);
         showTransactionStatus(networkError.message, 'warning');
-        return;
+        
+        // Fall back to public provider
+        console.log('📡 Falling back to public RPC provider');
+        providerToUse = createFallbackProvider();
+        isReadOnly = true;
       }
+    } else {
+      // No wallet provider - use fallback public provider for read-only access
+      console.log('📱 No wallet detected - using fallback public provider for read-only access');
+      providerToUse = createFallbackProvider();
+      isReadOnly = true;
+    }
+    
+    if (!providerToUse) {
+      console.error('❌ No provider available');
+      showTransactionStatus('Unable to connect to blockchain. Please try again.', 'error');
+      return;
     }
     
     // Create contract instance
-    if (signer) {
-      contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, signer);
-    } else if (provider) {
-      contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, provider);
-    } else {
-      // No provider available yet - wallet not connected
-      console.log('⏳ Waiting for wallet connection to load contract');
-      return;
+    contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, providerToUse);
+    
+    console.log('✅ Contract loaded:', CONTRACT_CONFIG.address, isReadOnly ? '(read-only)' : '(read/write)');
+    
+    // Verify contract is accessible with retry logic for mobile
+    const maxRetries = 3;
+    let retryCount = 0;
+    let contractAccessible = false;
+    
+    while (retryCount < maxRetries && !contractAccessible) {
+      try {
+        console.log(`🔍 Verifying contract accessibility (attempt ${retryCount + 1}/${maxRetries})...`);
+        const roundId = await contract.currentRoundId();
+        console.log('✅ Contract accessibility verified. Current round:', roundId.toString());
+        contractAccessible = true;
+      } catch (contractError) {
+        retryCount++;
+        console.warn(`⚠️ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError.message);
+        
+        if (retryCount < maxRetries) {
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        } else {
+          console.error('❌ Contract not accessible after retries:', contractError.message);
+          
+          // On mobile, try one more time with a fresh fallback provider
+          if (isMobileDevice() && !signer) {
+            console.log('📱 Mobile detected - trying with fresh fallback provider');
+            const freshProvider = createFallbackProvider();
+            if (freshProvider) {
+              contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, freshProvider);
+              try {
+                await contract.currentRoundId();
+                console.log('✅ Contract accessible with fresh fallback provider');
+                contractAccessible = true;
+              } catch (finalError) {
+                console.error('❌ Final attempt failed:', finalError.message);
+                showTransactionStatus('Unable to load contract data. Please refresh the page.', 'error');
+                return;
+              }
+            }
+          } else {
+            showTransactionStatus('Contract not accessible. Please check your connection.', 'error');
+            return;
+          }
+        }
+      }
     }
     
-    console.log('✅ Contract loaded:', CONTRACT_CONFIG.address);
-    
-    // Verify contract is accessible
-    try {
-      await contract.currentRoundId();
-      console.log('✅ Contract accessibility verified');
-    } catch (contractError) {
-      console.error('❌ Contract not accessible:', contractError.message);
-      showTransactionStatus('Contract not accessible. Please check deployment.', 'error');
-      return;
-    }
-    
-    // Set up event listeners
-    if (contract) {
+    // Set up event listeners (only if we have a wallet connection)
+    if (contract && !isReadOnly) {
       setupContractEventListeners();
     }
     

@@ -350,6 +350,19 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "buyTickets",
+      "inputs": [
+        {
+          "name": "tickets",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
       "name": "claim",
       "inputs": [
         {
@@ -1234,19 +1247,6 @@ export const CONTRACT_CONFIG = {
         }
       ],
       "stateMutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "placeBet",
-      "inputs": [
-        {
-          "name": "tickets",
-          "type": "uint256",
-          "internalType": "uint256"
-        }
-      ],
-      "outputs": [],
-      "stateMutability": "payable"
     },
     {
       "type": "function",

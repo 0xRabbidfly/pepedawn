@@ -43,10 +43,10 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint256 public constant VRF_REQUEST_TIMEOUT = 1 hours; // VRF timeout protection
     
     // VRF Gas Configuration Constants
-    uint32 public constant VRF_MIN_CALLBACK_GAS = 400000; // Minimum gas for lottery operations
+    uint32 public constant VRF_MIN_CALLBACK_GAS = 400_000; // Minimum gas for lottery operations
     uint32 public constant VRF_SAFETY_BUFFER_PCT = 50; // 50% safety buffer
     uint32 public constant VRF_VOLATILITY_BUFFER_PCT = 25; // 25% volatility buffer
-    uint32 public constant VRF_MAX_CALLBACK_GAS = 2500000; // Maximum gas limit
+    uint32 public constant VRF_MAX_CALLBACK_GAS = 2_500_000; // Maximum gas limit
     uint256 public constant MAX_GAS_PRICE = 50 gwei; // Maximum gas price for VRF requests
     
     // Version tracking
@@ -58,9 +58,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     // =============================================================================
     
     enum RoundStatus {
-        Created,    // Round created but not open for betting
-        Open,       // Round open for betting and proofs
-        Closed,     // Round closed, no more bets/proofs
+        Created,    // Round created but not open for ticket purchases
+        Open,       // Round open for ticket purchases and proofs
+        Closed,     // Round closed, no more ticket purchases/proofs
         Snapshot,   // Snapshot taken, ready for VRF
         VRFRequested, // VRF requested, waiting for fulfillment
         WinnersReady, // VRF fulfilled, Merkle root ready for submission
@@ -129,7 +129,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     
     address public creatorsAddress;
     address public emblemVaultAddress;
-    IERC721 public emblemVault; // Emblem Vault NFT contract for prize custody
+    IERC721 public immutable emblemVault; // Emblem Vault NFT contract for prize custody
     
     uint256 public currentRoundId;
     uint256 public nextRoundFunds;
@@ -138,7 +138,6 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     
     // Security state variables
     mapping(address => bool) public denylisted; // Denylist for blocked addresses
-    mapping(uint256 => mapping(address => bool)) private _winnerSelected; // Prevent duplicate winners
     bool public emergencyPaused; // Additional emergency pause state
     uint256 public lastVrfRequestTime; // Track VRF request timing
     string public pauseReason; // Reason for contract pause (for transparency)
@@ -345,7 +344,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
             coordinator: IVRFCoordinatorV2Plus(_vrfCoordinator),
             subscriptionId: _subscriptionId,
             keyHash: _keyHash,
-            callbackGasLimit: 500000, // Increased from 100000 for complex callback
+            callbackGasLimit: 500_000, // Increased from 100_000 for complex callback
             requestConfirmations: 5   // Increased from 3 for better finality
         });
         
@@ -435,6 +434,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     
     /**
      * @notice Update Emblem Vault address with validation
+     * @dev Note: emblemVault interface is immutable, only the address reference is updated
      * @param _emblemVaultAddress New Emblem Vault address
      */
     function updateEmblemVaultAddress(address _emblemVaultAddress) 
@@ -507,7 +507,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     }
     
     /**
-     * @notice Open a round for betting
+     * @notice Open a round for ticket purchases
      * @param roundId The round to open
      */
     function openRound(uint256 roundId) 
@@ -523,7 +523,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     }
     
     /**
-     * @notice Close a round (no more bets/proofs)
+     * @notice Close a round (no more ticket purchases/proofs)
      * @dev If round has fewer than MIN_TICKETS_FOR_DISTRIBUTION, automatically refunds all participants
      * @param roundId The round to close
      */
@@ -716,14 +716,14 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     }
     
     // =============================================================================
-    // BETTING & PROOFS
+    // TICKET PURCHASES & PROOFS
     // =============================================================================
     
     /**
-     * @notice Place a bet in the current round
+     * @notice Purchase tickets in the current round
      * @param tickets Number of tickets to purchase (1, 5, or 10)
      */
-    function placeBet(uint256 tickets) 
+    function buyTickets(uint256 tickets) 
         external 
         payable 
         nonReentrant 
@@ -735,7 +735,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Checks: Validate round is open
         require(currentRoundId > 0, "No active round");
         Round storage round = rounds[currentRoundId];
-        require(round.status == RoundStatus.Open, "Round not open for betting");
+        require(round.status == RoundStatus.Open, "Round not open for ticket purchases");
         
         // Checks: Circuit breaker - max participants
         if (!isParticipant[currentRoundId][msg.sender]) {
@@ -785,7 +785,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         round.totalWeight += effectiveWeight;
         round.totalWagered += msg.value;
         
-        // Effects: Add to participants if first bet
+        // Effects: Add to participants if first ticket purchase
         if (!isParticipant[currentRoundId][msg.sender]) {
             roundParticipants[currentRoundId].push(msg.sender);
             isParticipant[currentRoundId][msg.sender] = true;
@@ -974,24 +974,24 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         address[] memory participants = roundParticipants[roundId];
         
         // Base gas for fulfillRandomWords function
-        uint32 baseGas = 75000; // Increased for complex validation and setup
+        uint32 baseGas = 75_000; // Increased for complex validation and setup
         
         // Gas for optimized winner selection algorithm (O(N log N) instead of O(N²))
-        uint32 winnerSelectionGas = 30000; // Optimized algorithm with binary search
+        uint32 winnerSelectionGas = 30_000; // Optimized algorithm with binary search
         
         // Gas for prize distribution (per winner)
-        uint32 prizeDistributionGasPerWinner = 25000; // Increased for complex distribution
+        uint32 prizeDistributionGasPerWinner = 25_000; // Increased for complex distribution
         uint32 totalPrizeDistributionGas = prizeDistributionGasPerWinner * 10; // Max 10 winners
         
         // Gas for fee distribution
-        uint32 feeDistributionGas = 25000; // Fee calculation and transfer
+        uint32 feeDistributionGas = 25_000; // Fee calculation and transfer
         
         // Gas for storage operations (per participant) - optimized with pre-calculation
-        uint32 storageGasPerParticipant = 12000; // Pre-calculate cumulative weights + storage
+        uint32 storageGasPerParticipant = 12_000; // Pre-calculate cumulative weights + storage
         uint32 totalStorageGas = storageGasPerParticipant * uint32(participants.length);
         
         // Gas for event emissions
-        uint32 eventGas = 10000; // Multiple event emissions
+        uint32 eventGas = 10_000; // Multiple event emissions
         
         // Calculate total estimated gas
         uint32 totalEstimatedGas = baseGas + winnerSelectionGas + totalPrizeDistributionGas + 
@@ -999,11 +999,11 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         // Apply complexity multipliers based on round size
         if (participants.length > 100) {
-            totalEstimatedGas = totalEstimatedGas * 120 / 100; // 20% increase for large rounds
+            totalEstimatedGas = (totalEstimatedGas * 120) / 100; // 20% increase for large rounds
         }
         
         if (round.totalWeight > 1000) {
-            totalEstimatedGas = totalEstimatedGas * 110 / 100; // 10% increase for high weight rounds
+            totalEstimatedGas = (totalEstimatedGas * 110) / 100; // 10% increase for high weight rounds
         }
         
         // Ensure minimum gas limit for complex lottery operations
@@ -1093,256 +1093,6 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         // Interactions: Emit event
         emit WinnersCommitted(roundId, winnersRoot, ipfsHash);
-    }
-    
-    /**
-     * @notice Select multiple weighted winners efficiently using pre-calculated cumulative weights
-     * @param randomSeed The random seed from VRF
-     * @param totalWeight Total weight of all participants
-     * @param participants Array of participant addresses
-     * @param roundId The round ID for weight lookup
-     * @param numWinners Number of winners to select
-     * @return winners Array of selected winner addresses
-     */
-    function _selectWeightedWinnersBatch(
-        uint256 randomSeed,
-        uint256 totalWeight,
-        address[] memory participants,
-        uint256 roundId,
-        uint256 numWinners
-    ) internal view returns (address[] memory winners) {
-        require(participants.length > 0, "No participants in round");
-        require(totalWeight > 0, "No weight in round");
-        
-        // Pre-calculate cumulative weights array (O(N) operation, done once)
-        uint256[] memory cumulativeWeights = new uint256[](participants.length);
-        uint256 cumulative = 0;
-        
-        for (uint256 i = 0; i < participants.length; i++) {
-            cumulative += userWeightInRound[roundId][participants[i]];
-            cumulativeWeights[i] = cumulative;
-        }
-        
-        // Select winners using binary search (O(log N) per winner)
-        winners = new address[](numWinners);
-        for (uint256 winnerIndex = 0; winnerIndex < numWinners; winnerIndex++) {
-            // Generate random weight for this winner
-            uint256 randomWeight = uint256(keccak256(abi.encode(randomSeed, winnerIndex))) % totalWeight;
-            
-            // Binary search to find winner efficiently
-            uint256 winnerIdx = _binarySearchCumulativeWeights(cumulativeWeights, randomWeight);
-            winners[winnerIndex] = participants[winnerIdx];
-        }
-        
-        return winners;
-    }
-    
-    /**
-     * @notice Binary search to find participant index by cumulative weight
-     * @param cumulativeWeights Pre-calculated cumulative weights array
-     * @param targetWeight Target weight to find
-     * @return index The participant index
-     */
-    function _binarySearchCumulativeWeights(
-        uint256[] memory cumulativeWeights,
-        uint256 targetWeight
-    ) internal pure returns (uint256 index) {
-        uint256 left = 0;
-        uint256 right = cumulativeWeights.length;
-        
-        while (left < right) {
-            uint256 mid = (left + right) / 2;
-            
-            if (cumulativeWeights[mid] <= targetWeight) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-        
-        // Ensure we return a valid index
-        return left < cumulativeWeights.length ? left : cumulativeWeights.length - 1;
-    }
-    
-    /**
-     * @notice Assign winners based on VRF randomness and distribute prizes using optimized weighted lottery
-     * @dev Prize tiers randomly assigned: 10% Fake Pack, 20% Kek Pack, 70% Pepe Pack
-     * @dev Same wallet can win multiple prizes (weighted lottery, not raffle)
-     * @dev Uses batch processing for gas efficiency with large participant counts
-     * @param roundId The round to process
-     * @param randomSeed The random seed from VRF
-     */
-    function _assignWinnersAndDistribute(uint256 roundId, uint256 randomSeed) internal {
-        Round storage round = rounds[roundId];
-        address[] memory participants = roundParticipants[roundId];
-        
-        uint256 totalWeight = round.totalWeight;
-        require(totalWeight > 0, "No weight in round");
-        
-        // Determine optimal batch size based on participant count
-        uint256 batchSize = _calculateOptimalBatchSize(participants.length);
-        uint256 totalWinners = 10;
-        
-        // Process winners in batches if needed
-        address[] memory allWinners = new address[](totalWinners);
-        uint8[] memory allPrizeTiers = new uint8[](totalWinners);
-        uint256 winnerIndex = 0;
-        
-        for (uint256 batchStart = 0; batchStart < totalWinners; batchStart += batchSize) {
-            uint256 currentBatchSize = batchStart + batchSize > totalWinners ? 
-                totalWinners - batchStart : batchSize;
-            
-            // Select winners for this batch using optimized algorithm
-            address[] memory batchWinners = _selectWeightedWinnersBatch(
-                randomSeed,
-                totalWeight,
-                participants,
-                roundId,
-                currentBatchSize
-            );
-            
-            // Assign prize tiers and store results
-            for (uint256 i = 0; i < currentBatchSize; i++) {
-                uint256 globalIndex = batchStart + i;
-                uint8 prizeTier;
-                
-                // Security check: Validate winner address
-                address winner = batchWinners[i];
-                require(winner != address(0), "Invalid winner: zero address");
-                
-                // Generate truly random prize tier assignment for ALL winners
-                // Use winner address and position to ensure uniqueness and prevent manipulation
-                uint256 tierRandom = uint256(keccak256(abi.encode(randomSeed, "tier", globalIndex, winner, block.timestamp))) % 100;
-                
-                // Randomized prize distribution:
-                // 10% chance for Fake Pack (1 expected winner)
-                // 20% chance for Kek Pack (2 expected winners)  
-                // 70% chance for Pepe Pack (7 expected winners)
-                if (tierRandom < 10) {
-                    prizeTier = FAKE_PACK_TIER;  // 10% chance - Best prize
-                } else if (tierRandom < 30) {
-                    prizeTier = KEK_PACK_TIER;   // 20% chance - Mid prize
-                } else {
-                    prizeTier = PEPE_PACK_TIER;  // 70% chance - Common prize
-                }
-                
-                allWinners[winnerIndex] = winner;
-                allPrizeTiers[winnerIndex] = prizeTier;
-                
-                // Store winner assignment
-                roundWinners[roundId].push(WinnerAssignment({
-                    roundId: roundId,
-                    wallet: winner,
-                    prizeTier: prizeTier,
-                    vrfRequestId: round.vrfRequestId,
-                    blockNumber: block.number
-                }));
-                
-                winnerIndex++;
-            }
-        }
-        
-        // Emit winners assigned event
-        emit WinnersAssigned(roundId, allWinners, allPrizeTiers);
-        
-        // Distribute prizes and fees
-        _distributePrizes(roundId, allWinners, allPrizeTiers);
-        _distributeFees(roundId);
-    }
-    
-    /**
-     * @notice Calculate optimal batch size based on participant count to stay under gas limits
-     * @param participantCount Number of participants in the round
-     * @return batchSize Optimal batch size for winner selection
-     */
-    function _calculateOptimalBatchSize(uint256 participantCount) internal pure returns (uint256 batchSize) {
-        // Gas limit considerations:
-        // - Base operations: ~400,000 gas
-        // - Per participant storage: ~8,000 gas
-        // - Per winner selection: ~50,000 gas (with binary search)
-        // - Target: Stay under 15M gas (50% of block limit for safety)
-        
-        uint256 maxGasForWinnerSelection = 15000000; // 15M gas limit
-        uint256 baseGas = 400000; // Base operations
-        uint256 participantGas = participantCount * 8000; // Storage operations
-        uint256 availableGasForWinners = maxGasForWinnerSelection - baseGas - participantGas;
-        
-        if (availableGasForWinners <= 0) {
-            return 1; // Fallback to single winner if gas is too constrained
-        }
-        
-        uint256 gasPerWinner = 50000; // Gas per winner with optimized algorithm
-        uint256 maxWinnersPerBatch = availableGasForWinners / gasPerWinner;
-        
-        // Cap at 10 winners max and ensure minimum batch size
-        return maxWinnersPerBatch > 10 ? 10 : (maxWinnersPerBatch > 0 ? maxWinnersPerBatch : 1);
-    }
-    
-    /**
-     * @notice Distribute prizes to winners via Emblem Vault integration
-     * @param roundId The round ID
-     * @param winners Array of winner addresses
-     * @param prizeTiers Array of prize tiers for each winner
-     */
-    function _distributePrizes(uint256 roundId, address[] memory winners, uint8[] memory prizeTiers) internal {
-        // Basic Emblem Vault integration for small-scale site
-        require(emblemVaultAddress != address(0), "Emblem Vault address not set");
-        
-        for (uint256 i = 0; i < winners.length; i++) {
-            address winner = winners[i];
-            uint8 prizeTier = prizeTiers[i];
-            
-            // Security check: Validate winner address
-            require(winner != address(0), "Invalid winner address");
-            
-            // Map prize tier to asset ID (simplified mapping for 133 assets)
-            uint256 assetId = _getPrizeAssetId(prizeTier, roundId, i);
-            
-            // Basic prize distribution - emit event for Emblem Vault to process
-            // In production, this would call Emblem Vault contract directly
-            emit PrizeDistributed(
-                roundId,
-                winner,
-                prizeTier,
-                assetId
-            );
-            
-            // Additional event for Emblem Vault integration
-            emit EmblemVaultPrizeAssigned(
-                roundId,
-                winner,
-                assetId,
-                block.timestamp
-            );
-        }
-        
-        // Emit summary event for the round
-        emit RoundPrizesDistributed(roundId, winners.length, block.timestamp);
-    }
-    
-    /**
-     * @notice Get asset ID for prize distribution (simplified for small-scale site)
-     * @param prizeTier The prize tier (1=Fake, 2=Kek, 3=Pepe)
-     * @param roundId The round ID
-     * @param winnerIndex The winner index for uniqueness
-     * @return assetId The asset ID to distribute
-     */
-    function _getPrizeAssetId(uint8 prizeTier, uint256 roundId, uint256 winnerIndex) internal pure returns (uint256) {
-        // Simple asset ID mapping for 133 total assets
-        // Fake Pack: Assets 1-10
-        // Kek Pack: Assets 11-50  
-        // Pepe Pack: Assets 51-133
-        
-        if (prizeTier == FAKE_PACK_TIER) {
-            // Fake pack gets premium assets (1-10)
-            return 1 + (uint256(keccak256(abi.encode(roundId, winnerIndex, "fake"))) % 10);
-        } else if (prizeTier == KEK_PACK_TIER) {
-            // Kek pack gets mid-tier assets (11-50)
-            return 11 + (uint256(keccak256(abi.encode(roundId, winnerIndex, "kek"))) % 40);
-        } else {
-            // Pepe pack gets common assets (51-133)
-            return 51 + (uint256(keccak256(abi.encode(roundId, winnerIndex, "pepe"))) % 83);
-        }
     }
     
     /**
@@ -1461,7 +1211,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
      * @dev Rejects all other function calls to prevent accidental interactions
      */
     fallback() external payable {
-        revert("Function not found - use placeBet() to participate");
+        revert("Function not found - use buyTickets() to participate");
     }
 
     // =============================================================================

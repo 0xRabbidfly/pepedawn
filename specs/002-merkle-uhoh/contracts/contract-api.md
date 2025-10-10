@@ -110,13 +110,13 @@ mapping(address => bool) public denylisted;
 
 ## User Functions
 
-### placeBet
+### buyTickets
 
-**Description**: Place a bet in an open round.
+**Description**: Purchase tickets in an open round.
 
 **Function Signature**:
 ```solidity
-function placeBet(uint256 roundId, uint8 tickets) 
+function buyTickets(uint256 roundId, uint8 tickets) 
     external 
     payable 
     nonReentrant 
@@ -125,7 +125,7 @@ function placeBet(uint256 roundId, uint8 tickets)
 ```
 
 **Parameters**:
-- `roundId`: The round to bet in
+- `roundId`: The round to purchase tickets in
 - `tickets`: Number of tickets (1, 5, or 10)
 
 **Requirements**:
@@ -153,7 +153,7 @@ event BetPlaced(
 
 **Example**:
 ```javascript
-await contract.placeBet(1, 10, { value: ethers.parseEther("0.04") });
+await contract.buyTickets(1, 10, { value: ethers.parseEther("0.04") });
 ```
 
 ---
@@ -737,8 +737,8 @@ error VRFRequestFailed();
 
 | Function | Estimated Gas |
 |----------|--------------|
-| placeBet (new participant) | ~120,000 |
-| placeBet (existing participant) | ~80,000 |
+| buyTickets (new participant) | ~120,000 |
+| buyTickets (existing participant) | ~80,000 |
 | submitProof (success) | ~60,000 |
 | submitProof (fail) | ~50,000 |
 | claim | ~180,000 |

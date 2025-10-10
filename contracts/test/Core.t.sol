@@ -349,7 +349,7 @@ contract CoreTest is Test {
         
         // Place bet
         vm.prank(bettor);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Verify
         (uint256 wagered, uint256 tickets, uint256 weight,) = raffle.getUserStats(1, bettor);
@@ -372,7 +372,7 @@ contract CoreTest is Test {
         
         // Place bet
         vm.prank(bettor);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Submit proof
         vm.prank(bettor);

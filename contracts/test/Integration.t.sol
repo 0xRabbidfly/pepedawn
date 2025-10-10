@@ -77,15 +77,15 @@ contract IntegrationTest is Test {
         
         // 2. Users place bets
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         console.log("Alice placed bet: 1 ticket");
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         console.log("Bob placed bet: 5 tickets");
         
         vm.prank(charlie);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         console.log("Charlie placed bet: 10 tickets");
         
         // 3. Close and snapshot round
@@ -149,7 +149,7 @@ contract IntegrationTest is Test {
         
         // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -182,7 +182,7 @@ contract IntegrationTest is Test {
             
             // Alice buys 10 tickets to meet minimum threshold
             vm.prank(alice);
-            raffle.placeBet{value: 0.04 ether}(10);
+            raffle.buyTickets{value: 0.04 ether}(10);
             
             // Close, snapshot, request VRF
             raffle.closeRound(i);
@@ -217,11 +217,11 @@ contract IntegrationTest is Test {
         
         // Alice buys 10 tickets (0.04 ETH)
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Bob buys 10 tickets (0.04 ETH)
         vm.prank(bob);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         uint256 totalWagered = 0.08 ether;
         uint256 creatorsBalanceBefore = creatorsAddress.balance;
@@ -269,7 +269,7 @@ contract IntegrationTest is Test {
         
         // Only 5 tickets (below minimum of 10)
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Close round - should trigger refund accrual (pull-payment pattern)
         raffle.closeRound(1);
@@ -310,13 +310,13 @@ contract IntegrationTest is Test {
         
         // Alice: 10 tickets with proof (+40% = 14 weight)
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         vm.prank(alice);
         raffle.submitProof(validProof);
         
         // Bob: 10 tickets without proof (10 weight)
         vm.prank(bob);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Verify weights before snapshot
         (,, uint256 aliceWeight,) = raffle.getUserStats(1, alice);

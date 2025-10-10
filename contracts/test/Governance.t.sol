@@ -197,7 +197,7 @@ contract GovernanceTest is Test {
         
         // Add participants for further tests
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Test closeRound
         vm.prank(malicious);
@@ -272,7 +272,7 @@ contract GovernanceTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Transfer ownership during active round
         raffle.transferOwnership(newOwner);
@@ -373,7 +373,7 @@ contract GovernanceTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Change creators address during active round
         address originalCreators = raffle.creatorsAddress();
@@ -412,7 +412,7 @@ contract GovernanceTest is Test {
         // Alice cannot bet
         vm.prank(alice);
         vm.expectRevert("Address is denylisted");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Alice cannot submit proof
         vm.prank(alice);
@@ -428,7 +428,7 @@ contract GovernanceTest is Test {
         
         // Alice can now participate
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
     }
     
     /**
@@ -494,7 +494,7 @@ contract GovernanceTest is Test {
         // User operations blocked
         vm.prank(alice);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         vm.prank(alice);
         vm.expectRevert(Pausable.EnforcedPause.selector);
@@ -506,7 +506,7 @@ contract GovernanceTest is Test {
         
         // Operations work again
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
     }
     
     /**
@@ -519,7 +519,7 @@ contract GovernanceTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Activate both pause mechanisms
         raffle.pause("Emergency test");
@@ -549,7 +549,7 @@ contract GovernanceTest is Test {
         
         // Add enough tickets to meet minimum before testing pauses
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Emergency pause blocks BOTH admin and user operations
         raffle.setEmergencyPause(true);
@@ -561,7 +561,7 @@ contract GovernanceTest is Test {
         // User operations also blocked by emergency pause
         vm.prank(bob);
         vm.expectRevert("Emergency pause is active");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Remove emergency pause
         raffle.setEmergencyPause(false);
@@ -576,14 +576,14 @@ contract GovernanceTest is Test {
         // User operations also blocked by regular pause
         vm.prank(bob);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Remove regular pause
         raffle.unpause();
         
         // Everything works now
         vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         raffle.closeRound(1);
     }

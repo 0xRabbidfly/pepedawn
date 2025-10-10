@@ -340,7 +340,7 @@ cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-k
 # Windows users can use the provided script
 .\contracts\scripts\cli\interact.ps1 check        # Check status
 .\contracts\scripts\cli\interact.ps1 quick-start  # Create & open round
-.\contracts\scripts\cli\interact.ps1 bet 1 0.01   # Place bet
+.\contracts\scripts\cli\interact.ps1 buy-tickets 1 0.01   # Purchase tickets
 ```
 
 See `contracts/scripts/cli/GUIDE.md` for complete CLI documentation.

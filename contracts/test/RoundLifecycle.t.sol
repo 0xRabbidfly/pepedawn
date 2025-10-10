@@ -181,7 +181,7 @@ contract RoundLifecycleTest is Test {
         
         // Alice buys 10 tickets to meet minimum
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         vm.expectEmit(true, false, false, false);
         emit RoundClosed(1);
@@ -203,7 +203,7 @@ contract RoundLifecycleTest is Test {
         
         // Alice buys only 5 tickets (below minimum of 10)
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // When refunding, RoundClosed is NOT emitted, only ParticipantRefunded and RoundRefunded
         // So we don't expect RoundClosed here
@@ -236,13 +236,13 @@ contract RoundLifecycleTest is Test {
         
         // Multiple participants, total 7 tickets (below minimum of 10)
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1); // 1 ticket
+        raffle.buyTickets{value: 0.005 ether}(1); // 1 ticket
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5); // 5 tickets
+        raffle.buyTickets{value: 0.0225 ether}(5); // 5 tickets
         
         vm.prank(charlie);
-        raffle.placeBet{value: 0.005 ether}(1); // 1 ticket
+        raffle.buyTickets{value: 0.005 ether}(1); // 1 ticket
         
         // Close round - should trigger refund accrual (pull-payment pattern)
         vm.expectEmit(true, true, false, true);
@@ -329,10 +329,10 @@ contract RoundLifecycleTest is Test {
         
         // Add participants
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         
@@ -361,14 +361,14 @@ contract RoundLifecycleTest is Test {
         
         // Alice: 10 tickets with correct proof (+40% = 14 weight)
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         vm.prank(alice);
         raffle.submitProof(keccak256("correct_proof"));
         
         // Bob: 5 tickets no proof (5 weight)
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -400,7 +400,7 @@ contract RoundLifecycleTest is Test {
         
         // Only 5 tickets - will be refunded
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1); // This sets status to Refunded
         
@@ -417,7 +417,7 @@ contract RoundLifecycleTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         
@@ -439,7 +439,7 @@ contract RoundLifecycleTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -477,7 +477,7 @@ contract RoundLifecycleTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -497,7 +497,7 @@ contract RoundLifecycleTest is Test {
         raffle.openRound(2);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(2);
         raffle.snapshotRound(2);
@@ -522,7 +522,7 @@ contract RoundLifecycleTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -550,7 +550,7 @@ contract RoundLifecycleTest is Test {
         
         // Alice buys 1 ticket
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         round = raffle.getRound(1);
         assertEq(round.totalTickets, 1, "Should have 1 ticket");
@@ -558,7 +558,7 @@ contract RoundLifecycleTest is Test {
         
         // Bob buys 5 tickets
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         round = raffle.getRound(1);
         assertEq(round.totalTickets, 6, "Should have 6 tickets");
@@ -566,7 +566,7 @@ contract RoundLifecycleTest is Test {
         
         // Charlie buys 5 more tickets
         vm.prank(charlie);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         round = raffle.getRound(1);
         assertEq(round.totalTickets, 11, "Should have 11 tickets");
@@ -597,7 +597,7 @@ contract RoundLifecycleTest is Test {
         assertEq(uint8(round.status), 1, "Should be Open");
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         round = raffle.getRound(1);
@@ -635,7 +635,7 @@ contract RoundLifecycleTest is Test {
         
         // Only 5 tickets
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         round = raffle.getRound(1);

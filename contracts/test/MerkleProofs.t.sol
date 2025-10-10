@@ -72,9 +72,9 @@ contract MerkleProofsTest is Test {
         
         // Add participants to meet minimum
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Close and snapshot round
         raffle.closeRound(1);
@@ -101,7 +101,7 @@ contract MerkleProofsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Try to commit participants root without snapshot - should fail
         vm.expectRevert("Round not in required status");
@@ -118,9 +118,9 @@ contract MerkleProofsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -145,9 +145,9 @@ contract MerkleProofsTest is Test {
         
         // Add participants
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Close, snapshot, commit participants root
         raffle.closeRound(1);
@@ -181,7 +181,7 @@ contract MerkleProofsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Try to submit winners before VRF - should fail
         vm.expectRevert("Round not ready for winners submission");
@@ -198,9 +198,9 @@ contract MerkleProofsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);

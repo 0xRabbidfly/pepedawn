@@ -181,7 +181,7 @@ uint256 public constant BUNDLE_10_PRICE = 0.04 ether; // ~$100-150
 **Consider**:
 - Is $12 minimum too high/low for participation?
 - Gas costs on mainnet: $5-50+ per transaction during congestion
-- Users need to factor in: bet cost + gas + proof submission gas + claim gas
+- Users need to factor in: ticket cost + gas + proof submission gas + claim gas
 
 **Recommendation**: Monitor first round closely and be ready to adjust in v2.
 
@@ -457,21 +457,21 @@ At 50 gwei: ~0.0375 ETH ($110)
 
 ### User Operation Costs
 
-#### Place Bet
+#### Purchase Tickets
 ```
-First bet (new participant): ~180,000 gas
-Subsequent bets: ~100,000 gas
+First purchase (new participant): ~180,000 gas
+Subsequent purchases: ~100,000 gas
 
 At 30 gwei: 0.003-0.0054 ETH ($9-16)
 At 50 gwei: 0.005-0.009 ETH ($15-27)
 At 100 gwei: 0.01-0.018 ETH ($30-54)
 ```
 
-**Problem**: During high gas, users pay more in gas than minimum bet (0.005 ETH)!
+**Problem**: During high gas, users pay more in gas than minimum ticket price (0.005 ETH)!
 
 **Solutions**:
-1. Recommend betting during low-gas periods
-2. UI shows estimated gas costs before bet
+1. Recommend purchasing tickets during low-gas periods
+2. UI shows estimated gas costs before purchase
 3. Consider Layer 2 deployment in future (Arbitrum/Optimism)
 
 #### Submit Proof
@@ -494,10 +494,10 @@ At 50 gwei: ~0.0075 ETH ($22)
 
 #### 1. Batch Operations for Users (Future v2)
 ```solidity
-// Allow betting multiple times in one transaction
-function placeBets(uint256[] calldata ticketCounts) external payable {
+// Allow purchasing tickets multiple times in one transaction
+function buyTicketsBatch(uint256[] calldata ticketCounts) external payable {
     for (uint i = 0; i < ticketCounts.length; i++) {
-        _placeBet(ticketCounts[i]);
+        _buyTickets(ticketCounts[i]);
     }
 }
 ```
@@ -640,7 +640,7 @@ if (chainId !== 1) {
 ```
 
 **User Balance Checks**:
-- Must verify user has enough ETH for gas + bet
+- Must verify user has enough ETH for gas + tickets
 - Show clear error messages
 - Estimate total cost before transaction
 
@@ -721,14 +721,14 @@ echidna-test . --contract PepedawnRaffle --config echidna.config.yml
   - 1000 participants  
   - 5000 participants
 - [ ] Test VRF callback gas with max participants
-- [ ] Optimize hot paths (placeBet, submitProof)
+- [ ] Optimize hot paths (buyTickets, submitProof)
 - [ ] Run gas reporter: `forge test --gas-report`
 - [ ] Compare optimized vs current version
 
 #### Target Metrics
 - Deployment: < 5M gas
-- placeBet (first): < 150k gas
-- placeBet (repeat): < 80k gas
+- buyTickets (first): < 150k gas
+- buyTickets (repeat): < 80k gas
 - VRF callback: < 2M gas (with 1000 participants)
 
 ---
@@ -1126,7 +1126,7 @@ if (window.location.hostname !== 'pepedawn.art' &&
 **Track**:
 - Page views
 - Wallet connections
-- Bet placements (via events)
+- Ticket purchases (via events)
 - Proof submissions
 - Prize claims
 - Error rates
@@ -1730,7 +1730,7 @@ Round 1 is now open for betting!
 
 📍 Contract: 0x... (verified on Etherscan)
 🌐 Website: https://pepedawn.art
-💰 Min bet: 0.005 ETH
+💰 Min ticket price: 0.005 ETH
 🧩 Puzzle proofs: +40% odds
 🎁 Prizes: 10 Emblem Vault NFTs
 
@@ -1796,7 +1796,7 @@ Round closes in 2 weeks. Good luck! 🐸
 #### Metrics to Track
 - Unique participants
 - Total wagered
-- Average bet size
+- Average ticket purchase size
 - Proof submission rate
 - Error rate
 - Gas costs (actual vs estimated)

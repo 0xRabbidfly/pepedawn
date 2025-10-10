@@ -68,11 +68,11 @@ contract WinnerSelectionTest is Test {
         // Add 10 tickets total to meet MIN_TICKETS_FOR_DISTRIBUTION
         // Alice buys 5 tickets
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Bob buys 5 tickets  
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Verify we have exactly 10 tickets
         PepedawnRaffle.Round memory round = raffle.getRound(1);
@@ -100,7 +100,7 @@ contract WinnerSelectionTest is Test {
         
         // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -141,7 +141,7 @@ contract WinnerSelectionTest is Test {
         address[3] memory additionalParticipants = [charlie, david, eve];
         for (uint i = 0; i < additionalParticipants.length; i++) {
             vm.prank(additionalParticipants[i]);
-            raffle.placeBet{value: 0.005 ether}(1);
+            raffle.buyTickets{value: 0.005 ether}(1);
         }
         
         raffle.closeRound(1);
@@ -172,14 +172,14 @@ contract WinnerSelectionTest is Test {
         
         // Alice places bet and submits proof (gets 1.4x weight)
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         vm.prank(alice);
         raffle.submitProof(keccak256("alice_proof"));
         
         // Bob places bet without proof (gets 1x weight)
         vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Verify weights
         (,, uint256 aliceWeight,) = raffle.getUserStats(1, alice);
@@ -191,7 +191,7 @@ contract WinnerSelectionTest is Test {
         
         // Actually, let's test with more tickets to see the weight difference
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10); // 10 more tickets
+        raffle.buyTickets{value: 0.04 ether}(10); // 10 more tickets
         
         (,, uint256 newAliceWeight,) = raffle.getUserStats(1, alice);
         // Alice now has 11 tickets with proof: 11 * 1400 / 1000 = 15.4 = 15 (integer)
@@ -256,7 +256,7 @@ contract WinnerSelectionTest is Test {
         address[10] memory participants = [alice, bob, charlie, david, eve, frank, grace, henry, iris, jack];
         for (uint i = 0; i < participants.length; i++) {
             vm.prank(participants[i]);
-            raffle.placeBet{value: 0.005 ether}(1);
+            raffle.buyTickets{value: 0.005 ether}(1);
         }
         
         raffle.closeRound(1);
@@ -314,13 +314,13 @@ contract WinnerSelectionTest is Test {
         
         // Add participants with different weights
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10); // 10 tickets
+        raffle.buyTickets{value: 0.04 ether}(10); // 10 tickets
         
         vm.prank(alice);
         raffle.submitProof(keccak256("valid_proof")); // +40% weight (correct proof)
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1); // 1 ticket, no proof
+        raffle.buyTickets{value: 0.005 ether}(1); // 1 ticket, no proof
         
         // Alice has much higher weight, should have higher probability
         (,, uint256 aliceWeight,) = raffle.getUserStats(1, alice);
@@ -348,7 +348,7 @@ contract WinnerSelectionTest is Test {
         
         // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -377,11 +377,11 @@ contract WinnerSelectionTest is Test {
         // Try to place bet with invalid ticket count - should fail
         vm.prank(alice);
         vm.expectRevert("Invalid ticket count (must be 1, 5, or 10)");
-        raffle.placeBet{value: 1.0 ether}(250);
+        raffle.buyTickets{value: 1.0 ether}(250);
         
         // Use maximum valid bets instead
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         vm.prank(alice);
         raffle.submitProof(keccak256("alice_proof"));
@@ -407,7 +407,7 @@ contract WinnerSelectionTest is Test {
         
         // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);

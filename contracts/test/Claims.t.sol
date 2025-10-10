@@ -180,11 +180,11 @@ contract ClaimsTest is Test {
         
         // Alice buys 1 ticket
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Bob buys 10 tickets to meet minimum (total 11)
         vm.prank(bob);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -282,7 +282,7 @@ contract ClaimsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Try to claim before round is complete
         bytes32[] memory emptyProof = new bytes32[](0);
@@ -308,10 +308,10 @@ contract ClaimsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -369,10 +369,10 @@ contract ClaimsTest is Test {
         
         // Add participants
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Close and snapshot
         raffle.closeRound(roundId);

@@ -66,7 +66,7 @@ contract SecurityTest is Test {
     }
     
     /**
-     * @notice Test reentrancy protection on placeBet function
+     * @notice Test reentrancy protection on buyTickets function
      * @dev This test should PASS with security implementation
      */
     function testReentrancyProtectionPlaceBet() public {
@@ -78,8 +78,8 @@ contract SecurityTest is Test {
         MaliciousReentrant malicious = new MaliciousReentrant(payable(address(raffle)));
         vm.deal(address(malicious), 1 ether);
         
-        // The placeBet function has nonReentrant modifier
-        // Since placeBet doesn't send ETH back, we test that the modifier exists
+        // The buyTickets function has nonReentrant modifier
+        // Since buyTickets doesn't send ETH back, we test that the modifier exists
         // by checking the function works normally (no reentrancy occurs)
         malicious.attack{value: 0.005 ether}();
         
@@ -101,14 +101,14 @@ contract SecurityTest is Test {
         
         // Place legitimate bet first
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Deploy malicious contract for proof submission
         MaliciousProofReentrant malicious = new MaliciousProofReentrant(payable(address(raffle)));
         vm.deal(address(malicious), 1 ether);
         
         // First place a bet with malicious contract
-        malicious.placeBet{value: 0.005 ether}();
+        malicious.buyTickets{value: 0.005 ether}();
         
         // The submitProof function has nonReentrant modifier
         // Since submitProof doesn't send ETH back, we test that the modifier exists
@@ -133,7 +133,7 @@ contract SecurityTest is Test {
         
         // Alice buys 10 tickets to meet minimum threshold
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Close and snapshot round
         raffle.closeRound(1);
@@ -217,7 +217,7 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -272,7 +272,7 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -301,7 +301,7 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -321,7 +321,7 @@ contract SecurityTest is Test {
         raffle.openRound(2);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(2);
         raffle.snapshotRound(2);
@@ -346,7 +346,7 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -377,7 +377,7 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
@@ -402,7 +402,7 @@ contract SecurityTest is Test {
 
 /**
  * @title MaliciousReentrant
- * @notice Contract that attempts reentrancy attack on placeBet
+ * @notice Contract that attempts reentrancy attack on buyTickets
  */
 contract MaliciousReentrant {
     PepedawnRaffle public raffle;
@@ -414,14 +414,14 @@ contract MaliciousReentrant {
     
     function attack() external payable {
         attacking = true;
-        raffle.placeBet{value: msg.value}(1);
+        raffle.buyTickets{value: msg.value}(1);
     }
     
     // This function will be called when the contract receives ETH
-    // It attempts to re-enter the placeBet function
+    // It attempts to re-enter the buyTickets function
     receive() external payable {
         if (attacking && address(raffle).balance > 0) {
-            raffle.placeBet{value: 0.005 ether}(1);
+            raffle.buyTickets{value: 0.005 ether}(1);
         }
     }
 }
@@ -438,8 +438,8 @@ contract MaliciousProofReentrant {
         raffle = PepedawnRaffle(_raffle);
     }
     
-    function placeBet() external payable {
-        raffle.placeBet{value: msg.value}(1);
+    function buyTickets() external payable {
+        raffle.buyTickets{value: msg.value}(1);
     }
     
     function attackProof() external {

@@ -102,7 +102,7 @@ contract BettingAndProofsTest is Test {
         emit WagerPlaced(alice, 1, 0.005 ether, 1, 1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         (uint256 wagered, uint256 tickets, uint256 weight, bool hasProof) = 
             raffle.getUserStats(1, alice);
@@ -124,7 +124,7 @@ contract BettingAndProofsTest is Test {
      */
     function testPlaceBet5TicketBundle() public {
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         (uint256 wagered, uint256 tickets,,) = raffle.getUserStats(1, alice);
         assertEq(wagered, 0.0225 ether, "Wagered amount mismatch");
@@ -142,7 +142,7 @@ contract BettingAndProofsTest is Test {
      */
     function testPlaceBet10TicketBundle() public {
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         (uint256 wagered, uint256 tickets,,) = raffle.getUserStats(1, alice);
         assertEq(wagered, 0.04 ether, "Wagered amount mismatch");
@@ -162,17 +162,17 @@ contract BettingAndProofsTest is Test {
         // Zero tickets
         vm.prank(alice);
         vm.expectRevert("Invalid ticket count (must be 1, 5, or 10)");
-        raffle.placeBet{value: 0.005 ether}(0);
+        raffle.buyTickets{value: 0.005 ether}(0);
         
         // 2 tickets
         vm.prank(alice);
         vm.expectRevert("Invalid ticket count (must be 1, 5, or 10)");
-        raffle.placeBet{value: 0.01 ether}(2);
+        raffle.buyTickets{value: 0.01 ether}(2);
         
         // 11 tickets
         vm.prank(alice);
         vm.expectRevert("Invalid ticket count (must be 1, 5, or 10)");
-        raffle.placeBet{value: 0.055 ether}(11);
+        raffle.buyTickets{value: 0.055 ether}(11);
     }
     
     /**
@@ -183,22 +183,22 @@ contract BettingAndProofsTest is Test {
         // Too little for 1 ticket
         vm.prank(alice);
         vm.expectRevert("Incorrect payment amount");
-        raffle.placeBet{value: 0.004 ether}(1);
+        raffle.buyTickets{value: 0.004 ether}(1);
         
         // Too much for 1 ticket
         vm.prank(alice);
         vm.expectRevert("Incorrect payment amount");
-        raffle.placeBet{value: 0.006 ether}(1);
+        raffle.buyTickets{value: 0.006 ether}(1);
         
         // Wrong amount for 5 tickets
         vm.prank(alice);
         vm.expectRevert("Incorrect payment amount");
-        raffle.placeBet{value: 0.025 ether}(5);
+        raffle.buyTickets{value: 0.025 ether}(5);
         
         // Wrong amount for 10 tickets
         vm.prank(alice);
         vm.expectRevert("Incorrect payment amount");
-        raffle.placeBet{value: 0.05 ether}(10);
+        raffle.buyTickets{value: 0.05 ether}(10);
     }
     
     /**
@@ -208,7 +208,7 @@ contract BettingAndProofsTest is Test {
     function testRejectZeroValueBets() public {
         vm.prank(alice);
         vm.expectRevert("Invalid amount: must be greater than zero");
-        raffle.placeBet{value: 0}(1);
+        raffle.buyTickets{value: 0}(1);
     }
     
     // ============================================
@@ -223,7 +223,7 @@ contract BettingAndProofsTest is Test {
         // Alice buys 25 bundles of 10 tickets each (25 * 0.04 = 1.0 ETH)
         vm.startPrank(alice);
         for (uint i = 0; i < 25; i++) {
-            raffle.placeBet{value: 0.04 ether}(10);
+            raffle.buyTickets{value: 0.04 ether}(10);
         }
         
         (uint256 wagered, uint256 tickets,,) = raffle.getUserStats(1, alice);
@@ -232,7 +232,7 @@ contract BettingAndProofsTest is Test {
         
         // Next bet should fail
         vm.expectRevert("Exceeds wallet cap of 1.0 ETH");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         vm.stopPrank();
     }
     
@@ -244,19 +244,19 @@ contract BettingAndProofsTest is Test {
         vm.startPrank(alice);
         
         // First bet
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         (uint256 wagered1, uint256 tickets1,,) = raffle.getUserStats(1, alice);
         assertEq(wagered1, 0.005 ether, "First bet wagered mismatch");
         assertEq(tickets1, 1, "First bet tickets mismatch");
         
         // Second bet
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         (uint256 wagered2, uint256 tickets2,,) = raffle.getUserStats(1, alice);
         assertEq(wagered2, 0.0275 ether, "Cumulative wagered mismatch");
         assertEq(tickets2, 6, "Cumulative tickets mismatch");
         
         // Third bet
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         (uint256 wagered3, uint256 tickets3,,) = raffle.getUserStats(1, alice);
         assertEq(wagered3, 0.0675 ether, "Final wagered mismatch");
         assertEq(tickets3, 16, "Final tickets mismatch");
@@ -275,7 +275,7 @@ contract BettingAndProofsTest is Test {
     function testBetsOnlyInOpenRounds() public {
         // Complete round 1 first (from setUp)
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10); // Meet minimum
+        raffle.buyTickets{value: 0.04 ether}(10); // Meet minimum
         raffle.closeRound(1);
         raffle.snapshotRound(1);
         raffle.requestVrf(1);
@@ -303,7 +303,7 @@ contract BettingAndProofsTest is Test {
         
         vm.prank(bob);
         vm.expectRevert("Round not open for betting");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
     }
     
     /**
@@ -313,14 +313,14 @@ contract BettingAndProofsTest is Test {
     function testBetsRejectedAfterClose() public {
         // Add minimum tickets and close
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         raffle.closeRound(1);
         
         // Bob tries to bet after close
         vm.prank(bob);
         vm.expectRevert("Round not open for betting");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
     }
     
     /**
@@ -335,7 +335,7 @@ contract BettingAndProofsTest is Test {
         
         vm.prank(alice);
         vm.expectRevert("Round not open for betting");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
     }
     
     // ============================================
@@ -357,7 +357,7 @@ contract BettingAndProofsTest is Test {
         // Alice tries to bet
         vm.prank(alice);
         vm.expectRevert("Address is denylisted");
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
     }
     
     /**
@@ -373,7 +373,7 @@ contract BettingAndProofsTest is Test {
         
         // Alice can now bet
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         (uint256 wagered,,,) = raffle.getUserStats(1, alice);
         assertEq(wagered, 0.005 ether, "Bet should succeed");
@@ -404,7 +404,7 @@ contract BettingAndProofsTest is Test {
         
         // Alice bets 10 tickets
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Alice submits correct proof
         vm.expectEmit(true, true, false, false);
@@ -430,7 +430,7 @@ contract BettingAndProofsTest is Test {
         
         // Alice bets
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Alice submits wrong proof
         bytes32 wrongProofHash = keccak256("wrong_answer");
@@ -454,7 +454,7 @@ contract BettingAndProofsTest is Test {
     function testOneProofAttemptPerWallet() public {
         // Alice bets
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // First proof attempt
         vm.prank(alice);
@@ -473,7 +473,7 @@ contract BettingAndProofsTest is Test {
     function testProofValidation() public {
         // Alice bets first
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Zero hash rejected
         vm.prank(alice);
@@ -502,13 +502,13 @@ contract BettingAndProofsTest is Test {
         
         // Alice: 10 tickets with proof
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         vm.prank(alice);
         raffle.submitProof(validProofHash);
         
         // Bob: 10 tickets without proof
         vm.prank(bob);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         // Check weights
         (,, uint256 aliceWeight,) = raffle.getUserStats(1, alice);
@@ -535,7 +535,7 @@ contract BettingAndProofsTest is Test {
         
         // Test with 1 ticket: 1 * 1400 / 1000 = 1.4 = 1 (truncated)
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         vm.prank(alice);
         raffle.submitProof(validProofHash);
         (,, uint256 weight1,) = raffle.getUserStats(1, alice);
@@ -543,7 +543,7 @@ contract BettingAndProofsTest is Test {
         
         // Test with 5 tickets: 5 * 1400 / 1000 = 7
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         vm.prank(bob);
         raffle.submitProof(validProofHash);
         (,, uint256 weight5,) = raffle.getUserStats(1, bob);
@@ -551,7 +551,7 @@ contract BettingAndProofsTest is Test {
         
         // Test with 10 tickets: 10 * 1400 / 1000 = 14
         vm.prank(charlie);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         vm.prank(charlie);
         raffle.submitProof(validProofHash);
         (,, uint256 weight10,) = raffle.getUserStats(1, charlie);
@@ -565,7 +565,7 @@ contract BettingAndProofsTest is Test {
     function testProofSubmissionOnlyInOpenRounds() public {
         // Alice bets
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Close round
         raffle.closeRound(1);
@@ -586,19 +586,19 @@ contract BettingAndProofsTest is Test {
         
         // Alice bets and submits correct proof
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         vm.prank(alice);
         raffle.submitProof(validProofHash);
         
         // Bob bets and submits wrong proof
         vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         vm.prank(bob);
         raffle.submitProof(keccak256("wrong"));
         
         // Charlie bets but doesn't submit proof
         vm.prank(charlie);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         // Verify each user's state
         (,, uint256 aliceWeight, bool aliceHasProof) = raffle.getUserStats(1, alice);
@@ -630,7 +630,7 @@ contract BettingAndProofsTest is Test {
         
         // Alice bets
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         address[] memory participants1 = raffle.getRoundParticipants(1);
         assertEq(participants1.length, 1, "Should have 1 participant");
@@ -638,14 +638,14 @@ contract BettingAndProofsTest is Test {
         
         // Bob bets
         vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         address[] memory participants2 = raffle.getRoundParticipants(1);
         assertEq(participants2.length, 2, "Should have 2 participants");
         
         // Alice bets again (should not duplicate)
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         address[] memory participants3 = raffle.getRoundParticipants(1);
         assertEq(participants3.length, 2, "Should still have 2 participants");
@@ -663,7 +663,7 @@ contract BettingAndProofsTest is Test {
         
         // Alice bets 10 tickets
         vm.prank(alice);
-        raffle.placeBet{value: 0.04 ether}(10);
+        raffle.buyTickets{value: 0.04 ether}(10);
         
         PepedawnRaffle.Round memory round1 = raffle.getRound(1);
         assertEq(round1.totalTickets, 10, "Should have 10 tickets");
@@ -672,7 +672,7 @@ contract BettingAndProofsTest is Test {
         
         // Bob bets 5 tickets
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         PepedawnRaffle.Round memory round2 = raffle.getRound(1);
         assertEq(round2.totalTickets, 15, "Should have 15 tickets");

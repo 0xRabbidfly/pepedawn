@@ -69,10 +69,10 @@ contract RefundsTest is Test {
         uint256 bobWager = 0.005 ether;    // 1 ticket
         
         vm.prank(alice);
-        raffle.placeBet{value: aliceWager}(5);
+        raffle.buyTickets{value: aliceWager}(5);
         
         vm.prank(bob);
-        raffle.placeBet{value: bobWager}(1);
+        raffle.buyTickets{value: bobWager}(1);
         
         // Close round (should trigger refunds)
         raffle.closeRound(1);
@@ -99,7 +99,7 @@ contract RefundsTest is Test {
         
         uint256 wagerAmount = 0.0225 ether;
         vm.prank(alice);
-        raffle.placeBet{value: wagerAmount}(5);
+        raffle.buyTickets{value: wagerAmount}(5);
         
         raffle.closeRound(1);
         
@@ -143,7 +143,7 @@ contract RefundsTest is Test {
         raffle.openRound(1);
         
         vm.prank(address(attacker));
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         raffle.closeRound(1);
         
@@ -164,7 +164,7 @@ contract RefundsTest is Test {
         
         uint256 wager1 = 0.0225 ether;
         vm.prank(alice);
-        raffle.placeBet{value: wager1}(5);
+        raffle.buyTickets{value: wager1}(5);
         
         raffle.closeRound(1);
         
@@ -175,7 +175,7 @@ contract RefundsTest is Test {
         
         uint256 wager2 = 0.005 ether;
         vm.prank(alice);
-        raffle.placeBet{value: wager2}(1);
+        raffle.buyTickets{value: wager2}(1);
         
         raffle.closeRound(2);
         
@@ -202,10 +202,10 @@ contract RefundsTest is Test {
         
         // Two participants, total 6 tickets (below minimum of 10)
         vm.prank(alice);
-        raffle.placeBet{value: 0.005 ether}(1); // 1 ticket
+        raffle.buyTickets{value: 0.005 ether}(1); // 1 ticket
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);   // 5 tickets
+        raffle.buyTickets{value: 0.0225 ether}(5);   // 5 tickets
         
         // Verify total tickets
         PepedawnRaffle.Round memory round = raffle.getRound(1);
@@ -244,10 +244,10 @@ contract RefundsTest is Test {
         
         // Alice and Bob each buy 5 tickets (total 10 = threshold)
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         // Close round
         raffle.closeRound(1);
@@ -272,7 +272,7 @@ contract RefundsTest is Test {
         
         uint256 wagerAmount = 0.0225 ether;
         vm.prank(alice);
-        raffle.placeBet{value: wagerAmount}(5);
+        raffle.buyTickets{value: wagerAmount}(5);
         
         raffle.closeRound(1);
         
@@ -296,7 +296,7 @@ contract RefundsTest is Test {
         
         uint256 wagerAmount = 0.0225 ether;
         vm.prank(alice);
-        raffle.placeBet{value: wagerAmount}(5);
+        raffle.buyTickets{value: wagerAmount}(5);
         
         // Close round - should emit ParticipantRefunded
         vm.expectEmit(true, true, true, true);
@@ -320,13 +320,13 @@ contract RefundsTest is Test {
         raffle.openRound(1);
         
         vm.prank(alice);
-        raffle.placeBet{value: 0.0225 ether}(5);
+        raffle.buyTickets{value: 0.0225 ether}(5);
         
         vm.prank(bob);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         vm.prank(charlie);
-        raffle.placeBet{value: 0.005 ether}(1);
+        raffle.buyTickets{value: 0.005 ether}(1);
         
         raffle.closeRound(1);
         
@@ -382,7 +382,7 @@ contract ReentrancyAttacker {
     }
     
     // Allow contract to place bets
-    function placeBet(uint256 tickets) external payable {
-        raffle.placeBet{value: msg.value}(tickets);
+    function buyTickets(uint256 tickets) external payable {
+        raffle.buyTickets{value: msg.value}(tickets);
     }
 }

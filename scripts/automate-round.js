@@ -17,21 +17,18 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../contracts/.env') });
 
 // Load environment variables
 function loadEnv() {
-  const envPath = path.join(__dirname, '../contracts/.env');
-  if (!fs.existsSync(envPath)) {
-    throw new Error('contracts/.env not found. Create it first!');
+  // dotenv already loaded above, but verify key variables exist
+  if (!process.env.SEPOLIA_RPC_URL) {
+    throw new Error('SEPOLIA_RPC_URL not found in contracts/.env');
   }
-  
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  envContent.split('\n').forEach(line => {
-    const match = line.match(/^([^=]+)=(.*)$/);
-    if (match && !process.env[match[1]]) {
-      process.env[match[1]] = match[2].trim();
-    }
-  });
+  if (!process.env.PRIVATE_KEY) {
+    throw new Error('PRIVATE_KEY not found in contracts/.env');
+  }
+  console.log('✅ Environment variables loaded from contracts/.env');
 }
 
 function exec(cmd, options = {}) {

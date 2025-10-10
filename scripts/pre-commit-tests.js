@@ -8,10 +8,12 @@ console.log('🔍 Running pre-commit checks...');
 // Test files to run (matching current test structure)
 const testFiles = [
     'test/BettingAndProofs.t.sol',
+    'test/Claims.t.sol',
     'test/Core.t.sol',
-    'test/DeployedContractTest.t.sol',
     'test/Governance.t.sol',
     'test/Integration.t.sol',
+    'test/MerkleProofs.t.sol',
+    'test/Refunds.t.sol',
     'test/RoundLifecycle.t.sol',
     'test/Security.t.sol',
     'test/WinnerSelection.t.sol'

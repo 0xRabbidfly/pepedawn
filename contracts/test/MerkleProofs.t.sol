@@ -53,8 +53,8 @@ contract MerkleProofsTest is Test {
         vm.deal(bob, 10 ether);
         vm.deal(charlie, 10 ether);
         
-        // Reset VRF timing
-        raffle.resetVrfTiming();
+        // Reset VRF timing by directly manipulating storage (test only)
+        vm.store(address(raffle), bytes32(uint256(10)), bytes32(uint256(0)));
     }
     
     // ============================================

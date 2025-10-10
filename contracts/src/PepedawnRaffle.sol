@@ -38,8 +38,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint8 public constant PEPE_PACK_TIER = 3;
     
     // Security constants
-    uint256 public constant MAX_PARTICIPANTS_PER_ROUND = 10000; // Circuit breaker
-    uint256 public constant MAX_TOTAL_WAGER_PER_ROUND = 1000 ether; // Circuit breaker
+    uint256 public constant MAX_PARTICIPANTS_PER_ROUND = 100; // Circuit breaker
+    uint256 public constant MAX_TOTAL_WAGER_PER_ROUND = 100 ether; // Circuit breaker - start conservative
     uint256 public constant VRF_REQUEST_TIMEOUT = 1 hours; // VRF timeout protection
     
     // VRF Gas Configuration Constants
@@ -47,6 +47,11 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint32 public constant VRF_SAFETY_BUFFER_PCT = 50; // 50% safety buffer
     uint32 public constant VRF_VOLATILITY_BUFFER_PCT = 25; // 25% volatility buffer
     uint32 public constant VRF_MAX_CALLBACK_GAS = 2500000; // Maximum gas limit
+    uint256 public constant MAX_GAS_PRICE = 50 gwei; // Maximum gas price for VRF requests
+    
+    // Version tracking
+    string public constant VERSION = "1.0.0";
+    uint256 public immutable DEPLOYMENT_TIMESTAMP;
     
     // =============================================================================
     // ENUMS
@@ -136,6 +141,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     mapping(uint256 => mapping(address => bool)) private _winnerSelected; // Prevent duplicate winners
     bool public emergencyPaused; // Additional emergency pause state
     uint256 public lastVrfRequestTime; // Track VRF request timing
+    string public pauseReason; // Reason for contract pause (for transparency)
     
     // Merkle & Claims state variables (NEW)
     mapping(uint256 => string) public participantsCIDs; // roundId => IPFS CID for participants file
@@ -264,6 +270,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     // Emergency & Recovery events
     event EmergencyWithdrawal(address indexed to, uint256 amount, string assetType);
     event DirectETHReceived(address indexed sender, uint256 amount);
+    event ContractPausedWithReason(string reason, uint256 timestamp);
     
     // =============================================================================
     // MODIFIERS
@@ -291,6 +298,11 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     
     modifier whenNotEmergencyPaused() {
         require(!emergencyPaused, "Emergency pause is active");
+        _;
+    }
+    
+    modifier whenEmergencyPaused() {
+        require(emergencyPaused, "Emergency pause is not active");
         _;
     }
     
@@ -340,6 +352,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Initialize security state
         emergencyPaused = false;
         lastVrfRequestTime = 0;
+        
+        // Set deployment timestamp for version tracking
+        DEPLOYMENT_TIMESTAMP = block.timestamp;
     }
     
     // =============================================================================
@@ -370,16 +385,20 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     }
     
     /**
-     * @notice Pause contract (Pausable functionality)
+     * @notice Pause contract with reason (Pausable functionality)
+     * @param reason Reason for pausing the contract
      */
-    function pause() external onlyOwner {
+    function pause(string calldata reason) external onlyOwner {
+        pauseReason = reason;
         _pause();
+        emit ContractPausedWithReason(reason, block.timestamp);
     }
     
     /**
      * @notice Unpause contract (Pausable functionality)
      */
     function unpause() external onlyOwner {
+        pauseReason = "";
         _unpause();
     }
     
@@ -400,14 +419,6 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         vrfConfig.coordinator = IVRFCoordinatorV2Plus(_coordinator);
         vrfConfig.subscriptionId = _subscriptionId;
         vrfConfig.keyHash = _keyHash;
-    }
-
-    /**
-     * @notice Reset VRF timing for testing purposes
-     * @dev Only available for testing - should be removed in production
-     */
-    function resetVrfTiming() external onlyOwner {
-        lastVrfRequestTime = 0;
     }
     
     /**
@@ -905,6 +916,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
             "Invalid VRF coordinator"
         );
         
+        // Security check: Prevent VRF requests during extreme gas spikes
+        require(tx.gasprice <= MAX_GAS_PRICE, "Gas price too high for VRF request");
+        
         // Dynamic gas estimation following Chainlink best practices
         uint32 estimatedGas = _estimateCallbackGas(roundId);
         
@@ -1384,11 +1398,11 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         require(amount <= address(this).balance, "Insufficient contract balance");
         require(to != address(this), "Cannot withdraw to self");
         
-        // Additional safety: Require contract to be paused for at least 24 hours
+        // Additional safety: Require contract to be paused for at least 7 days
         // This gives users time to withdraw refunds before emergency action
         require(
-            block.timestamp >= lastVrfRequestTime + 24 hours, 
-            "Must wait 24 hours after last activity"
+            block.timestamp >= lastVrfRequestTime + 7 days, 
+            "Must wait 7 days after last activity"
         );
         
         (bool success, ) = to.call{value: amount}("");
@@ -1421,8 +1435,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         // Additional safety check
         require(
-            block.timestamp >= lastVrfRequestTime + 24 hours, 
-            "Must wait 24 hours after last activity"
+            block.timestamp >= lastVrfRequestTime + 7 days, 
+            "Must wait 7 days after last activity"
         );
         
         IERC721(nftContract).safeTransferFrom(address(this), to, tokenId);
@@ -1498,6 +1512,39 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
      */
     function estimateVrfCallbackGas(uint256 roundId) external view returns (uint32) {
         return _estimateCallbackGas(roundId);
+    }
+    
+    /**
+     * @notice Get detailed round state information
+     * @param roundId The round to get state for
+     * @return round Round struct with all round data
+     * @return participantsCount Number of participants in the round
+     * @return winnersCount Number of winners selected
+     * @return prizesClaimed Number of prizes that have been claimed
+     */
+    function getRoundState(uint256 roundId) 
+        external 
+        view 
+        roundExists(roundId)
+        returns (
+            Round memory round,
+            uint256 participantsCount,
+            uint256 winnersCount,
+            uint256 prizesClaimed
+        ) 
+    {
+        round = rounds[roundId];
+        participantsCount = roundParticipants[roundId].length;
+        winnersCount = roundWinners[roundId].length;
+        
+        // Count claimed prizes
+        for (uint8 i = 0; i < 10; i++) {
+            if (claims[roundId][i] != address(0)) {
+                prizesClaimed++;
+            }
+        }
+        
+        return (round, participantsCount, winnersCount, prizesClaimed);
     }
     
     // =============================================================================

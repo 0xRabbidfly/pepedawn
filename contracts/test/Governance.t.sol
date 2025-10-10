@@ -65,8 +65,8 @@ contract GovernanceTest is Test {
         vm.deal(malicious, 10 ether);
         vm.deal(newOwner, 10 ether);
         
-        // Reset VRF timing for tests
-        raffle.resetVrfTiming();
+        // Reset VRF timing by directly manipulating storage (test only)
+        vm.store(address(raffle), bytes32(uint256(10)), bytes32(uint256(0)));
     }
     
     // ============================================
@@ -238,7 +238,7 @@ contract GovernanceTest is Test {
         // Test pause
         vm.prank(malicious);
         vm.expectRevert("Only callable by owner");
-        raffle.pause();
+        raffle.pause("test");
         
         // Test unpause
         vm.prank(malicious);
@@ -487,7 +487,7 @@ contract GovernanceTest is Test {
         raffle.openRound(1);
         
         // Activate regular pause
-        raffle.pause();
+        raffle.pause("Test pause");
         assertTrue(raffle.paused(), "Should be paused");
         
         // User operations blocked
@@ -521,7 +521,7 @@ contract GovernanceTest is Test {
         raffle.placeBet{value: 0.005 ether}(1);
         
         // Activate both pause mechanisms
-        raffle.pause();
+        raffle.pause("Emergency test");
         raffle.setEmergencyPause(true);
         
         // View functions still work
@@ -566,7 +566,7 @@ contract GovernanceTest is Test {
         raffle.setEmergencyPause(false);
         
         // Now test regular pause (blocks all state changes)
-        raffle.pause();
+        raffle.pause("Block all state changes");
         
         // Admin operations blocked by regular pause
         vm.expectRevert(Pausable.EnforcedPause.selector);

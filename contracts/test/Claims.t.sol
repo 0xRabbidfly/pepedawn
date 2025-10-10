@@ -58,8 +58,9 @@ contract ClaimsTest is Test {
             emblemVault.mint(address(raffle), 1000 + i);
         }
         
-        // Reset VRF timing
-        raffle.resetVrfTiming();
+        // Reset VRF timing by directly manipulating storage (test only)
+        // lastVrfRequestTime is at storage slot (calculate based on contract layout)
+        vm.store(address(raffle), bytes32(uint256(10)), bytes32(uint256(0)));
     }
     
     // ============================================

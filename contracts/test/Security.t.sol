@@ -61,8 +61,8 @@ contract SecurityTest is Test {
         vm.deal(bob, 10 ether);
         vm.deal(attacker, 10 ether);
         
-        // Reset VRF timing for all tests
-        raffle.resetVrfTiming();
+        // Reset VRF timing by directly manipulating storage (test only)
+        vm.store(address(raffle), bytes32(uint256(10)), bytes32(uint256(0)));
     }
     
     /**
@@ -75,7 +75,7 @@ contract SecurityTest is Test {
         raffle.openRound(1);
         
         // Deploy malicious contract
-        MaliciousReentrant malicious = new MaliciousReentrant(address(raffle));
+        MaliciousReentrant malicious = new MaliciousReentrant(payable(address(raffle)));
         vm.deal(address(malicious), 1 ether);
         
         // The placeBet function has nonReentrant modifier
@@ -104,7 +104,7 @@ contract SecurityTest is Test {
         raffle.placeBet{value: 0.005 ether}(1);
         
         // Deploy malicious contract for proof submission
-        MaliciousProofReentrant malicious = new MaliciousProofReentrant(address(raffle));
+        MaliciousProofReentrant malicious = new MaliciousProofReentrant(payable(address(raffle)));
         vm.deal(address(malicious), 1 ether);
         
         // First place a bet with malicious contract
@@ -408,7 +408,7 @@ contract MaliciousReentrant {
     PepedawnRaffle public raffle;
     bool public attacking = false;
     
-    constructor(address _raffle) {
+    constructor(address payable _raffle) {
         raffle = PepedawnRaffle(_raffle);
     }
     
@@ -434,7 +434,7 @@ contract MaliciousProofReentrant {
     PepedawnRaffle public raffle;
     bool public attacking = false;
     
-    constructor(address _raffle) {
+    constructor(address payable _raffle) {
         raffle = PepedawnRaffle(_raffle);
     }
     

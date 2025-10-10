@@ -47,8 +47,8 @@ contract RefundsTest is Test {
         vm.deal(bob, 10 ether);
         vm.deal(charlie, 10 ether);
         
-        // Reset VRF timing
-        raffle.resetVrfTiming();
+        // Reset VRF timing by directly manipulating storage (test only)
+        vm.store(address(raffle), bytes32(uint256(10)), bytes32(uint256(0)));
     }
     
     // ============================================
@@ -135,7 +135,7 @@ contract RefundsTest is Test {
      */
     function testReentrancyProtection() public {
         // Deploy malicious contract
-        ReentrancyAttacker attacker = new ReentrancyAttacker(address(raffle));
+        ReentrancyAttacker attacker = new ReentrancyAttacker(payable(address(raffle)));
         vm.deal(address(attacker), 10 ether);
         
         // Setup refund for attacker
@@ -365,7 +365,7 @@ contract ReentrancyAttacker {
     PepedawnRaffle public raffle;
     bool public attacking;
     
-    constructor(address _raffle) {
+    constructor(address payable _raffle) {
         raffle = PepedawnRaffle(_raffle);
     }
     

@@ -505,6 +505,44 @@ section h2 {
   animation: bounce 1s ease-in-out infinite;
 }
 
+/* Unclaimed Prizes Notification */
+#unclaimed-prizes-notification {
+  margin-top: 15px;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.unclaimed-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 193, 7, 0.2));
+  border: 2px solid #FF9800;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+}
+
+.unclaimed-link:hover {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.3), rgba(255, 193, 7, 0.3));
+  border-color: #FFC107;
+  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.unclaimed-icon {
+  font-size: 1.5em;
+  animation: bounce 1.5s ease-in-out infinite;
+}
+
+.unclaimed-text {
+  color: #FFF;
+  font-size: 1em;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
 @keyframes pulse-glow {
   0%, 100% { 
     box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3);

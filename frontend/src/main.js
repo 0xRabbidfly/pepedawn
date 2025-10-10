@@ -324,6 +324,105 @@ function setupLeaderboardRoundSelector() {
   }
 }
 
+// Check for unclaimed prizes across recent rounds
+async function checkUnclaimedPrizes(contract, userAddress) {
+  if (!contract || !userAddress) return { count: 0, rounds: [] };
+  
+  try {
+    const currentRoundId = await contract.currentRoundId();
+    const currentRoundNum = Number(currentRoundId);
+    
+    if (currentRoundNum === 0) return { count: 0, rounds: [] };
+    
+    const unclaimedPrizes = [];
+    
+    // Check last 5 rounds only
+    const startRound = Math.max(1, currentRoundNum - 4);
+    
+    for (let roundId = startRound; roundId <= currentRoundNum; roundId++) {
+      try {
+        // Check round status first - only process Distributed rounds
+        const roundState = await contract.getRoundState(roundId);
+        const status = Number(roundState.round.status);
+        if (status !== 6) continue; // Only Distributed rounds
+        
+        // Get winners CID from contract
+        const winnersCID = await contract.winnersCIDs(roundId);
+        if (!winnersCID || winnersCID === '') continue;
+        
+        // Fetch winners file (local, fast)
+        const { fetchWinnersFile } = await import('./services/ipfs.js');
+        const { getPrizesForAddress } = await import('./services/merkle.js');
+        
+        const winnersFile = await fetchWinnersFile(winnersCID, roundId);
+        if (!winnersFile || !winnersFile.winners) continue;
+        
+        // Get user's prizes in this round
+        const userPrizes = getPrizesForAddress(winnersFile.winners, userAddress);
+        if (userPrizes.length === 0) continue;
+        
+        // Check each prize if claimed (batch this for performance)
+        for (const prize of userPrizes) {
+          const claimedAddress = roundState.prizeClaimers[prize.prizeIndex];
+          const isClaimed = claimedAddress !== ethers.ZeroAddress;
+          
+          if (!isClaimed) {
+            unclaimedPrizes.push({
+              roundId,
+              prizeIndex: prize.prizeIndex,
+              prizeTier: prize.prizeTier
+            });
+          }
+        }
+      } catch (error) {
+        // Silently skip rounds with errors (file not found, etc.)
+        console.log(`Skipping round ${roundId}:`, error.message);
+      }
+    }
+    
+    return {
+      count: unclaimedPrizes.length,
+      rounds: [...new Set(unclaimedPrizes.map(p => p.roundId))],
+      prizes: unclaimedPrizes
+    };
+  } catch (error) {
+    console.error('Error checking unclaimed prizes:', error);
+    return { count: 0, rounds: [] };
+  }
+}
+
+// Display unclaimed prizes notification
+async function displayUnclaimedPrizesNotification(contract, userAddress) {
+  console.log('🎁 displayUnclaimedPrizesNotification called:', { contract: !!contract, userAddress });
+  const notificationElement = document.getElementById('unclaimed-prizes-notification');
+  if (!notificationElement) {
+    console.warn('⚠️ Notification element not found');
+    return;
+  }
+  
+  try {
+    const result = await checkUnclaimedPrizes(contract, userAddress);
+    console.log('🎁 Unclaimed prizes check result:', result);
+    
+    if (result.count > 0) {
+      console.log('✅ Showing unclaimed prizes notification');
+      notificationElement.innerHTML = `
+        <a href="/claim.html" class="unclaimed-link">
+          <span class="unclaimed-icon">🎁</span>
+          <span class="unclaimed-text">${result.count} unclaimed prize${result.count > 1 ? 's' : ''}!</span>
+        </a>
+      `;
+      notificationElement.style.display = 'block';
+    } else {
+      console.log('ℹ️ No unclaimed prizes to show');
+      notificationElement.style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Error displaying unclaimed prizes notification:', error);
+    notificationElement.style.display = 'none';
+  }
+}
+
 // Contract information functions
 async function updateContractInfo(contract) {
   if (!contract) return;
@@ -489,12 +588,13 @@ async function setupWalletConnection(showSuccessToast = true) {
     showSecurityStatus(contract, userAddress);
     await updateButtonStates(roundState); // Update button states after connecting
     
-    // Update refunds (only on main page)
+    // Update refunds and unclaimed prizes (only on main page)
     console.log('🔍 Current page:', window.location.pathname);
     console.log('🔍 Current round ID:', currentRoundId.toString());
     if (currentRoundId.toString() !== '0') {
       if (window.location.pathname.includes('main.html')) {
         await displayRefundButton(contract, userAddress);
+        await displayUnclaimedPrizesNotification(contract, userAddress);
       }
     }
     
@@ -634,6 +734,7 @@ async function reconnectWallet(newAddress) {
       if (currentRoundId.toString() !== '0') {
         if (window.location.pathname.includes('main.html')) {
           await displayRefundButton(contract, userAddress);
+          await displayUnclaimedPrizesNotification(contract, userAddress);
         }
         if (window.location.pathname.includes('claim.html')) {
           await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
@@ -1474,9 +1575,10 @@ function startPeriodicUpdates() {
         if (userAddress) {
           await updateUserStats(contract, userAddress, roundState);
           
-          // Update refunds on main page
+          // Update refunds and unclaimed prizes on main page
           if (currentRoundId.toString() !== '0' && window.location.pathname.includes('main.html')) {
             await displayRefundButton(contract, userAddress);
+            await displayUnclaimedPrizesNotification(contract, userAddress);
           }
         }
         

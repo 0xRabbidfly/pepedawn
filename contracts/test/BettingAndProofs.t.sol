@@ -302,7 +302,7 @@ contract BettingAndProofsTest is Test {
         raffle.createRound();
         
         vm.prank(bob);
-        vm.expectRevert("Round not open for betting");
+        vm.expectRevert("Round not open for ticket purchases");
         raffle.buyTickets{value: 0.005 ether}(1);
     }
     
@@ -319,7 +319,7 @@ contract BettingAndProofsTest is Test {
         
         // Bob tries to bet after close
         vm.prank(bob);
-        vm.expectRevert("Round not open for betting");
+        vm.expectRevert("Round not open for ticket purchases");
         raffle.buyTickets{value: 0.005 ether}(1);
     }
     
@@ -334,7 +334,7 @@ contract BettingAndProofsTest is Test {
         raffle.closeRound(1);
         
         vm.prank(alice);
-        vm.expectRevert("Round not open for betting");
+        vm.expectRevert("Round not open for ticket purchases");
         raffle.buyTickets{value: 0.005 ether}(1);
     }
     

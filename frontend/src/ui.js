@@ -475,6 +475,19 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
     
     // Get round data
     const roundData = await contract.getRound(displayRoundId);
+    const roundStatus = Number(roundData.status);
+    
+    // Check if round was refunded (status 7)
+    if (roundStatus === 7) {
+      leaderboardList.innerHTML = `
+        <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-secondary);">
+          <h3>💰 Round Refunded</h3>
+          <p>Round ${displayRoundId} was refunded due to insufficient participation.</p>
+          <p>All participants have been refunded their wagers.</p>
+        </div>
+      `;
+      return;
+    }
     
     if (roundData.totalTickets.toString() === '0') {
       leaderboardList.innerHTML = '<p>No participants yet</p>';
@@ -482,7 +495,7 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
     }
     
     // Check if round is distributed (status 6)
-    const isDistributed = Number(roundData.status) === 6;
+    const isDistributed = roundStatus === 6;
     
     // Winners section removed - winners are displayed in their own dedicated section
     

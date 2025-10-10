@@ -207,6 +207,18 @@ export async function displayWinners(contract, roundId) {
     // Always show winners section (even if no winners yet)
     winnersSection.style.display = 'block';
     
+    // Check if round was refunded (status 7)
+    if (status === 7) {
+      winnersList.innerHTML = `
+        <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-secondary);">
+          <h3>💰 Round Refunded</h3>
+          <p>Round ${roundId} was refunded due to insufficient participation.</p>
+          <p>No winners were selected - all participants have been refunded their wagers.</p>
+        </div>
+      `;
+      return;
+    }
+    
     // Check if winners root is set
     if (!roundData.winnersRoot || roundData.winnersRoot === ethers.ZeroHash) {
       winnersList.innerHTML = '<p class="info">Winners not yet determined for this round</p>';

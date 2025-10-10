@@ -1637,7 +1637,7 @@ section h2 {
 }
 
 .tx-status.info {
-  background-color: rgba(33, 150, 243, 0.1);
+  background-color: rgba(33, 150, 243, 0.3);
   border: 1px solid var(--secondary-color);
   color: var(--secondary-color);
 }
@@ -1646,6 +1646,12 @@ section h2 {
   background-color: #90EE90;
   border: 1px solid var(--success-color);
   color: #2E7D32;
+}
+
+.tx-status.warning {
+  background-color: rgba(255, 152, 0, 0.3);
+  border: 1px solid var(--warning-color);
+  color: var(--warning-color);
 }
 
 .tx-status.error {

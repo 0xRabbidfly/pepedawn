@@ -14,7 +14,7 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
   console.log('🎯 displayClaimablePrizes called:', { userAddress, roundId });
   const claimsContainer = document.getElementById('claims-container');
   if (!claimsContainer) {
-    console.error('❌ claims-container not found in DOM');
+    // Element not found - likely on different page (e.g., leaderboard)
     return;
   }
   
@@ -107,8 +107,6 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     if (claimsSection) {
       console.log('✅ Showing claims section');
       claimsSection.style.display = 'block';
-    } else {
-      console.error('❌ claims-section not found');
     }
     
     // Add event listeners to claim buttons

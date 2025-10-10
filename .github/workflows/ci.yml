@@ -24,6 +24,22 @@ jobs:
         ls -la frontend/dist/
         echo "✅ Pre-built files found and ready for deployment"
         
+        # Verify critical PNG files are present
+        echo "Checking for PNG files..."
+        if [ ! -f "frontend/dist/counterparty.png" ]; then
+          echo "❌ Error: counterparty.png not found in dist/"
+          exit 1
+        fi
+        if [ ! -f "frontend/dist/raven_cutout_800.png" ]; then
+          echo "❌ Error: raven_cutout_800.png not found in dist/"
+          exit 1
+        fi
+        if [ ! -f "frontend/dist/PEPEDAWN_thumbnail.png" ]; then
+          echo "❌ Error: PEPEDAWN_thumbnail.png not found in dist/"
+          exit 1
+        fi
+        echo "✅ All PNG files verified"
+        
     - name: Deploy to FTP
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4

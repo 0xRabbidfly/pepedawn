@@ -1515,12 +1515,14 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     }
     
     /**
-     * @notice Get detailed round state information
+     * @notice Get comprehensive round state information (optimized for frontend)
      * @param roundId The round to get state for
      * @return round Round struct with all round data
      * @return participantsCount Number of participants in the round
      * @return winnersCount Number of winners selected
      * @return prizesClaimed Number of prizes that have been claimed
+     * @return prizeTokenIds Array of 10 NFT token IDs for this round's prizes
+     * @return prizeClaimers Array of 10 addresses (address(0) if unclaimed)
      */
     function getRoundState(uint256 roundId) 
         external 
@@ -1530,21 +1532,26 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
             Round memory round,
             uint256 participantsCount,
             uint256 winnersCount,
-            uint256 prizesClaimed
+            uint256 prizesClaimed,
+            uint256[10] memory prizeTokenIds,
+            address[10] memory prizeClaimers
         ) 
     {
         round = rounds[roundId];
         participantsCount = roundParticipants[roundId].length;
         winnersCount = roundWinners[roundId].length;
         
-        // Count claimed prizes
+        // Gather all prize information in one pass
         for (uint8 i = 0; i < 10; i++) {
-            if (claims[roundId][i] != address(0)) {
+            prizeTokenIds[i] = prizeNFTs[roundId][i];
+            prizeClaimers[i] = claims[roundId][i];
+            
+            if (prizeClaimers[i] != address(0)) {
                 prizesClaimed++;
             }
         }
         
-        return (round, participantsCount, winnersCount, prizesClaimed);
+        return (round, participantsCount, winnersCount, prizesClaimed, prizeTokenIds, prizeClaimers);
     }
     
     // =============================================================================

@@ -57,7 +57,7 @@ function formatAddress(address) {
 }
 
 // Update button states based on round status and user state
-async function updateButtonStates() {
+async function updateButtonStates(roundState = null) {
   const submitProofBtn = document.getElementById('submit-proof');
   const placeBetBtn = document.getElementById('place-bet');
   const ticketCards = document.querySelectorAll('.ticket-option-card');
@@ -89,8 +89,14 @@ async function updateButtonStates() {
       // No active round - disable interactions
       currentRoundStatus = 0;
     } else {
-      // Get round data
-      const roundData = await contract.getRound(currentRoundId);
+      // Use pre-fetched round state if available
+      let roundData;
+      if (roundState) {
+        roundData = roundState.round;
+      } else {
+        // Get round data
+        roundData = await contract.getRound(currentRoundId);
+      }
       currentRoundStatus = Number(roundData.status);
     }
     
@@ -373,12 +379,18 @@ async function setupWalletConnection(showSuccessToast = true) {
   
   // Update user stats and security status
   if (contract) {
-    await updateUserStats(contract, userAddress);
+    // Get current round ID and state
+    const currentRoundId = await contract.currentRoundId();
+    let roundState = null;
+    if (currentRoundId.toString() !== '0') {
+      roundState = await contract.getRoundState(currentRoundId);
+    }
+    
+    await updateUserStats(contract, userAddress, roundState);
     showSecurityStatus(contract, userAddress);
-    await updateButtonStates(); // Update button states after connecting
+    await updateButtonStates(roundState); // Update button states after connecting
     
     // Update claims and refunds (only on main page)
-    const currentRoundId = await contract.currentRoundId();
     console.log('🔍 Current page:', window.location.pathname);
     console.log('🔍 Current round ID:', currentRoundId.toString());
     if (currentRoundId.toString() !== '0') {
@@ -419,14 +431,19 @@ function handleNetworkChange(chainId) {
     processedEvents.clear(); // Clear processed events
     
     // Reload contract and update UI
-    loadContract().then(() => {
-      if (userAddress) {
-        updateWalletInfo(userAddress, provider);
-        if (contract) {
-          updateUserStats(contract, userAddress);
-          showSecurityStatus(contract, userAddress);
-          updateButtonStates();
+    loadContract().then(async () => {
+      if (userAddress && contract) {
+        // Fetch round state once
+        const currentRoundId = await contract.currentRoundId();
+        let roundState = null;
+        if (currentRoundId.toString() !== '0') {
+          roundState = await contract.getRoundState(currentRoundId);
         }
+        
+        updateWalletInfo(userAddress, provider);
+        updateUserStats(contract, userAddress, roundState);
+        showSecurityStatus(contract, userAddress);
+        updateButtonStates(roundState);
       }
     });
     
@@ -491,11 +508,18 @@ async function reconnectWallet(newAddress) {
     
     // Update all UI components
     if (contract) {
-      await updateUserStats(contract, userAddress);
+      // Fetch round state once
+      const currentRoundId = await contract.currentRoundId();
+      let roundState = null;
+      if (currentRoundId.toString() !== '0') {
+        roundState = await contract.getRoundState(currentRoundId);
+      }
+      
+      await updateUserStats(contract, userAddress, roundState);
       showSecurityStatus(contract, userAddress);
-      await updateButtonStates();
-      await updateRoundStatus(contract, provider);
-      await updateProgressIndicator(contract);
+      await updateButtonStates(roundState);
+      await updateRoundStatus(contract, provider, roundState);
+      await updateProgressIndicator(contract, roundState);
       await updateLeaderboard(contract);
     }
     
@@ -1315,22 +1339,31 @@ function startPeriodicUpdates() {
   setInterval(async () => {
     if (contract) {
       try {
-        await updateRoundStatus(contract, provider);
-        await updateProgressIndicator(contract);
+        // Get current round ID first
+        const currentRoundId = await contract.currentRoundId();
+        
+        // If we have an active round, fetch ALL data in one optimized call
+        let roundState = null;
+        if (currentRoundId.toString() !== '0') {
+          roundState = await contract.getRoundState(currentRoundId);
+        }
+        
+        // Update all UI components with the pre-fetched data
+        await updateRoundStatus(contract, provider, roundState);
+        await updateProgressIndicator(contract, roundState);
         await updateLeaderboard(contract);
         
         if (userAddress) {
-          await updateUserStats(contract, userAddress);
+          await updateUserStats(contract, userAddress, roundState);
           
-          // Update claims and refunds
-          const currentRoundId = await contract.currentRoundId();
+          // Update claims and refunds (claims already uses getRoundState internally)
           if (currentRoundId.toString() !== '0') {
             await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
             await displayRefundButton(contract, userAddress);
           }
         }
         
-        await updateButtonStates(); // Update button states periodically
+        await updateButtonStates(roundState); // Update button states periodically
       } catch (error) {
         // Completely silence expected contract errors to prevent console spam
         const isExpectedError = error.message.includes('execution reverted') || 
@@ -1366,15 +1399,26 @@ function startPeriodicUpdates() {
   
   // Initial update
   if (contract) {
-    updateRoundStatus(contract, provider);
-    updateProgressIndicator(contract);
-    updateLeaderboard(contract);
-    
-    if (userAddress) {
-      showSecurityStatus(contract, userAddress);
-    }
-    
-    updateButtonStates(); // Initial button state update
+    // Get current round ID and fetch state once
+    contract.currentRoundId().then(async (currentRoundId) => {
+      let roundState = null;
+      if (currentRoundId.toString() !== '0') {
+        roundState = await contract.getRoundState(currentRoundId);
+      }
+      
+      updateRoundStatus(contract, provider, roundState);
+      updateProgressIndicator(contract, roundState);
+      updateLeaderboard(contract);
+      
+      if (userAddress) {
+        showSecurityStatus(contract, userAddress);
+        updateUserStats(contract, userAddress, roundState);
+      }
+      
+      updateButtonStates(roundState); // Initial button state update
+    }).catch(error => {
+      console.error('Initial update error:', error);
+    });
   }
 }
 

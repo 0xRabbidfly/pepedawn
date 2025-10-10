@@ -102,7 +102,7 @@ export async function updateWalletInfo(address, provider) {
 }
 
 // Update round status display
-export async function updateRoundStatus(contract, provider = null) {
+export async function updateRoundStatus(contract, provider = null, roundState = null) {
   try {
     if (!contract) {
       // Show mock data when contract not available
@@ -150,8 +150,13 @@ export async function updateRoundStatus(contract, provider = null) {
       return;
     }
     
-    // Get round data (Remix version returns tuple)
-    const roundData = await contract.getRound(currentRoundId);
+    // Use pre-fetched round state if available, otherwise fetch it
+    let roundData;
+    if (roundState) {
+      roundData = roundState.round;
+    } else {
+      roundData = await contract.getRound(currentRoundId);
+    }
     
     // Update round title
     const currentRoundTitle = document.getElementById('current-round-title');
@@ -226,7 +231,7 @@ export async function updateRoundStatus(contract, provider = null) {
 }
 
 // Update dispenser progress indicator showing ticket count toward 10-ticket minimum
-export async function updateProgressIndicator(contract) {
+export async function updateProgressIndicator(contract, roundState = null) {
   try {
     const dispenserText = document.getElementById('dispenser-text');
     const dispenserBadge = document.getElementById('dispenser-badge');
@@ -247,8 +252,13 @@ export async function updateProgressIndicator(contract) {
       return;
     }
     
-    // Get round data
-    const roundData = await contract.getRound(currentRoundId);
+    // Use pre-fetched round state if available, otherwise fetch it
+    let roundData;
+    if (roundState) {
+      roundData = roundState.round;
+    } else {
+      roundData = await contract.getRound(currentRoundId);
+    }
     const totalTickets = Number(roundData.totalTickets);
     
     // Update ticket icons (fill in purchased tickets)
@@ -574,7 +584,7 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
 }
 
 // Update user statistics
-export async function updateUserStats(contract, userAddress) {
+export async function updateUserStats(contract, userAddress, roundState = null) {
   try {
     const userTickets = document.getElementById('user-tickets');
     const userWeight = document.getElementById('user-weight');
@@ -608,8 +618,13 @@ export async function updateUserStats(contract, userAddress) {
     // Get user stats for current round
     let stats, roundData;
     try {
-      // First check if the round exists by getting round data
-      roundData = await contract.getRound(currentRoundId);
+      // Use pre-fetched round state if available
+      if (roundState) {
+        roundData = roundState.round;
+      } else {
+        // First check if the round exists by getting round data
+        roundData = await contract.getRound(currentRoundId);
+      }
       
       // Check if round is properly initialized (has a valid status)
       if (!roundData || roundData.status === undefined) {

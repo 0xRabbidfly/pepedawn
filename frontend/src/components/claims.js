@@ -19,8 +19,10 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
   }
   
   try {
-    // Get round data
-    const roundData = await contract.getRound(roundId);
+    // Get ALL round data in one efficient call
+    console.log('📡 Fetching round state (single optimized call)...');
+    const roundState = await contract.getRoundState(roundId);
+    const roundData = roundState.round;
     const status = Number(roundData.status);
     
     // Only show claims if round is Distributed (5) or Closed
@@ -67,28 +69,30 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
       return;
     }
     
+    // Extract prize data from the already-fetched round state
+    const prizeTokenIds = roundState.prizeTokenIds;
+    const prizeClaimers = roundState.prizeClaimers;
+    
     // Display claimable prizes
     console.log('🎨 Building HTML for prizes...');
     let html = '<div class="prizes-grid">';
     
     for (const prize of userPrizes) {
-      console.log('🔍 Checking claim status for prize:', prize.prizeIndex);
-      // Check if already claimed
-      let isClaimed = false;
-      try {
-        const claimStatus = await contract.claims(roundId, prize.prizeIndex);
-        isClaimed = claimStatus !== ethers.ZeroAddress;
-        console.log('✅ Claim status:', { prizeIndex: prize.prizeIndex, isClaimed, claimStatus });
-      } catch (error) {
-        console.error('❌ Error checking claim status:', error);
-        isClaimed = false; // Default to not claimed if error
-      }
+      const prizeIndex = prize.prizeIndex;
+      
+      // Get data from the batched call
+      const isClaimed = prizeClaimers[prizeIndex] !== ethers.ZeroAddress;
+      const nftId = prizeTokenIds[prizeIndex].toString() !== '0' 
+        ? prizeTokenIds[prizeIndex].toString() 
+        : 'TBD';
+      
+      console.log('🎁 Prize', prizeIndex, '- NFT:', nftId, '- Claimed:', isClaimed);
       
       html += `
         <div class="prize-card ${isClaimed ? 'claimed' : ''}">
           <div class="prize-tier">${getPrizeTierName(prize.prizeTier)}</div>
           <div class="prize-index">Prize #${prize.prizeIndex + 1}</div>
-          <div class="prize-token">NFT ID: ${prize.emblemVaultTokenId || 'TBD'}</div>
+          <div class="prize-token">NFT ID: ${nftId}</div>
           ${isClaimed 
             ? '<div class="claim-status claimed">✓ Claimed</div>'
             : `<button class="claim-btn" data-round="${roundId}" data-prize-index="${prize.prizeIndex}" data-prize-tier="${prize.prizeTier}">🐸 Claim Prize</button>`

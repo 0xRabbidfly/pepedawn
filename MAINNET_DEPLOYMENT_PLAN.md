@@ -118,56 +118,136 @@ uint32 public constant VRF_MAX_CALLBACK_GAS = 2500000; // Line 49
 
 ### 4. EMBLEM VAULT INTEGRATION
 
-**Current Implementation** (Lines 125-127, 330, 621-638):
+**Current Implementation** (Lines 131-132, 341-342, 642, 697):
 ```solidity
 address public emblemVaultAddress;
-IERC721 public emblemVault;
+IERC721 public emblemVault; // Standard ERC721 interface
 ```
 
-**CRITICAL CHANGES NEEDED**:
-
-#### Issue 1: Wrong Contract Address
-```solidity
-// Constructor parameter
-address _emblemVaultAddress // Line 318
-```
-
-**Current**: Uses test/mock Emblem Vault address on Sepolia  
-**Required**: Must use **mainnet Emblem Vault contract**
-
-**Action**:
-- [ ] Get official Emblem Vault mainnet contract address
-- [ ] Verify contract supports ERC721 interface
-- [ ] Test NFT custody and transfer functions
-- [ ] Document which Emblem Vault version/contract is used
-
-#### Issue 2: Prize Assignment Logic
-```solidity
-function _getPrizeAssetId(uint8 prizeTier, uint256 roundId, uint256 winnerIndex) 
-    internal pure returns (uint256) 
-{
-    // Lines 1322-1331 - Simple mapping for 133 assets
-    // Fake: 1-10, Kek: 11-50, Pepe: 51-133
-}
-```
-
-**Questions**:
-- [ ] Do you actually have 133 Emblem Vault NFTs ready?
-- [ ] Are NFTs minted on mainnet with correct token IDs?
-- [ ] How will NFTs be transferred to contract before each round?
-- [ ] What happens if we run out of NFTs?
-
-**Recommendation**:
-```solidity
-// Add validation
-require(tokenIds.length == 10, "Must provide 10 prizes");
-require(
-    emblemVault.ownerOf(tokenIds[i]) == address(this),
-    "Contract must own NFT"
-);
-```
+**Our contract uses**: Standard ERC721 interface (simple, clean ✓)  
+**Emblem Vault SDK provides**: Advanced vault creation/management tools (not needed for basic custody)
 
 ---
+
+#### 🎯 MAINNET MIGRATION PLAN
+
+**Contract Addresses**:
+Based on Emblem SDK docs, Emblem Vault uses different addresses per network:
+- **Sepolia**: Test/mock address (current)
+- **Mainnet**: Must identify the specific Emblem Vault collection contract
+
+**📋 ACTION ITEMS** (in order):
+
+#### Phase 1: Discovery (Week 1)
+- [ ] **Identify which Emblem Vault collection** you're using for prizes
+  - Are these curated vaults? Custom collection? Existing NFTs?
+  - Get the mainnet contract address for that specific collection
+- [ ] **Verify contract is ERC721 compliant** on mainnet:
+  ```bash
+  cast call $EMBLEM_VAULT_MAINNET "supportsInterface(bytes4)" "0x80ac58cd" --rpc-url $MAINNET_RPC_URL
+  # Should return: 0x0000000000000000000000000000000000000000000000000000000000000001 (true)
+  ```
+- [ ] **Confirm NFT inventory**:
+  - How many NFTs available? (contract assumes 133 total)
+  - Which token IDs? (contract maps: 1-10 Fake, 11-50 Kek, 51-133 Pepe)
+  - Who currently owns them?
+
+#### Phase 2: Testing (Week 2)
+- [ ] **Fork test NFT operations**:
+  ```bash
+  # Fork mainnet
+  anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+  
+  # Test ownership check
+  cast call $EMBLEM_VAULT_MAINNET "ownerOf(uint256)" $TOKEN_ID --rpc-url http://localhost:8545
+  
+  # Test transfer to contract (simulate)
+  cast send $EMBLEM_VAULT_MAINNET "safeTransferFrom(address,address,uint256)" \
+    $CURRENT_OWNER $CONTRACT_ADDRESS $TOKEN_ID --rpc-url http://localhost:8545
+  ```
+- [ ] **Test contract's prize claiming flow** on fork with real Emblem Vault contract
+- [ ] **Verify gas costs** for `safeTransferFrom` with Emblem Vault NFTs
+
+#### Phase 3: Pre-Deployment Prep (Week 3)
+- [ ] **Gather prize NFTs**:
+  - Minimum 10 NFTs for Round 1 (contract validates this in `setPrizesForRound`)
+  - Ensure you control the wallet that owns them
+  - Document token IDs: `[id1, id2, id3, ..., id10]`
+- [ ] **Calculate gas budget** for NFT transfers:
+  - 10 NFTs × ~65,000 gas × current gas price = transfer cost
+  - At 30 gwei: ~0.02 ETH total
+
+#### Phase 4: Deployment Day
+- [ ] **Deploy contract** with mainnet Emblem Vault address:
+  ```bash
+  # In Deploy.s.sol constructor:
+  EMBLEM_VAULT_MAINNET = 0x...; # The actual mainnet address
+  ```
+- [ ] **Transfer NFTs to contract** (before opening round):
+  ```bash
+  # For each prize NFT (use owner wallet):
+  cast send $EMBLEM_VAULT_MAINNET \
+    "safeTransferFrom(address,address,uint256)" \
+    $YOUR_ADDRESS \
+    $CONTRACT_ADDRESS \
+    $TOKEN_ID \
+    --private-key $OWNER_KEY \
+    --rpc-url $MAINNET_RPC_URL
+  ```
+- [ ] **Verify contract ownership**:
+  ```bash
+  # Check contract owns all 10 NFTs
+  for id in 1 2 3 4 5 6 7 8 9 10; do
+    cast call $EMBLEM_VAULT_MAINNET "ownerOf(uint256)" $id --rpc-url $MAINNET_RPC_URL
+  done
+  ```
+- [ ] **Set prizes for Round 1**:
+  ```bash
+  cast send $CONTRACT_ADDRESS \
+    "setPrizesForRound(uint256,uint256[])" \
+    1 "[1,2,3,4,5,6,7,8,9,10]" \
+    --private-key $OWNER_KEY \
+    --rpc-url $MAINNET_RPC_URL
+  ```
+
+---
+
+#### 🔍 KEY QUESTIONS TO ANSWER NOW
+
+1. **Which Emblem Vault contract are you using?**
+   - Emblem Vault V2? V3? A specific curated collection?
+   - Contract address on mainnet?
+
+2. **Do you have the NFTs?**
+   - 133 NFTs as coded? Or starting with fewer?
+   - Are they already minted on mainnet?
+   - What wallet currently owns them?
+
+3. **Prize allocation strategy**:
+   - Using the hardcoded mapping (1-10, 11-50, 51-133)?
+   - Or dynamic selection per round?
+
+4. **NFT replenishment plan**:
+   - After distributing 10 NFTs/round, how to get more?
+   - Buy on secondary market? Mint new? Partner with Emblem?
+
+---
+
+#### ⚠️ CRITICAL RISKS
+
+1. **Wrong Contract Address**: If you deploy with wrong Emblem Vault address, prizes won't transfer
+   - **Mitigation**: Test on fork first, verify `ownerOf()` and `safeTransferFrom()` work
+   
+2. **NFT Not Owned**: If contract doesn't own the NFT, claim will fail
+   - **Mitigation**: Pre-transfer all NFTs before opening round, validate in `setPrizesForRound()`
+   
+3. **Token ID Mismatch**: If hardcoded IDs don't exist, claims fail
+   - **Mitigation**: Document exact token IDs, update `_getPrizeAssetId()` if needed
+
+
+## Emergency Recovery
+If NFT stuck: Use `emergencyWithdrawNFT()` (owner only)
+```
 
 ### 5. CONSTANTS VALIDATION
 

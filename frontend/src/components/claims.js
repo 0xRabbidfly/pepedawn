@@ -69,8 +69,7 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     
     // Display claimable prizes
     console.log('🎨 Building HTML for prizes...');
-    let html = '<h3>🎁 Your Prizes</h3>';
-    html += '<div class="prizes-grid">';
+    let html = '<div class="prizes-grid">';
     
     for (const prize of userPrizes) {
       console.log('🔍 Checking claim status for prize:', prize.prizeIndex);

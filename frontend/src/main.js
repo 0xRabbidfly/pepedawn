@@ -60,7 +60,7 @@ function formatAddress(address) {
 async function updateButtonStates() {
   const submitProofBtn = document.getElementById('submit-proof');
   const placeBetBtn = document.getElementById('place-bet');
-  const ticketBtns = document.querySelectorAll('.ticket-btn');
+  const ticketCards = document.querySelectorAll('.ticket-option-card');
   const proofInput = document.getElementById('proof-input');
   
   // If contract not available, disable all interactive buttons
@@ -73,9 +73,10 @@ async function updateButtonStates() {
       placeBetBtn.disabled = true;
       placeBetBtn.title = 'Contract not available';
     }
-    ticketBtns.forEach(btn => {
-      btn.disabled = true;
-      btn.title = 'Contract not available';
+    ticketCards.forEach(card => {
+      card.style.pointerEvents = 'none';
+      card.style.opacity = '0.5';
+      card.title = 'Contract not available';
     });
     return;
   }
@@ -85,28 +86,15 @@ async function updateButtonStates() {
     const currentRoundId = await contract.currentRoundId();
     
     if (currentRoundId.toString() === '0') {
-      // No active round - disable everything
-      currentRoundStatus = null;
-      if (submitProofBtn) {
-        submitProofBtn.disabled = true;
-        submitProofBtn.title = 'No active round';
-      }
-      if (placeBetBtn) {
-        placeBetBtn.disabled = true;
-        placeBetBtn.title = 'No active round';
-      }
-      ticketBtns.forEach(btn => {
-        btn.disabled = true;
-        btn.title = 'No active round';
-      });
-      return;
+      // No active round - disable interactions
+      currentRoundStatus = 0;
+    } else {
+      // Get round data
+      const roundData = await contract.getRound(currentRoundId);
+      currentRoundStatus = Number(roundData.status);
     }
     
-    // Get round data
-    const roundData = await contract.getRound(currentRoundId);
-    currentRoundStatus = Number(roundData.status);
-    
-    // Check if round is open (status = 1)
+    // Check if round is open for betting (status 1 = Open)
     const isRoundOpen = currentRoundStatus === 1;
     
     // Update betting buttons
@@ -121,14 +109,19 @@ async function updateButtonStates() {
       }
     }
     
-    ticketBtns.forEach(btn => {
-      btn.disabled = !isRoundOpen || !userAddress;
-      if (!userAddress) {
-        btn.title = 'Connect wallet to place bets';
-      } else if (!isRoundOpen) {
-        btn.title = 'Round is not open for betting';
+    ticketCards.forEach(card => {
+      if (!isRoundOpen || !userAddress) {
+        card.style.pointerEvents = 'none';
+        card.style.opacity = '0.5';
+        if (!userAddress) {
+          card.title = 'Connect wallet to place bets';
+        } else if (!isRoundOpen) {
+          card.title = 'Round is not open for betting';
+        }
       } else {
-        btn.title = '';
+        card.style.pointerEvents = 'auto';
+        card.style.opacity = '1';
+        card.title = '';
       }
     });
     
@@ -186,9 +179,10 @@ async function updateButtonStates() {
       placeBetBtn.disabled = true;
       placeBetBtn.title = 'Error checking round status';
     }
-    ticketBtns.forEach(btn => {
-      btn.disabled = true;
-      btn.title = 'Error checking round status';
+    ticketCards.forEach(card => {
+      card.style.pointerEvents = 'none';
+      card.style.opacity = '0.5';
+      card.title = 'Error checking round status';
     });
   }
 }
@@ -205,6 +199,16 @@ window.toggleProofSection = function() {
     content.style.display = 'none';
     icon.textContent = '▼';
   }
+}
+
+// Close ticket office - make it globally accessible
+window.closeTicketOffice = function() {
+  const ticketOffice = document.getElementById('ticket-office');
+  if (ticketOffice) {
+    ticketOffice.classList.remove('open', 'receiving');
+  }
+  document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
+  hideTicketConnector();
 }
 
 // Initialize the application
@@ -252,10 +256,16 @@ function setupEventListeners() {
     connectBtn.addEventListener('click', connectWallet);
   }
   
-  const ticketBtns = document.querySelectorAll('.ticket-btn');
-  ticketBtns.forEach(btn => {
-    btn.addEventListener('click', selectTickets);
-  });
+  // Use event delegation to handle ticket card clicks
+  const bettingForm = document.getElementById('betting-form');
+  if (bettingForm) {
+    bettingForm.addEventListener('click', function(event) {
+      const card = event.target.closest('.ticket-option-card');
+      if (card) {
+        selectTickets({ currentTarget: card });
+      }
+    });
+  }
   
   const placeBetBtn = document.getElementById('place-bet');
   if (placeBetBtn) {
@@ -983,20 +993,96 @@ function setupContractEventListeners() {
 
 // Select ticket bundle
 function selectTickets(event) {
-  const btn = event.target;
-  const tickets = parseInt(btn.dataset.tickets);
-  const amount = parseFloat(btn.dataset.amount);
+  const card = event.currentTarget;
+  
+  // If this card is already selected, unselect it
+  if (card.classList.contains('selected')) {
+    card.classList.remove('selected');
+    const ticketOffice = document.getElementById('ticket-office');
+    if (ticketOffice) {
+      ticketOffice.classList.remove('open', 'receiving');
+    }
+    hideTicketConnector();
+    return;
+  }
+  
+  const tickets = parseInt(card.dataset.tickets);
+  const amount = parseFloat(card.dataset.amount);
   
   // Update UI
   document.getElementById('selected-tickets').textContent = String(tickets);
   document.getElementById('selected-amount').textContent = String(amount);
   
-  // Show bet summary
-  document.getElementById('bet-summary').style.display = 'block';
+  // Show ticket office with slide animation
+  const ticketOffice = document.getElementById('ticket-office');
+  if (ticketOffice) {
+    setTimeout(() => {
+      ticketOffice.classList.add('open');
+      // Add receiving animation after office opens
+      setTimeout(() => {
+        ticketOffice.classList.add('receiving');
+      }, 200);
+    }, 10);
+  }
   
-  // Highlight selected button
-  document.querySelectorAll('.ticket-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
+  // Highlight selected card and remove selection from others
+  document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  
+  // Draw and animate the connector
+  setTimeout(() => {
+    drawTicketConnector(card, ticketOffice);
+  }, 50);
+}
+
+// Draw animated connector between card and ticket office
+function drawTicketConnector(card, office) {
+  const svg = document.getElementById('ticket-connector');
+  const path = document.getElementById('connector-path');
+  const particles = document.querySelectorAll('.particle-ticket');
+  
+  if (!svg || !path || !card || !office) return;
+  
+  // Get bounding boxes relative to the betting section
+  const section = document.getElementById('betting-section');
+  const sectionRect = section.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const officeRect = office.getBoundingClientRect();
+  
+  // Calculate start point (right-center of card)
+  const startX = cardRect.right - sectionRect.left;
+  const startY = cardRect.top + cardRect.height / 2 - sectionRect.top;
+  
+  // Calculate end point (left-center of office)
+  const endX = officeRect.left - sectionRect.left;
+  const endY = officeRect.top + officeRect.height / 2 - sectionRect.top;
+  
+  // Create a smooth curved path (cubic bezier)
+  const controlX1 = startX + (endX - startX) * 0.3;
+  const controlY1 = startY - 30; // Curve upward
+  const controlX2 = startX + (endX - startX) * 0.7;
+  const controlY2 = endY + 30; // Curve downward
+  
+  const pathData = `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`;
+  path.setAttribute('d', pathData);
+  
+  // Show and animate the SVG
+  svg.classList.add('active');
+  path.classList.add('animated');
+  
+  // Particle animations removed - keeping only the beam
+}
+
+// Hide ticket connector
+function hideTicketConnector() {
+  const svg = document.getElementById('ticket-connector');
+  const path = document.getElementById('connector-path');
+  
+  if (!svg || !path) return;
+  
+  // Hide animations
+  svg.classList.remove('active');
+  path.classList.remove('animated');
 }
 
 // Place bet with enhanced security validations
@@ -1077,8 +1163,12 @@ async function placeBet() {
       showTransactionStatus(`✅ Bet placed successfully! ${tickets} tickets for ${amount} ETH`, 'success');
       
       // Reset form
-      document.getElementById('bet-summary').style.display = 'none';
-      document.querySelectorAll('.ticket-btn').forEach(btn => btn.classList.remove('selected'));
+      const ticketOffice = document.getElementById('ticket-office');
+      if (ticketOffice) {
+        ticketOffice.classList.remove('open', 'receiving');
+      }
+      document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
+      hideTicketConnector();
       
       // Update user stats and security status
       await updateUserStats(contract, userAddress);

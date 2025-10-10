@@ -51,8 +51,8 @@ function resetForms() {
     proofInput.value = '';
   }
   
-  const ticketBtns = document.querySelectorAll('.ticket-btn');
-  ticketBtns.forEach(btn => btn.classList.remove('selected'));
+  const ticketCards = document.querySelectorAll('.ticket-option-card');
+  ticketCards.forEach(card => card.classList.remove('selected'));
 }
 
 // Update wallet information display with security validations

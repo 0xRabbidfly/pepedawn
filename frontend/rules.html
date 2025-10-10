@@ -14,6 +14,7 @@
         <nav>
           <a href="/">Home</a>
           <a href="/main.html">Ticket Office</a>
+          <a href="/claim.html">Claim Office</a>
           <a href="/leaderboard.html">Leaderboard</a>
           <a href="/rules.html" class="active">Rules</a>
         </nav>
@@ -29,7 +30,7 @@
             <li><strong>Buy Your Tickets:</strong> Round opens for betting, track your stats in real-time</li>
             <li><strong>Atomic Dispenser:</strong> Visual progress tracker shows 10 tickets filling up as purchases are made</li>
             <li><strong>Proof Submission:</strong> Submit puzzle proof after your first ticket purchase for +40% weight bonus</li>
-            <li><strong>Drawing Winners:</strong> Chainlink VRF provides verifiable randomness, Merkle proof verification badge displayed</li>
+            <li><strong>Drawing Winners:</strong> Chainlink VRF provides verifiable randomness</li>
             <li><strong>Prize Distribution:</strong> Automatic Emblem Vault NFT distribution to winners</li>
             <li><strong>Winners Claiming:</strong> Winners claim their Emblem Vault prizes using Merkle proofs</li>
           </ul>
@@ -74,7 +75,7 @@
                 <li>3rd-10th Place: 1x Pepe Pack each (1 PEPEDAWN card per Emblem Vault)</li>
               </ul>
             </li>
-            <li><strong>Total Winners:</strong> 10 winners per round, 10 prize packs distributed</li>
+            <li><strong>Total Winners:</strong> 10 ticket winners per round, 10 prize packs distributed</li>
             <li><strong>Source:</strong> Emblem Vault preloaded assets</li>
             <li><strong>Distribution:</strong> Automatic post-VRF fulfillment</li>
             <li><strong>Transparency:</strong> All winner assignments recorded on-chain</li>
@@ -84,7 +85,7 @@
           <h3>Fee Structure</h3>
           <ul>
             <li><strong>Creators:</strong> 80% of fees</li>
-            <li><strong>Next Round:</strong> 20% of fees</li>
+            <li><strong>Next Round Pot:</strong> 20% of fees</li>
             <li><strong>Settlement:</strong> Applied at round close</li>
             <li><strong>Events:</strong> All fee distributions logged on-chain</li>
           </ul>
@@ -93,30 +94,17 @@
           <p>Your winning odds depend on:</p>
           <ul>
             <li>Total number of participants</li>
-            <li>Your ticket count and weight multiplier</li>
-            <li>Prize tier distribution</li>
-            <li>Current Emblem Vault asset values</li>
-            <li>Whether the round meets the 10-ticket minimum</li>
+            <li>Your ticket count and successful proof submission</li>        
           </ul>
           
           <h3>Atomic Dispenser (Progress Tracking)</h3>
           <ul>
             <li><strong>Visual Tracker:</strong> 10 individual ticket icons (🎫) show dispenser progress in real-time</li>
-            <li><strong>Ticket States:</strong> Grey/dimmed icons for unpurchased tickets, bright colored icons for purchased tickets</li>
             <li><strong>Status Message:</strong> Displays "minimum 10 tickets required" until threshold is reached</li>
-            <li><strong>Dispenser Active:</strong> Shows "🐸 PEPEDAWN will be dispensed" once 10+ tickets are purchased</li>
-            <li><strong>Counterparty Integration:</strong> XCP diamond icon (◆) indicates atomic swap capability</li>
             <li><strong>Refund Policy:</strong> If threshold not met by round end, all participants receive full refunds automatically</li>
           </ul>
           
-          <h3>Current Round Display</h3>
-          <ul>
-            <li><strong>Time Remaining:</strong> Live countdown until round closes</li>
-            <li><strong>Total Tickets:</strong> Real-time count of all tickets purchased</li>
-            <li><strong>Vaulted $ETH:</strong> Total ETH locked in the contract for the current round</li>
-            <li><strong>Round Status:</strong> Three-phase lifecycle (Buy Tickets → Drawing Winners → Winners Claiming)</li>
-            <li><strong>Merkle Badge:</strong> Blue verification badge appears during Drawing Winners phase</li>
-          </ul>
+          
 
           <h3>Technical Details</h3>
           <ul>
@@ -138,6 +126,50 @@
             <li><strong>One Proof Attempt:</strong> Only one puzzle proof submission allowed per wallet per round</li>
             <li><strong>Network Only:</strong> Ethereum mainnet/testnet only, no L2 networks</li>
           </ul>
+
+          <h3>Contract Information</h3>
+          <div id="contract-info" class="contract-info-section">
+            <div class="contract-info-grid">
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract Address</div>
+                <div class="contract-info-value" id="contract-address">Loading...</div>
+                <div class="contract-info-copy">
+                  <button onclick="copyToClipboard('contract-address')" class="copy-btn">📋</button>
+                </div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract Verified</div>
+                <div class="contract-info-value" id="contract-verified">
+                  <span id="verified-status">Checking...</span>
+                  <span id="verified-checkmark" style="display: none;">✅</span>
+                </div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract Owner</div>
+                <div class="contract-info-value" id="contract-owner">Loading...</div>
+                <div class="contract-info-copy">
+                  <button onclick="copyToClipboard('contract-owner')" class="copy-btn">📋</button>
+                </div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract ETH Balance</div>
+                <div class="contract-info-value" id="contract-balance">Loading...</div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract NFTs</div>
+                <div class="contract-info-value" id="contract-nfts">Loading...</div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Current Round</div>
+                <div class="contract-info-value" id="current-round">Loading...</div>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     </div>

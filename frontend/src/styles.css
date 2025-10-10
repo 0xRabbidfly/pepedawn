@@ -586,8 +586,8 @@ section h2 {
   width: 85px;
   height: 85px;
   position: absolute;
-  left: -105px;
-  top: 50%;
+  left: -135px;
+  top: 55%;
   transform: translateY(-50%);
 }
 
@@ -606,6 +606,111 @@ section h2 {
   word-wrap: break-word;
   max-width: 70px;
   padding-bottom: 10px;
+}
+
+/* Make merkle badge text glow when drawing phase is active */
+.status-row-with-badge .status-item.drawing-phase.active ~ * .merkle-badge .badge-text,
+.status-row-with-badge:has(.status-item.drawing-phase.active) .merkle-badge .badge-text {
+  color: #FF9800;
+  text-shadow: 0 0 10px rgba(255, 152, 0, 0.8), 0 0 20px rgba(255, 152, 0, 0.6);
+  animation: text-glow-orange 2s ease-in-out infinite, text-pulse 2s ease-in-out infinite;
+}
+
+/* Contract Information Section */
+.contract-info-section {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(3, 169, 244, 0.1));
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.contract-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.contract-info-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  position: relative;
+}
+
+.contract-info-label {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contract-info-value {
+  font-size: 0.95em;
+  font-weight: 500;
+  color: var(--text-color);
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.contract-info-copy {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+}
+
+.copy-btn {
+  background: rgba(33, 150, 243, 0.2);
+  border: 1px solid rgba(33, 150, 243, 0.4);
+  border-radius: var(--border-radius-sm);
+  padding: 4px 8px;
+  font-size: 0.8em;
+  cursor: pointer;
+  color: var(--text-color);
+  transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+  background: rgba(33, 150, 243, 0.3);
+  border-color: rgba(33, 150, 243, 0.6);
+  transform: scale(1.05);
+}
+
+.copy-btn:active {
+  transform: scale(0.95);
+}
+
+#verified-status {
+  color: #FFA726;
+}
+
+#verified-checkmark {
+  color: #4CAF50;
+  font-size: 1.1em;
+}
+
+@keyframes text-glow-orange {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(255, 152, 0, 0.8), 0 0 20px rgba(255, 152, 0, 0.6);
+  }
+  50% { 
+    text-shadow: 0 0 15px rgba(255, 152, 0, 1), 0 0 30px rgba(255, 152, 0, 0.8);
+  }
+}
+
+@keyframes text-pulse {
+  0%, 100% { 
+    transform: scale(1);
+  }
+  50% { 
+    transform: scale(1.05);
+  }
 }
 
 @keyframes badge-glow-orange {

@@ -5,8 +5,8 @@
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PEPEDAWN</title>
-    <script type="module" crossorigin src="/assets/main-CrfXpO4O.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/main-D80ok6vL.css">
+    <script type="module" crossorigin src="/assets/main-_tQIEquD.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-CW7w4ujr.css">
   </head>
   <body>
     <div id="app">
@@ -15,6 +15,7 @@
         <nav>
           <a href="/">Home</a>
           <a href="/main.html">Ticket Office</a>
+          <a href="/claim.html">Claim Office</a>
           <a href="/leaderboard.html">Leaderboard</a>
           <a href="/rules.html" class="active">Rules</a>
         </nav>
@@ -24,13 +25,15 @@
         <section id="rules-content">
           <h2>How PEPEDAWN Decentralized Lottery Works</h2>
           
-          <h3>Timeline</h3>
+          <h3>Round Lifecycle</h3>
           <ul>
             <li><strong>Round Duration:</strong> 2 weeks per round</li>
-            <li><strong>Ticket Office:</strong> Open for most of the round</li>
-            <li><strong>Proof Submission:</strong> Available after purchasing first ticket</li>
-            <li><strong>Draw Phase:</strong> Uses Chainlink VRF for verifiable randomness</li>
-            <li><strong>Distribution:</strong> Automatic Emblem Vault prize distribution</li>
+            <li><strong>Buy Your Tickets:</strong> Round opens for betting, track your stats in real-time</li>
+            <li><strong>Atomic Dispenser:</strong> Visual progress tracker shows 10 tickets filling up as purchases are made</li>
+            <li><strong>Proof Submission:</strong> Submit puzzle proof after your first ticket purchase for +40% weight bonus</li>
+            <li><strong>Drawing Winners:</strong> Chainlink VRF provides verifiable randomness</li>
+            <li><strong>Prize Distribution:</strong> Automatic Emblem Vault NFT distribution to winners</li>
+            <li><strong>Winners Claiming:</strong> Winners claim their Emblem Vault prizes using Merkle proofs</li>
           </ul>
 
           <h3>Ticket Office Rules</h3>
@@ -73,7 +76,7 @@
                 <li>3rd-10th Place: 1x Pepe Pack each (1 PEPEDAWN card per Emblem Vault)</li>
               </ul>
             </li>
-            <li><strong>Total Winners:</strong> 10 winners per round, 10 prize packs distributed</li>
+            <li><strong>Total Winners:</strong> 10 ticket winners per round, 10 prize packs distributed</li>
             <li><strong>Source:</strong> Emblem Vault preloaded assets</li>
             <li><strong>Distribution:</strong> Automatic post-VRF fulfillment</li>
             <li><strong>Transparency:</strong> All winner assignments recorded on-chain</li>
@@ -83,7 +86,7 @@
           <h3>Fee Structure</h3>
           <ul>
             <li><strong>Creators:</strong> 80% of fees</li>
-            <li><strong>Next Round:</strong> 20% of fees</li>
+            <li><strong>Next Round Pot:</strong> 20% of fees</li>
             <li><strong>Settlement:</strong> Applied at round close</li>
             <li><strong>Events:</strong> All fee distributions logged on-chain</li>
           </ul>
@@ -92,28 +95,28 @@
           <p>Your winning odds depend on:</p>
           <ul>
             <li>Total number of participants</li>
-            <li>Your ticket count and weight multiplier</li>
-            <li>Prize tier distribution</li>
-            <li>Current Emblem Vault asset values</li>
-            <li>Whether the round meets the 10-ticket minimum</li>
+            <li>Your ticket count and successful proof submission</li>        
           </ul>
           
-          <h3>Round Progress Tracking</h3>
+          <h3>Atomic Dispenser (Progress Tracking)</h3>
           <ul>
-            <li><strong>Progress Bar:</strong> Shows tickets purchased toward 10-ticket minimum</li>
-            <li><strong>Status Updates:</strong> "X/10 tickets are required for distribution when round closes"</li>
-            <li><strong>Success Message:</strong> "PEPEDAWN Packs will be distributed this round !!" when 10+ tickets reached</li>
-            <li><strong>Refund Warning:</strong> If threshold not met by round end, participants notified of pending refund</li>
+            <li><strong>Visual Tracker:</strong> 10 individual ticket icons (🎫) show dispenser progress in real-time</li>
+            <li><strong>Status Message:</strong> Displays "minimum 10 tickets required" until threshold is reached</li>
+            <li><strong>Refund Policy:</strong> If threshold not met by round end, all participants receive full refunds automatically</li>
           </ul>
+          
+          
 
           <h3>Technical Details</h3>
           <ul>
-            <li><strong>Smart Contracts:</strong> Solidity 0.8.x on Ethereum</li>
-            <li><strong>Testing:</strong> Foundry unit and invariant tests</li>
-            <li><strong>Frontend:</strong> Minimal vanilla JS with ethers v6</li>
-            <li><strong>Performance:</strong> ≤100KB JS bundle for fast loading</li>
-            <li><strong>VRF Provider:</strong> Chainlink VRF v2/v2.5 for verifiable randomness</li>
-            <li><strong>Eligibility:</strong> Configurable denylist enforcement, no allowlist</li>
+            <li><strong>Smart Contracts:</strong> Solidity 0.8.x on Ethereum with OpenZeppelin security modules</li>
+            <li><strong>Testing:</strong> 151 Foundry unit tests with 100% functional requirement coverage</li>
+            <li><strong>Frontend:</strong> Minimal vanilla JS with ethers v6 for Web3 interaction</li>
+            <li><strong>Performance:</strong> Optimized bundle size for fast loading on all devices</li>
+            <li><strong>VRF Provider:</strong> Chainlink VRF v2.5 for cryptographically verifiable randomness</li>
+            <li><strong>Data Storage:</strong> Winners stored on IPFS, verified on-chain with Merkle roots</li>
+            <li><strong>Leaderboard:</strong> Live on-chain participant data with real-time odds calculation</li>
+            <li><strong>Eligibility:</strong> Configurable denylist enforcement, pausable for emergencies</li>
           </ul>
           
           <h3>Important Disclaimers</h3>
@@ -124,6 +127,50 @@
             <li><strong>One Proof Attempt:</strong> Only one puzzle proof submission allowed per wallet per round</li>
             <li><strong>Network Only:</strong> Ethereum mainnet/testnet only, no L2 networks</li>
           </ul>
+
+          <h3>Contract Information</h3>
+          <div id="contract-info" class="contract-info-section">
+            <div class="contract-info-grid">
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract Address</div>
+                <div class="contract-info-value" id="contract-address">Loading...</div>
+                <div class="contract-info-copy">
+                  <button onclick="copyToClipboard('contract-address')" class="copy-btn">📋</button>
+                </div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract Verified</div>
+                <div class="contract-info-value" id="contract-verified">
+                  <span id="verified-status">Checking...</span>
+                  <span id="verified-checkmark" style="display: none;">✅</span>
+                </div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract Owner</div>
+                <div class="contract-info-value" id="contract-owner">Loading...</div>
+                <div class="contract-info-copy">
+                  <button onclick="copyToClipboard('contract-owner')" class="copy-btn">📋</button>
+                </div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract ETH Balance</div>
+                <div class="contract-info-value" id="contract-balance">Loading...</div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Contract NFTs</div>
+                <div class="contract-info-value" id="contract-nfts">Loading...</div>
+              </div>
+              
+              <div class="contract-info-item">
+                <div class="contract-info-label">Current Round</div>
+                <div class="contract-info-value" id="current-round">Loading...</div>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     </div>

@@ -155,17 +155,16 @@ npm install
 cd Z:\Projects\pepedawn\contracts
 forge script scripts/forge/MintTestNFTs.s.sol:MintTestNFTs --rpc-url $env:SEPOLIA_RPC_URL --private-key $env:PRIVATE_KEY --broadcast
 ```
-
-Update `contracts/.env`:
 ```bash
 EMBLEM_VAULT_ADDRESS=0xYourTestNFTAddress
 ```
+Update `contracts/.env` with new NFT contract
 
 **Reload environment** (repeat step 0.2)
 
-**Note**: Deploy once, reuse forever. Mint more NFTs as needed with:
+**Note**: Deploy contract once, reuse forever. Mint more NFTs as needed with:
 ```bash
-cast send $EMBLEM_VAULT_ADDRESS "mint(address)" $CREATORS_ADDRESS --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send $EMBLEM_VAULT_ADDRESS "mint(address,uint256)" $CREATORS_ADDRESS 10 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
 ---
@@ -341,7 +340,7 @@ This is normal - no rounds exist yet!
 
 ```powershell
 cd Z:\Projects\pepedawn\contracts
-cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL --gas-limit 500000
 ```
 
 **Expected Output**:
@@ -370,19 +369,10 @@ cast send $env:EMBLEM_VAULT_ADDRESS "setApprovalForAll(address,bool)" $env:CONTR
 Start-Sleep -Seconds 10
 
 # Transfer NFTs 1-10 (modify iterator 1..10 at start if NFT #s changed range)
-1..10 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
+31..40 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
 
-# Map prizes
-cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
-```
-
-**Git Bash**:
-```bash
-cd /z/Projects/pepedawn/contracts
-set -a; source .env; set +a
-cast send $EMBLEM_VAULT_ADDRESS "setApprovalForAll(address,bool)" $CONTRACT_ADDRESS true --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
-for i in {1..10}; do cast send $EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $CREATORS_ADDRESS $CONTRACT_ADDRESS $i --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL; sleep 2; done
-cast send $CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[10])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+# Map prizes (modify IDs to match above)
+cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[31,32,33,34,35,36,37,38,39,40]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Using Emblem Vault Interface**:
@@ -1163,7 +1153,7 @@ Should show `WinnersCommitted (6) ✅`
 **Create Round 2**:
 ```powershell
 cd Z:\Projects\pepedawn\contracts
-cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL --gas-limit 500000
 ```
 
 ---

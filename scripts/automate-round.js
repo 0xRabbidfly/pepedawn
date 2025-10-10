@@ -59,8 +59,13 @@ async function deployContract() {
   console.log('   DEPLOYING NEW CONTRACT');
   console.log('========================================\n');
   
+  // Build contracts first
+  console.log('🔨 Building contracts...');
+  exec('forge build');
+  
+  console.log('\n🚀 Deploying...');
   exec(
-    `forge script scripts/forge/Deploy.s.sol --rpc-url ${process.env.SEPOLIA_RPC_URL} --broadcast --verify`
+    `forge script scripts/forge/Deploy.s.sol --rpc-url ${process.env.SEPOLIA_RPC_URL} --broadcast`
   );
   
   // Read contract address from deployment broadcast file
@@ -78,22 +83,50 @@ async function deployContract() {
   
   console.log(`\n✅ Contract deployed: ${contractAddress}`);
   
-  // Update configs
+  // Try to verify on Etherscan (non-blocking)
+  console.log('\n🔍 Attempting Etherscan verification...');
+  const verifyResult = exec(
+    `forge verify-contract ${contractAddress} src/PepedawnRaffle.sol:PepedawnRaffle --chain sepolia --watch`,
+    { allowFail: true }
+  );
+  
+  if (verifyResult) {
+    console.log('✅ Contract verified on Etherscan!');
+  } else {
+    console.log('⚠️  Etherscan verification failed (continuing anyway)');
+    console.log('   You can verify manually later if needed.');
+  }
+  
+  // Update configs (run from project root, not contracts dir)
   console.log('\n📝 Updating configs...');
-  exec(`node ${path.join(__dirname, 'update-contract-address.js')} ${contractAddress}`);
-  exec(`node ${path.join(__dirname, 'update-abi.js')}`);
+  execSync(`node ${path.join(__dirname, 'update-contract-address.js')} ${contractAddress}`, {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit'
+  });
+  execSync(`node ${path.join(__dirname, 'update-abi.js')}`, {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit'
+  });
   
   // Add as VRF consumer automatically
   console.log('\n📡 Adding contract as VRF consumer...');
-  try {
-    exec(
-      `cast send ${process.env.VRF_COORDINATOR} "addConsumer(uint256,address)" ${process.env.VRF_SUBSCRIPTION_ID} ${contractAddress} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`
-    );
-    console.log('✅ Contract added as VRF consumer!');
-  } catch (error) {
-    console.log('⚠️  Failed to add VRF consumer automatically.');
-    console.log('   You may not be the subscription owner, or it may already be added.');
+  
+  // Check if VRF config exists
+  if (!process.env.VRF_COORDINATOR || !process.env.VRF_SUBSCRIPTION_ID) {
+    console.log('⚠️  VRF_COORDINATOR or VRF_SUBSCRIPTION_ID not set in .env');
     console.log('   Add manually at: https://vrf.chain.link/');
+  } else {
+    try {
+      exec(
+        `cast send ${process.env.VRF_COORDINATOR} "addConsumer(uint256,address)" ${process.env.VRF_SUBSCRIPTION_ID} ${contractAddress} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`,
+        { allowFail: true }
+      );
+      console.log('✅ Contract added as VRF consumer!');
+    } catch (error) {
+      console.log('⚠️  Failed to add VRF consumer automatically.');
+      console.log('   You may not be the subscription owner, or it may already be added.');
+      console.log('   Add manually at: https://vrf.chain.link/');
+    }
   }
   
   return contractAddress;
@@ -116,14 +149,14 @@ async function createAndOpenRound(contractAddress) {
   
   // Create round
   console.log(`\n📝 Creating round ${roundId}...`);
-  exec(`cast send ${contractAddress} "createRound()" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+  exec(`cast send ${contractAddress} "createRound()" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL} --gas-limit 500000`);
   
   await sleep(2000); // Wait for block confirmation
   
   // Set prizes (using mock NFT IDs 1-10)
   console.log('🎁 Setting prizes for round...');
   try {
-    exec(`cast send ${contractAddress} "setPrizesForRound(uint256,uint256[10])" ${roundId} "[1,2,3,4,5,6,7,8,9,10]" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { allowFail: true });
+    exec(`cast send ${contractAddress} "setPrizesForRound(uint256,uint256[])" ${roundId} "[1,2,3,4,5,6,7,8,9,10]" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { allowFail: true });
     console.log('✅ Prizes set!');
   } catch (error) {
     console.log('⚠️  Failed to set prizes - contract may not have NFTs yet.');
@@ -155,7 +188,7 @@ async function placeBetsAndClose(contractAddress, roundId = 1) {
   
   // Place bet (10 tickets for 0.04 ETH)
   console.log('💰 Placing bet (10 tickets, 0.04 ETH)...');
-  exec(`cast send ${contractAddress} "placeBet(uint256,uint8)" ${roundId} 10 --value 0.04ether --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+  exec(`cast send ${contractAddress} "placeBet(uint256)" 10 --value 0.04ether --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
   
   await sleep(2000);
   
@@ -214,20 +247,15 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
   console.log('   WAITING FOR VRF & COMMITTING WINNERS');
   console.log('========================================\n');
   
-  // Poll for VRF fulfillment using cast
+  // Poll for VRF fulfillment using reliable CLI status checker
   console.log('⏳ Waiting for VRF fulfillment...');
+  console.log('💡 This typically takes 1-5 minutes on Sepolia');
+  
   let attempts = 0;
-  const maxAttempts = 60; // 5 minutes max (5 second intervals)
+  const maxAttempts = 60; // 5 minutes max (5 second intervals) - back to working version
   
   while (attempts < maxAttempts) {
     try {
-      const result = exec(
-        `cast call ${contractAddress} "getRound(uint256)" ${roundId} --rpc-url ${process.env.SEPOLIA_RPC_URL}`,
-        { silent: true }
-      );
-      
-      // Parse the hex result - status is at position 3, vrfSeed at position 14
-      // For now, just use the CLI status checker
       const statusOutput = execSync(
         `node manage-round.js status ${roundId}`,
         {
@@ -236,16 +264,25 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
         }
       );
       
+      // Check for WinnersReady status (exact match from working version)
       if (statusOutput.includes('WinnersReady (5)') || statusOutput.includes('Status: 5')) {
         console.log('✅ VRF fulfilled!');
         break;
       }
+      
+      // Log progress every 30 seconds
+      if (attempts % 6 === 0 && attempts > 0) {
+        const elapsed = Math.floor(attempts * 5 / 60);
+        const remaining = Math.floor((maxAttempts - attempts) * 5 / 60);
+        console.log(`⏳ Still waiting... (${elapsed}m elapsed, ${remaining}m remaining)`);
+        console.log(`   Current status: VRFRequested`);
+      }
+      
     } catch (error) {
-      // Continue polling
-    }
-    
-    if (attempts % 6 === 0) { // Log every 30 seconds
-      console.log(`⏳ Still waiting... (${attempts * 5}s / ${maxAttempts * 5}s)`);
+      // Continue polling even if status check fails
+      if (attempts % 12 === 0) { // Log errors every minute
+        console.log(`⚠️  Status check error (continuing): ${error.message.split('\n')[0]}`);
+      }
     }
     
     await sleep(5000);
@@ -253,7 +290,7 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
   }
   
   if (attempts >= maxAttempts) {
-    throw new Error('VRF fulfillment timeout after 5 minutes');
+    throw new Error(`VRF fulfillment timeout after ${Math.floor(maxAttempts * 5 / 60)} minutes. Check Chainlink VRF dashboard: https://vrf.chain.link/`);
   }
   
   // Generate winners file
@@ -274,9 +311,79 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
   // For testing, use a mock CID
   const mockCID = `bafkrei-test-winners-${roundId}-${Date.now()}`;
   
-  // Submit winners root
+  // Submit winners root with robust retry logic using CLI status checker
   console.log('🌳 Submitting winners root...');
-  exec(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${winnersRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+  let retries = 10; // More retries for reliability
+  let submissionSuccess = false;
+  
+  while (retries > 0 && !submissionSuccess) {
+    try {
+      // Use the reliable CLI status checker (same as watch mode)
+      console.log(`🔍 Verifying round status before submission (attempt ${11 - retries})...`);
+      
+      const statusOutput = execSync(
+        `node manage-round.js status ${roundId}`,
+        {
+          cwd: path.join(__dirname, '../contracts/scripts/cli'),
+          encoding: 'utf8'
+        }
+      );
+      
+      // Check if round is in WinnersReady status (flexible matching)
+      const isWinnersReady = statusOutput.includes('WinnersReady') || statusOutput.includes('Status: 5');
+      
+      console.log(`📊 Round status check: ${isWinnersReady ? '✅ WinnersReady' : '❌ Not ready yet'}`);
+      
+      if (!isWinnersReady) {
+        console.log(`⚠️  Round not ready yet, waiting 15 seconds... (${retries} attempts left)`);
+        await sleep(15000);
+        retries--;
+        continue;
+      }
+      
+      console.log(`✅ Round confirmed as WinnersReady, submitting...`);
+      
+      // Small delay to ensure RPC synchronization
+      console.log('⏳ Waiting 5 seconds for RPC sync...');
+      await sleep(10000);
+      
+      // Try the actual submission
+      console.log(`🔧 Attempting submission with:`);
+      console.log(`   Contract: ${contractAddress}`);
+      console.log(`   Round: ${roundId}`);
+      console.log(`   Root: ${winnersRoot}`);
+      console.log(`   CID: ${mockCID}`);
+      
+      exec(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${winnersRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+      
+      submissionSuccess = true;
+      console.log('✅ Winners root submitted successfully!');
+      
+    } catch (error) {
+      retries--;
+      console.log(`❌ Submission attempt failed:`);
+      console.log(`   Full error: ${error.message}`);
+      console.log(`   Error type: ${error.constructor.name}`);
+      
+      if (retries > 0) {
+        console.log(`⚠️  Retrying in 20 seconds... (${retries} attempts left)`);
+        await sleep(20000); // Longer delay between retries
+      } else {
+        console.error('\n❌ All retries exhausted. Possible issues:');
+        console.error('   1. VRF callback hasn\'t been processed yet (check Chainlink VRF dashboard)');
+        console.error('   2. RPC node is behind (try a different RPC URL)');
+        console.error('   3. Transaction is timing out (check network congestion)');
+        console.error(`\nManual recovery:`);
+        console.error(`   cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${winnersRoot} "${mockCID}" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL`);
+        throw error; // Re-throw if all retries failed
+      }
+    }
+  }
+  
+  // Only report success if submission actually succeeded
+  if (!submissionSuccess) {
+    throw new Error('Failed to submit winners root after all retry attempts');
+  }
   
   console.log('\n✅ Winners committed! Round is complete and ready for claims!');
   console.log(`\n🎉 Check the frontend at http://localhost:5173/main.html`);

@@ -8,7 +8,7 @@
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
-  address: "0x7Be07bE03603a44c64A81bcEFDe2Bedc38b1f5d0", // Deployed on 2025-02-06 - Binary search optimization
+  address: "0x9b295952839a02CA8f604Ee53C89c289324ab1d8", // Deployed on 2025-02-06 - Binary search optimization
   
   // Sepolia testnet configuration
   network: 'sepolia',
@@ -46,6 +46,14 @@ export const CONTRACT_CONFIG = {
         }
       ],
       "stateMutability": "nonpayable"
+    },
+    {
+      "type": "fallback",
+      "stateMutability": "payable"
+    },
+    {
+      "type": "receive",
+      "stateMutability": "payable"
     },
     {
       "type": "function",
@@ -88,6 +96,19 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "DEPLOYMENT_TIMESTAMP",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "FAKE_PACK_TIER",
       "inputs": [],
       "outputs": [
@@ -108,6 +129,19 @@ export const CONTRACT_CONFIG = {
           "name": "",
           "type": "uint8",
           "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_GAS_PRICE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
         }
       ],
       "stateMutability": "view"
@@ -212,6 +246,19 @@ export const CONTRACT_CONFIG = {
           "name": "",
           "type": "uint256",
           "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "VERSION",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "string",
+          "internalType": "string"
         }
       ],
       "stateMutability": "view"
@@ -506,6 +553,47 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "function",
+      "name": "emergencyWithdrawETH",
+      "inputs": [
+        {
+          "name": "to",
+          "type": "address",
+          "internalType": "address payable"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "emergencyWithdrawNFT",
+      "inputs": [
+        {
+          "name": "nftContract",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
       "name": "estimateVrfCallbackGas",
       "inputs": [
         {
@@ -706,6 +794,127 @@ export const CONTRACT_CONFIG = {
           "name": "",
           "type": "address[]",
           "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRoundState",
+      "inputs": [
+        {
+          "name": "roundId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "round",
+          "type": "tuple",
+          "internalType": "struct PepedawnRaffle.Round",
+          "components": [
+            {
+              "name": "id",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "startTime",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "endTime",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "status",
+              "type": "uint8",
+              "internalType": "enum PepedawnRaffle.RoundStatus"
+            },
+            {
+              "name": "totalTickets",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalWeight",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalWagered",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "vrfRequestId",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "vrfRequestedAt",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "feesDistributed",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "participantCount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "validProofHash",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "participantsRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "winnersRoot",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            },
+            {
+              "name": "vrfSeed",
+              "type": "bytes32",
+              "internalType": "bytes32"
+            }
+          ]
+        },
+        {
+          "name": "participantsCount",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "winnersCount",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "prizesClaimed",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "prizeTokenIds",
+          "type": "uint256[10]",
+          "internalType": "uint256[10]"
+        },
+        {
+          "name": "prizeClaimers",
+          "type": "address[10]",
+          "internalType": "address[10]"
         }
       ],
       "stateMutability": "view"
@@ -990,9 +1199,28 @@ export const CONTRACT_CONFIG = {
     {
       "type": "function",
       "name": "pause",
-      "inputs": [],
+      "inputs": [
+        {
+          "name": "reason",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
       "outputs": [],
       "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseReason",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "string",
+          "internalType": "string"
+        }
+      ],
+      "stateMutability": "view"
     },
     {
       "type": "function",
@@ -1091,13 +1319,6 @@ export const CONTRACT_CONFIG = {
           "internalType": "uint256"
         }
       ],
-      "outputs": [],
-      "stateMutability": "nonpayable"
-    },
-    {
-      "type": "function",
-      "name": "resetVrfTiming",
-      "inputs": [],
       "outputs": [],
       "stateMutability": "nonpayable"
     },
@@ -1727,6 +1948,25 @@ export const CONTRACT_CONFIG = {
     },
     {
       "type": "event",
+      "name": "ContractPausedWithReason",
+      "inputs": [
+        {
+          "name": "reason",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        },
+        {
+          "name": "timestamp",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
       "name": "CoordinatorSet",
       "inputs": [
         {
@@ -1734,6 +1974,25 @@ export const CONTRACT_CONFIG = {
           "type": "address",
           "indexed": false,
           "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "DirectETHReceived",
+      "inputs": [
+        {
+          "name": "sender",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
         }
       ],
       "anonymous": false
@@ -1778,6 +2037,31 @@ export const CONTRACT_CONFIG = {
           "type": "bool",
           "indexed": false,
           "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "EmergencyWithdrawal",
+      "inputs": [
+        {
+          "name": "to",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "assetType",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
         }
       ],
       "anonymous": false

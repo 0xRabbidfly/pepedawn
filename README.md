@@ -332,7 +332,7 @@ The project implements comprehensive security measures:
 cast call 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "currentRoundId()" --rpc-url $SEPOLIA_RPC_URL
 
 # Create round (owner only)
-cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send 0x3b8cB41b97a4F736F95D1b7d62D101F7a0cd251A "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL --gas-limit 500000
 ```
 
 ### Using PowerShell Script

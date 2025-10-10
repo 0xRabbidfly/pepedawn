@@ -329,6 +329,7 @@ export async function populateRoundSelector(contract) {
   try {
     const roundSelect = document.getElementById('round-select');
     const winnersRoundSelect = document.getElementById('winners-round-select');
+    const claimsRoundSelect = document.getElementById('claims-round-select');
     if (!contract) return;
     
     // Get current round ID
@@ -351,12 +352,6 @@ export async function populateRoundSelector(contract) {
         }
         roundSelect.appendChild(option);
       }
-      
-      // Add future round option
-      const futureOption = document.createElement('option');
-      futureOption.value = (currentRoundNum + 1).toString();
-      futureOption.textContent = `Round ${currentRoundNum + 1} (Future)`;
-      roundSelect.appendChild(futureOption);
     }
     
     // Populate winners selector
@@ -374,6 +369,24 @@ export async function populateRoundSelector(contract) {
           option.selected = true;
         }
         winnersRoundSelect.appendChild(option);
+      }
+    }
+    
+    // Populate claims selector
+    if (claimsRoundSelect) {
+      // Clear existing options
+      claimsRoundSelect.innerHTML = '';
+      
+      // Add options for all rounds (claims can be made for any distributed round)
+      for (let i = Math.max(1, currentRoundNum - 5); i <= currentRoundNum; i++) {
+        const option = document.createElement('option');
+        option.value = i.toString();
+        option.textContent = `Round ${i}`;
+        if (i === currentRoundNum) {
+          option.textContent += ' (Current)';
+          option.selected = true;
+        }
+        claimsRoundSelect.appendChild(option);
       }
     }
     
@@ -468,39 +481,10 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
       return;
     }
     
-    // Check if round is distributed (status 5)
-    const isDistributed = Number(roundData.status) === 5;
+    // Check if round is distributed (status 6)
+    const isDistributed = Number(roundData.status) === 6;
     
-    let winnersHTML = '';
-    if (isDistributed) {
-      const winners = await getWinnersData(contract, displayRoundId);
-      if (winners) {
-        winnersHTML = `
-          <div class="winners-section">
-            <div class="winners-title">🎉 Round ${displayRoundId} Winners 🎉</div>
-            
-            <div class="winner-tier">
-              <div class="winner-tier-title fake-pack">🥇 Fake Pack Winner (3x PEPEDAWN)</div>
-              <div class="winner-address">${winners.fakePackWinner ? formatAddress(winners.fakePackWinner) : 'No Winner'}</div>
-            </div>
-            
-            <div class="winner-tier">
-              <div class="winner-tier-title kek-pack">🥈 Kek Pack Winner (2x PEPEDAWN)</div>
-              <div class="winner-address">${winners.kekPackWinner ? formatAddress(winners.kekPackWinner) : 'No Winner'}</div>
-            </div>
-            
-            <div class="winner-tier">
-              <div class="winner-tier-title pepe-pack">🥉 Pepe Pack Winners (1x PEPEDAWN)</div>
-              <div class="pepe-winners-grid">
-                ${winners.pepePackWinners.map(address => 
-                  `<div class="winner-address">${formatAddress(address)}</div>`
-                ).join('')}
-              </div>
-            </div>
-          </div>
-        `;
-      }
-    }
+    // Winners section removed - winners are displayed in their own dedicated section
     
     // Get ALL participants (fixed: was only showing current user)
     const leaderboardData = [];
@@ -552,7 +536,6 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
     
     // Generate leaderboard HTML
     const leaderboardHTML = `
-      ${winnersHTML}
       <div class="leaderboard-header">
         <span>Rank</span>
         <span>Address</span>

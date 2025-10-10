@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PEPEDAWN - Claim Office</title>
+    <script type="module" crossorigin src="/assets/main-_tQIEquD.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/main-CW7w4ujr.css">
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>PEPEDAWN</h1>
+        <nav>
+          <a href="/">Home</a>
+          <a href="/main.html">Ticket Office</a>
+          <a href="/claim.html" class="active">Claim Office</a>
+          <a href="/leaderboard.html">Leaderboard</a>
+          <a href="/rules.html">Rules</a>
+        </nav>
+      </header>
+
+      <main>
+        <section id="wallet-section">
+          <button id="connect-wallet">Connect Wallet</button>
+          <div id="wallet-info" style="display: none;">
+            <div class="wallet-details">
+              <span class="wallet-address" id="wallet-address-display"></span>
+              <span class="wallet-balance">Balance: <span id="wallet-balance"></span> ETH</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="claims-section">
+          <div class="leaderboard-header-section">
+            <h2 id="claims-title">Claim Your Packs</h2>
+            <div class="round-selector">
+              <label for="claims-round-select">Round:</label>
+              <select id="claims-round-select">
+                <option value="">Loading...</option>
+              </select>
+            </div>
+          </div>
+          <div id="claims-container">
+            <p>Connect wallet and select a round to view claimable prizes...</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+  </body>
+</html>
+

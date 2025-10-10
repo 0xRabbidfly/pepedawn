@@ -227,8 +227,8 @@ async function init() {
   // Set up event listeners
   setupEventListeners();
   
-  // Set up leaderboard round selector if on leaderboard page
-  if (window.location.pathname.includes('leaderboard.html')) {
+  // Set up round selectors for leaderboard and claim pages
+  if (window.location.pathname.includes('leaderboard.html') || window.location.pathname.includes('claim.html')) {
     setupLeaderboardRoundSelector();
   }
   
@@ -310,7 +310,106 @@ function setupLeaderboardRoundSelector() {
       }
     });
   }
+  
+  const claimsRoundSelect = document.getElementById('claims-round-select');
+  if (claimsRoundSelect) {
+    claimsRoundSelect.addEventListener('change', async function() {
+      const selectedValue = this.value;
+      
+      // Update claims with selected round
+      if (contract && userAddress) {
+        await displayClaimablePrizes(contract, userAddress, Number(selectedValue));
+      }
+    });
+  }
 }
+
+// Contract information functions
+async function updateContractInfo(contract) {
+  if (!contract) return;
+  
+  try {
+    // Get contract address from config
+    const contractAddress = CONTRACT_CONFIG.address;
+    document.getElementById('contract-address').textContent = contractAddress;
+    
+    // Get contract owner
+    const owner = await contract.owner();
+    document.getElementById('contract-owner').textContent = owner;
+    
+    // Get contract ETH balance
+    const balance = await provider.getBalance(contractAddress);
+    const balanceEth = ethers.formatEther(balance);
+    document.getElementById('contract-balance').textContent = `${parseFloat(balanceEth).toFixed(4)} ETH`;
+    
+    // Get current round
+    const currentRoundId = await contract.currentRoundId();
+    document.getElementById('current-round').textContent = currentRoundId.toString() !== '0' ? `Round ${currentRoundId}` : 'No active rounds';
+    
+    // Get NFT count (check emblem vault balance)
+    try {
+      const emblemVaultAddress = await contract.emblemVaultAddress();
+      const emblemVault = new ethers.Contract(emblemVaultAddress, ['function balanceOf(address) view returns (uint256)'], provider);
+      const nftBalance = await emblemVault.balanceOf(contractAddress);
+      document.getElementById('contract-nfts').textContent = `${nftBalance.toString()} NFTs`;
+    } catch (error) {
+      document.getElementById('contract-nfts').textContent = 'Unable to fetch';
+    }
+    
+    // Check contract verification (simplified check)
+    checkContractVerification(contractAddress);
+    
+  } catch (error) {
+    console.error('Error updating contract info:', error);
+    // Set error states
+    document.getElementById('contract-owner').textContent = 'Error loading';
+    document.getElementById('contract-balance').textContent = 'Error loading';
+    document.getElementById('contract-nfts').textContent = 'Error loading';
+    document.getElementById('current-round').textContent = 'Error loading';
+  }
+}
+
+async function checkContractVerification(contractAddress) {
+  try {
+    // Simple verification check - try to get contract code
+    const code = await provider.getCode(contractAddress);
+    if (code && code !== '0x') {
+      document.getElementById('verified-status').style.display = 'none';
+      document.getElementById('verified-checkmark').style.display = 'inline';
+    } else {
+      document.getElementById('verified-status').textContent = 'Not verified';
+      document.getElementById('verified-status').style.color = '#f44336';
+    }
+  } catch (error) {
+    document.getElementById('verified-status').textContent = 'Unable to check';
+    document.getElementById('verified-status').style.color = '#f44336';
+  }
+}
+
+// Copy to clipboard function
+function copyToClipboard(elementId) {
+  const element = document.getElementById(elementId);
+  const text = element.textContent;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    // Show feedback
+    const button = element.parentElement.querySelector('.copy-btn');
+    const originalText = button.textContent;
+    button.textContent = '✅';
+    button.style.background = 'rgba(76, 175, 80, 0.3)';
+    
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = '';
+    }, 1500);
+  }).catch(err => {
+    console.error('Failed to copy: ', err);
+    alert('Failed to copy to clipboard');
+  });
+}
+
+// Make copyToClipboard globally available
+window.copyToClipboard = copyToClipboard;
 
 // Connect to wallet with enhanced security validations
 async function connectWallet() {
@@ -390,15 +489,20 @@ async function setupWalletConnection(showSuccessToast = true) {
     showSecurityStatus(contract, userAddress);
     await updateButtonStates(roundState); // Update button states after connecting
     
-    // Update claims and refunds (only on main page)
+    // Update refunds (only on main page)
     console.log('🔍 Current page:', window.location.pathname);
     console.log('🔍 Current round ID:', currentRoundId.toString());
     if (currentRoundId.toString() !== '0') {
-      // Show claims and refunds only on main page
       if (window.location.pathname.includes('main.html')) {
-        console.log('🎯 Calling displayClaimablePrizes');
-        await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
         await displayRefundButton(contract, userAddress);
+      }
+    }
+    
+    // Populate round selector and show claims if on claim page
+    if (window.location.pathname.includes('claim.html')) {
+      await populateRoundSelector(contract);
+      if (currentRoundId.toString() !== '0') {
+        await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
       }
     }
     
@@ -410,6 +514,11 @@ async function setupWalletConnection(showSuccessToast = true) {
         const { displayWinners } = await import('./components/claims.js');
         await displayWinners(contract, Number(currentRoundId));
       }
+    }
+    
+    // Update contract information if on rules page
+    if (window.location.pathname.includes('rules.html')) {
+      await updateContractInfo(contract);
     }
   }
   
@@ -521,6 +630,15 @@ async function reconnectWallet(newAddress) {
       await updateRoundStatus(contract, provider, roundState);
       await updateProgressIndicator(contract, roundState);
       await updateLeaderboard(contract);
+      
+      if (currentRoundId.toString() !== '0') {
+        if (window.location.pathname.includes('main.html')) {
+          await displayRefundButton(contract, userAddress);
+        }
+        if (window.location.pathname.includes('claim.html')) {
+          await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
+        }
+      }
     }
     
     showTransactionStatus('Wallet switched successfully', 'success');
@@ -1356,9 +1474,8 @@ function startPeriodicUpdates() {
         if (userAddress) {
           await updateUserStats(contract, userAddress, roundState);
           
-          // Update claims and refunds (claims already uses getRoundState internally)
-          if (currentRoundId.toString() !== '0') {
-            await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
+          // Update refunds on main page
+          if (currentRoundId.toString() !== '0' && window.location.pathname.includes('main.html')) {
             await displayRefundButton(contract, userAddress);
           }
         }

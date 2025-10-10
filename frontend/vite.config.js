@@ -14,6 +14,8 @@ export default defineConfig({
       input: {
         main: 'index.html',
         betting: 'main.html',
+        claim: 'claim.html',
+        leaderboard: 'leaderboard.html',
         rules: 'rules.html'
       }
     },

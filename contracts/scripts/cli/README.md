@@ -142,7 +142,7 @@ node upload-to-ipfs.js participants-round-1.json
 
 ```bash
 # Create and open round
-cast send $CONTRACT_ADDRESS "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send $CONTRACT_ADDRESS "createRound()" --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL --gas-limit 500000
 cast send $CONTRACT_ADDRESS "openRound(uint256)" 1 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 
 # Set valid proof hash (optional)

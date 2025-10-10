@@ -75,6 +75,10 @@ foundry.lock
 contracts/out/
 contracts/cache/
 
+# Prevent accidental nested directories
+contracts/contracts/
+contracts/frontend/
+
 # Temporary files
 tmp/
 temp/

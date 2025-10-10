@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PEPEDAWN</title>
+    <title>PEPEDAWN - Claim Office</title>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
@@ -14,40 +14,35 @@
         <nav>
           <a href="/">Home</a>
           <a href="/main.html">Ticket Office</a>
-          <a href="/claim.html">Claim Office</a>
-          <a href="/leaderboard.html" class="active">Leaderboard</a>
+          <a href="/claim.html" class="active">Claim Office</a>
+          <a href="/leaderboard.html">Leaderboard</a>
           <a href="/rules.html">Rules</a>
         </nav>
       </header>
 
       <main>
-        <section id="winners-section">
-          <div class="leaderboard-header-section">
-            <h2 id="winners-title">Winners</h2>
-            <div class="round-selector">
-              <label for="winners-round-select">Round:</label>
-              <select id="winners-round-select">
-                <option value="">Loading...</option>
-              </select>
+        <section id="wallet-section">
+          <button id="connect-wallet">Connect Wallet</button>
+          <div id="wallet-info" style="display: none;">
+            <div class="wallet-details">
+              <span class="wallet-address" id="wallet-address-display"></span>
+              <span class="wallet-balance">Balance: <span id="wallet-balance"></span> ETH</span>
             </div>
-          </div>
-          <div id="winners-list">
-            <p>Loading winners...</p>
           </div>
         </section>
 
-        <section id="leaderboard">
+        <section id="claims-section">
           <div class="leaderboard-header-section">
-            <h2 id="leaderboard-title">Live Leaderboard</h2>
+            <h2 id="claims-title">Claim Your Packs</h2>
             <div class="round-selector">
-              <label for="round-select">Round:</label>
-              <select id="round-select">
+              <label for="claims-round-select">Round:</label>
+              <select id="claims-round-select">
                 <option value="">Loading...</option>
               </select>
             </div>
           </div>
-          <div id="leaderboard-list">
-            <p>Loading leaderboard...</p>
+          <div id="claims-container">
+            <p>Connect wallet and select a round to view claimable prizes...</p>
           </div>
         </section>
       </main>
@@ -56,3 +51,4 @@
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
+

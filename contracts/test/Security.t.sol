@@ -163,11 +163,11 @@ contract SecurityTest is Test {
         
         // This test would require creating MAX_PARTICIPANTS_PER_ROUND participants
         // For now, we test the logic exists
-        // In a real scenario, we'd create 10000 participants and verify the 10001st fails
+        // In a real scenario, we'd create 100 participants and verify the 101st fails
         
         // Verify the constant exists and is reasonable
         uint256 maxParticipants = raffle.MAX_PARTICIPANTS_PER_ROUND();
-        assertEq(maxParticipants, 10000);
+        assertEq(maxParticipants, 100);
     }
     
     /**
@@ -180,7 +180,7 @@ contract SecurityTest is Test {
         
         // Verify the constant exists and is reasonable
         uint256 maxWager = raffle.MAX_TOTAL_WAGER_PER_ROUND();
-        assertEq(maxWager, 1000 ether);
+        assertEq(maxWager, 100 ether);
         
         // Test would involve reaching this limit, but requires many participants
         // For now, verify the protection exists in the contract

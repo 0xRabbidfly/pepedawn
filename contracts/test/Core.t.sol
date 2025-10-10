@@ -197,8 +197,8 @@ contract CoreTest is Test {
      * @dev Security: MAX_PARTICIPANTS and MAX_TOTAL_WAGER
      */
     function testCircuitBreakerConstants() public {
-        assertEq(raffle.MAX_PARTICIPANTS_PER_ROUND(), 10000, "Max participants should be 10,000");
-        assertEq(raffle.MAX_TOTAL_WAGER_PER_ROUND(), 1000 ether, "Max total wager should be 1000 ETH");
+        assertEq(raffle.MAX_PARTICIPANTS_PER_ROUND(), 100, "Max participants should be 100");
+        assertEq(raffle.MAX_TOTAL_WAGER_PER_ROUND(), 100 ether, "Max total wager should be 100 ETH");
     }
     
     /**

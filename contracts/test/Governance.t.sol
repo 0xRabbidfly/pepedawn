@@ -66,7 +66,8 @@ contract GovernanceTest is Test {
         vm.deal(newOwner, 10 ether);
         
         // Reset VRF timing by directly manipulating storage (test only)
-        vm.store(address(raffle), bytes32(uint256(10)), bytes32(uint256(0)));
+        // lastVrfRequestTime is at slot 16 (not slot 10 which is subscriptionId!)
+        vm.store(address(raffle), bytes32(uint256(16)), bytes32(uint256(0)));
     }
     
     // ============================================
@@ -603,10 +604,18 @@ contract GovernanceTest is Test {
         assertEq(raffle.creatorsAddress(), creatorsAddress, "Initial creators mismatch");
         assertEq(raffle.emblemVaultAddress(), emblemVaultAddress, "Initial emblem vault mismatch");
         
-        (IVRFCoordinatorV2Plus coordinator, uint256 subId, bytes32 keyHash,,) = raffle.vrfConfig();
+        (
+            IVRFCoordinatorV2Plus coordinator,
+            uint256 subId,
+            bytes32 keyHash,
+            uint32 callbackGasLimit,
+            uint16 requestConfirmations
+        ) = raffle.vrfConfig();
         assertEq(address(coordinator), address(mockVrfCoordinator), "Initial VRF coordinator mismatch");
         assertEq(subId, SUBSCRIPTION_ID, "Initial subscription ID mismatch");
         assertEq(keyHash, KEY_HASH, "Initial key hash mismatch");
+        assertTrue(callbackGasLimit > 0, "Callback gas limit should be set");
+        assertTrue(requestConfirmations > 0, "Request confirmations should be set");
         
         // Verify initial security state
         assertFalse(raffle.paused(), "Should not be paused initially");

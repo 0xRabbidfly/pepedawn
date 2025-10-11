@@ -144,25 +144,7 @@ install.ps1
 tmp/
 temp/
 
-# Large files and media assets
-*.gif
-*.mp4
-*.mov
-*.avi
-*.mkv
-*.webm
-*.png
-*.jpg
-*.jpeg
-*.bmp
-*.tiff
-*.svg
-*.ico
 
-# Exception: Allow favicon files
-!frontend/public/PEPEDAWN_thumbnail.png
-!frontend/public/*.ico
-!frontend/public/*.svg
 
 # Files larger than 50MB (use git-lfs instead)
 # Check file size before committing: git ls-files -s | awk '{if ($4 > 52428800) print $4/1024/1024 "MB " $NF}'

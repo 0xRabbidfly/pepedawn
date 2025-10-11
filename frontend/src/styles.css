@@ -287,6 +287,11 @@ main {
   50% { transform: scale(1.1); opacity: 0.6; }
 }
 
+/* Mobile Purchase Slide-out (hidden on desktop) */
+.mobile-purchase-slideout {
+  display: none;
+}
+
 /* Buttons */
 .btn {
   display: inline-block;
@@ -567,40 +572,36 @@ section h2 {
 
 /* Unclaimed Prizes Notification */
 #unclaimed-prizes-notification {
-  margin-top: 15px;
+  margin-top: var(--spacing-sm);
   animation: fadeIn 0.5s ease-in;
 }
 
 .unclaimed-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 193, 7, 0.2));
-  border: 2px solid #FF9800;
-  border-radius: 12px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+  display: inline-block !important;
+  padding: 3px 8px !important;
+  background: rgba(255, 152, 0, 0.15) !important;
+  border: 1px solid #FF9800 !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-size: 0.75rem !important;
+  color: #FFF !important;
+  transition: all 0.2s ease !important;
 }
 
 .unclaimed-link:hover {
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.3), rgba(255, 193, 7, 0.3));
-  border-color: #FFC107;
-  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
-  transform: translateY(-2px);
+  background: rgba(255, 152, 0, 0.25) !important;
+  border-color: #FFC107 !important;
+  transform: translateY(-1px) !important;
 }
 
 .unclaimed-icon {
-  font-size: 1.5em;
-  animation: bounce 1.5s ease-in-out infinite;
+  font-size: 0.9em !important;
+  margin-right: 4px !important;
 }
 
 .unclaimed-text {
-  color: #FFF;
-  font-size: 1em;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-size: inherit !important;
+  font-weight: 500 !important;
 }
 
 @keyframes pulse-glow {
@@ -1802,10 +1803,10 @@ section h2 {
   }
   
   .round-header {
-    width: 100vw;
-    margin-left: calc(-1 * var(--spacing-md));
-    margin-right: calc(-1 * var(--spacing-md));
-    padding: 0 var(--spacing-md);
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
   }
   
   .round-content {
@@ -1813,10 +1814,10 @@ section h2 {
     gap: var(--spacing-lg);
     display: flex;
     flex-direction: column-reverse; /* Info column on top, status column below */
-    width: 100vw;
-    margin-left: calc(-1 * var(--spacing-md));
-    margin-right: calc(-1 * var(--spacing-md));
-    padding: 0 var(--spacing-md);
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
   }
   
   .status-column {
@@ -1824,6 +1825,8 @@ section h2 {
     justify-content: center;
     flex-wrap: wrap;
     order: 2; /* Status column goes after info */
+    width: 100%;
+    padding: 0;
   }
   
   .status-arrow-vertical {
@@ -1834,16 +1837,28 @@ section h2 {
   .info-column {
     order: 1; /* Info column first */
     padding: 0; /* Remove padding on mobile */
+    width: 100%;
   }
   
   .info-section-vertical {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    width: 100%;
   }
   
   /* Time remaining full width on mobile */
   .info-section-vertical > .info-item:first-child {
+    width: 100%;
+  }
+  
+  /* Dispenser container full width on mobile */
+  .dispenser-container {
+    width: 100%;
+    margin-top: var(--spacing-md);
+  }
+  
+  .ticket-graphic {
     width: 100%;
   }
   
@@ -2153,295 +2168,117 @@ section h2 {
   margin-left: var(--spacing-xs);
 }
 
-/* Small mobile devices */
-@media (max-width: 480px) {
-  header {
-    padding: var(--spacing-sm);
-  }
-  
-  header h1 {
-    font-size: var(--font-size-xl);
-  }
-  
-  nav {
-    gap: var(--spacing-sm);
-  }
-  
-  nav a {
-    padding: var(--spacing-xs);
-    font-size: var(--font-size-sm);
-  }
-  
-  main {
-    padding: var(--spacing-sm);
-  }
-  
-  /* Dispenser responsive styles */
-  .ticket-graphic {
-    grid-template-columns: repeat(5, 1fr);
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm);
-    padding-top: var(--spacing-xl);
-  }
-  
-  .ticket-icon {
-    font-size: 1.5em;
-  }
-  
-  .dispenser-label {
-    font-size: 0.7rem;
-  }
-  
-  .dispenser-badge {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 0.85em;
-  }
-  
-  .title-logo {
-    font-size: 2.5rem;
-    letter-spacing: 0.05em;
-  }
-  
-  .title-subtitle {
-    font-size: var(--font-size-base);
-  }
-  
-  .title-description {
-    font-size: var(--font-size-sm);
-    line-height: 1.4;
-  }
-  
-  .title-container {
-    padding: var(--spacing-sm);
-    max-width: 98vw;
-  }
-  
-  .title-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .title-actions button {
-    width: 100%;
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  /* Single column layouts for mobile */
-  .ticket-options {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
-  }
-  
-  #user-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .round-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-  
-  .merkle-badge {
-    align-self: flex-end;
-  }
-  
-  .info-section {
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-sm);
-  }
-  
-  .info-item {
-    min-width: auto;
-    width: 100%;
-    max-width: 200px;
-  }
-  
-  .status-flow {
-    gap: var(--spacing-xs);
-  }
-  
-  .status-item {
-    width: 100px;
-    height: 100px;
-    padding: var(--spacing-sm);
-  }
-  
-  .status-icon {
-    font-size: 1.8em;
-  }
-  
-  .status-text {
-    font-size: 0.75em;
-    max-width: 85px;
-  }
-  
-  .status-arrow-vertical {
-    font-size: 1.3em;
-  }
-  
-  .info-item {
-    padding: var(--spacing-sm);
-  }
-  
-  .merkle-badge {
-    padding: var(--spacing-xs);
-  }
-  
-  .badge-text {
-    font-size: 0.55em;
-  }
-  
-  .info-icon {
-    font-size: 1em;
-  }
-  
-  .info-text {
-    font-size: var(--font-size-lg); /* Responsive but still readable (1.125rem) */
-  }
-  
-  .info-value {
-    font-size: var(--font-size-xl); /* Match desktop prize-tier on mobile (1.25rem) */
-  }
-  
-  /* Mobile winners section */
-  .winners-section {
-    padding: var(--spacing-md);
-  }
-  
-  .winners-title {
-    font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-md);
-  }
-  
-  .winner-tier-title {
-    font-size: var(--font-size-lg);
-  }
-  
-  .winner-address {
-    font-size: var(--font-size-base);
-    padding: var(--spacing-xs);
-  }
-  
-  .pepe-winners-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  /* Mobile leaderboard header */
-  .leaderboard-header-section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-  
-  .round-selector {
-    align-self: stretch;
-  }
-  
-  .round-selector select {
-    flex: 1;
-    min-width: auto;
-  }
-  
-  /* Simplified leaderboard for small screens */
-  .leaderboard-header,
-  .leaderboard-entry {
-    grid-template-columns: 30px 1fr 50px 70px;
-    font-size: var(--font-size-sm);
-    gap: var(--spacing-xs);
-  }
-  
-  /* Hide less important columns on very small screens */
-  .leaderboard-header .tickets,
-  .leaderboard-entry .tickets {
-    display: none;
-  }
-  
-  /* Stack form elements vertically */
-  .form-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .form-group label {
-    margin-bottom: var(--spacing-xs);
-  }
-  
-  /* Betting layout stacks on mobile */
-  .betting-layout {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-  }
-  
-  /* Mobile ticket layout - horizontal row */
-  .ticket-options-column {
-    flex-direction: row !important;
-    display: flex !important;
-    gap: 8px !important;
-    justify-content: space-between !important;
-  }
-  
-  .ticket-option-card {
-    flex: 1 !important;
-    min-height: 80px !important;
-    height: auto !important;
-    max-width: calc(33.333% - 4px) !important;
-    width: auto !important;
-  }
-  
-  /* Hide raven completely on mobile */
-  .raven-background {
-    display: none !important;
-  }
-  
-  /* Trigger deployment - PNG checks removed */
-  
-  .ticket-visual {
-    min-width: 60px;
-  }
-  
-  .ticket-single {
-    font-size: 2.5em;
-  }
-  
-  .ticket-stack {
-    width: 50px;
-    height: 40px;
-  }
-  
-  .ticket-stacked {
-    font-size: 2em;
-  }
-  
-  .ticket-bundle {
-    font-size: 2.5em;
-  }
-  
-  .summary-icon {
-    font-size: 2em;
-    min-width: 40px;
-  }
-  
-  .summary-value {
-    font-size: var(--font-size-xl);
-  }
-  
-  /* Simplified sections */
-  section {
-    padding: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  section h2 {
-    font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  section h3 {
-    font-size: var(--font-size-lg);
-    margin-bottom: var(--spacing-xs);
-  }
+/* Mobile ticket counter refactor */
+.betting-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Mobile ticket options - horizontal row at top */
+.ticket-options-column {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 8px !important;
+  justify-content: space-between !important;
+  margin-bottom: var(--spacing-md);
+}
+
+.ticket-option-card {
+  flex: 1 !important;
+  min-height: 80px !important;
+  height: auto !important;
+  max-width: calc(33.333% - 4px) !important;
+  width: auto !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  padding: var(--spacing-sm) var(--spacing-xs) !important;
+  gap: var(--spacing-xs) !important;
+}
+
+.ticket-option-card.mobile-selected {
+  background-color: rgba(76, 175, 80, 0.2) !important;
+  border-color: var(--primary-color) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Mobile ticket visual adjustments */
+.ticket-visual {
+  width: 45px !important;
+  height: 45px !important;
+  min-width: 45px !important;
+}
+
+.ticket-single {
+  font-size: 1.8em !important;
+}
+
+.ticket-stack {
+  width: 35px !important;
+  height: 30px !important;
+}
+
+.ticket-stacked {
+  font-size: 1.4em !important;
+}
+
+.ticket-bundle {
+  font-size: 1.8em !important;
+}
+
+/* Mobile ticket text adjustments */
+.ticket-label {
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
+.ticket-price {
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
+.ticket-discount {
+  font-size: 0.7rem !important;
+  padding: 2px 4px !important;
+  min-width: auto !important;
+}
+
+/* Hide desktop ticket office on mobile */
+.ticket-office {
+  display: none !important;
+}
+
+/* Hide raven completely on mobile */
+.raven-background {
+  display: none !important;
+}
+
+/* Mobile purchase slide-out */
+.mobile-purchase-slideout {
+  display: block !important;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(33, 150, 243, 0.08));
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin-top: var(--spacing-md);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-purchase-slideout.open {
+  max-height: 400px;
+  opacity: 1;
+  padding: var(--spacing-lg);
+}
+
+.mobile-purchase-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 /* Winners Section - Podium Style */

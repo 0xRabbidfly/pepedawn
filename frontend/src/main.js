@@ -351,6 +351,12 @@ function setupEventListeners() {
     buyTicketsBtn.addEventListener('click', buyTickets);
   }
   
+  // Mobile purchase button
+  const mobileBuyTicketsBtn = document.getElementById('mobile-place-bet');
+  if (mobileBuyTicketsBtn) {
+    mobileBuyTicketsBtn.addEventListener('click', buyTicketsMobile);
+  }
+  
   const submitProofBtn = document.getElementById('submit-proof');
   if (submitProofBtn) {
     submitProofBtn.addEventListener('click', submitProof);
@@ -1419,45 +1425,72 @@ function setupContractEventListeners() {
 // Select ticket bundle
 function selectTickets(event) {
   const card = event.currentTarget;
+  const isMobile = window.innerWidth <= 768;
   
   // If this card is already selected, unselect it
-  if (card.classList.contains('selected')) {
-    card.classList.remove('selected');
-    const ticketOffice = document.getElementById('ticket-office');
-    if (ticketOffice) {
-      ticketOffice.classList.remove('open', 'receiving');
+  if (card.classList.contains('selected') || card.classList.contains('mobile-selected')) {
+    card.classList.remove('selected', 'mobile-selected');
+    
+    if (isMobile) {
+      // Hide mobile slide-out
+      const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+      if (mobileSlideout) {
+        mobileSlideout.classList.remove('open');
+      }
+    } else {
+      // Hide desktop ticket office
+      const ticketOffice = document.getElementById('ticket-office');
+      if (ticketOffice) {
+        ticketOffice.classList.remove('open', 'receiving');
+      }
+      hideTicketConnector();
     }
-    hideTicketConnector();
     return;
   }
   
   const tickets = parseInt(card.dataset.tickets);
   const amount = parseFloat(card.dataset.amount);
   
-  // Update UI
-  document.getElementById('selected-tickets').textContent = String(tickets);
-  document.getElementById('selected-amount').textContent = String(amount);
-  
-  // Show ticket office with slide animation
-  const ticketOffice = document.getElementById('ticket-office');
-  if (ticketOffice) {
-    setTimeout(() => {
-      ticketOffice.classList.add('open');
-      // Add receiving animation after office opens
+  if (isMobile) {
+    // Mobile: Update mobile slide-out and show it
+    document.getElementById('mobile-selected-tickets').textContent = String(tickets);
+    document.getElementById('mobile-selected-amount').textContent = String(amount);
+    
+    // Highlight selected card and remove selection from others
+    document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('mobile-selected'));
+    card.classList.add('mobile-selected');
+    
+    // Show mobile slide-out
+    const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+    if (mobileSlideout) {
+      mobileSlideout.classList.add('open');
+    }
+  } else {
+    // Desktop: Update desktop UI and show ticket office
+    document.getElementById('selected-tickets').textContent = String(tickets);
+    document.getElementById('selected-amount').textContent = String(amount);
+    
+    // Show ticket office with slide animation
+    const ticketOffice = document.getElementById('ticket-office');
+    if (ticketOffice) {
       setTimeout(() => {
-        ticketOffice.classList.add('receiving');
-      }, 200);
-    }, 10);
+        ticketOffice.classList.add('open');
+        // Add receiving animation after office opens
+        setTimeout(() => {
+          ticketOffice.classList.add('receiving');
+        }, 200);
+      }, 10);
+    }
+    
+    // Highlight selected card and remove selection from others
+    document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    
+    // Draw and animate the connector
+    setTimeout(() => {
+      drawTicketConnector(card, ticketOffice);
+    }, 50);
   }
-  
-  // Highlight selected card and remove selection from others
-  document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
-  card.classList.add('selected');
-  
-  // Draw and animate the connector
-  setTimeout(() => {
-    drawTicketConnector(card, ticketOffice);
-  }, 50);
 }
 
 // Draw animated connector between card and ticket office
@@ -1576,7 +1609,7 @@ async function buyTickets() {
       showTransactionStatus('Submitting bet transaction...', 'info');
       
       // Call contract method (enhanced version uses tickets parameter)
-      const tx = await contract.buyTickets(tickets, { value: amountWei });
+      const tx = await contract.placeBet(tickets, { value: amountWei });
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);
@@ -1607,6 +1640,80 @@ async function buyTickets() {
     
   } catch (error) {
     console.error('Error placing bet:', error);
+    showTransactionStatus('Failed to place bet: ' + error.message, 'error');
+  }
+}
+
+// Buy tickets from mobile slide-out
+async function buyTicketsMobile() {
+  try {
+    if (!contract || !signer || !userAddress) {
+      showTransactionStatus('Please connect your wallet first', 'error');
+      return;
+    }
+    
+    const tickets = parseInt(document.getElementById('mobile-selected-tickets').textContent);
+    const amount = parseFloat(document.getElementById('mobile-selected-amount').textContent);
+    
+    if (!tickets || !amount) {
+      showTransactionStatus('Please select a ticket bundle first', 'error');
+      return;
+    }
+    
+    // Use the same validation and purchase logic as desktop
+    // Validate transaction parameters
+    try {
+      validateTransactionParams({ amount, tickets, userAddress });
+    } catch (validationError) {
+      showTransactionStatus(validationError.message, 'error');
+      return;
+    }
+    
+    // Check rate limiting
+    try {
+      checkRateLimit(userAddress);
+    } catch (rateLimitError) {
+      showTransactionStatus(rateLimitError.message, 'warning');
+      return;
+    }
+    
+    // Validate security state
+    try {
+      validateSecurityState(contract, userAddress);
+    } catch (securityError) {
+      showTransactionStatus(securityError.message, 'error');
+      return;
+    }
+    
+    const amountWei = ethers.parseEther(amount.toString());
+    
+    // Call contract method
+    const tx = await contract.placeBet(tickets, { value: amountWei });
+    
+    showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
+    console.log('Transaction hash:', tx.hash);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    console.log('Transaction confirmed:', receipt);
+    
+    // Hide mobile slide-out after successful purchase
+    const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+    if (mobileSlideout) {
+      mobileSlideout.classList.remove('open');
+    }
+    
+    // Remove selection from cards
+    document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('mobile-selected'));
+    
+    // Update user stats and security status
+    await updateUserStats(contract, userAddress);
+    showSecurityStatus(contract, userAddress);
+    
+    showTransactionStatus('Tickets purchased successfully!', 'success');
+    
+  } catch (error) {
+    console.error('Error placing mobile bet:', error);
     showTransactionStatus('Failed to place bet: ' + error.message, 'error');
   }
 }

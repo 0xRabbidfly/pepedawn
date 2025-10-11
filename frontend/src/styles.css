@@ -2363,9 +2363,25 @@ section h2 {
     gap: var(--spacing-md);
   }
   
-  /* Larger touch targets */
+  /* Mobile ticket layout - horizontal row */
+  .ticket-options-column {
+    flex-direction: row !important;
+    display: flex !important;
+    gap: 8px !important;
+    justify-content: space-between !important;
+  }
+  
   .ticket-option-card {
-    min-height: 60px;
+    flex: 1 !important;
+    min-height: 80px !important;
+    height: auto !important;
+    max-width: calc(33.333% - 4px) !important;
+    width: auto !important;
+  }
+  
+  /* Hide raven completely on mobile */
+  .raven-background {
+    display: none !important;
   }
   
   .ticket-visual {

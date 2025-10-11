@@ -1,6 +1,6 @@
 {
   "name": "pepedawn",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Pepedawn Raffle Smart Contract and Frontend",
   "private": true,
   "scripts": {
@@ -13,7 +13,10 @@
     "dev": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
     "test": "cd contracts && forge test",
-    "deploy": "cd contracts && forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify"
+    "deploy": "cd contracts && forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify",
+    "release:major": "node scripts/bump-version.js major",
+    "release:minor": "node scripts/bump-version.js minor",
+    "release:patch": "node scripts/bump-version.js patch"
   },
   "devDependencies": {
     "husky": "^9.1.7"

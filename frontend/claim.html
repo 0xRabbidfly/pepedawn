@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.infura.io https://*.alchemy.com https://*.etherscan.io https://arweave.net https://gateway.pinata.cloud; img-src 'self' data: https:; frame-ancestors 'none';">
     <title>PEPEDAWN - Claim Office</title>
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
@@ -29,6 +30,19 @@
         <section id="wallet-section">
           <button id="connect-wallet">Connect Wallet</button>
           <div id="wallet-info" style="display: none;">
+            <div id="contract-verification" style="padding-left: 10px; margin-bottom: 8px;">
+              <a id="verification-link"
+                 href="#" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 style="text-decoration: none; color: #888; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; opacity: 0.7; transition: opacity 0.2s;"
+                 onmouseover="this.style.opacity='1'; this.style.color='#4CAF50';"
+                 onmouseout="this.style.opacity='0.7'; this.style.color='#888';">
+                <span>🔒</span>
+                <span>Interacting with Verified Contract</span>
+                <span id="contract-version" style="font-size: 0.7rem; opacity: 0.6;">•</span>
+              </a>
+            </div>
             <div class="wallet-details">
               <span class="wallet-address" id="wallet-address-display"></span>
               <!-- Debug network indicator - controlled by CONTRACT_CONFIG.DEV_MODE -->

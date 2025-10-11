@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="PEPEDAWN Raffle Rules - Legitimate skill-weighted raffle on Sepolia testnet. Contract verified on Etherscan. Gambling involves risk." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.infura.io https://*.alchemy.com https://*.etherscan.io https://arweave.net https://gateway.pinata.cloud; img-src 'self' data: https:; frame-ancestors 'none';">
+    <meta name="description" content="PEPEDAWN Raffle Rules - Legitimate skill-weighted raffle on Ethereum. Contract verified on Etherscan. Gambling involves risk." />
     <title>PEPEDAWN - Rules</title>
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
@@ -30,11 +31,11 @@
         <section class="gambling-warning">
           <div class="warning-content">
             <h3>⚠️ Important Security Notice</h3>
-            <p><strong>This is a legitimate raffle contract on Sepolia testnet.</strong></p>
-            <p>MetaMask may show security warnings because this is a gambling contract. This is normal and expected behavior for raffle/lottery applications.</p>
-            <p><strong>Contract Address:</strong> <code>0x9b295952839a02CA8f604Ee53C89c289324ab1d8</code></p>
-            <p><strong>Network:</strong> Sepolia Testnet (Chain ID: 11155111)</p>
-            <p><strong>Verification:</strong> <a href="https://sepolia.etherscan.io/address/0x9b295952839a02CA8f604Ee53C89c289324ab1d8#code" target="_blank" rel="noopener noreferrer">View on Etherscan</a></p>
+            <p><strong>This is a legitimate raffle contract on <span id="network-name-display">Ethereum</span>.</strong></p>
+            <p>Wallets may show security warnings because this is a gambling contract. This is normal and expected behavior for raffle/lottery applications.</p>
+            <p><strong>Contract Address:</strong> <code id="contract-address-display">Loading...</code></p>
+            <p><strong>Network:</strong> <span id="network-full-display">Ethereum</span> (Chain ID: <span id="chain-id-display">1</span>)</p>
+            <p><strong>Verification:</strong> <a id="etherscan-link" href="#" target="_blank" rel="noopener noreferrer">View on Etherscan</a></p>
             <p class="risk-notice">⚠️ Gambling involves risk. Only bet what you can afford to lose.</p>
           </div>
         </section>
@@ -159,8 +160,9 @@
               <div class="contract-info-item">
                 <div class="contract-info-label">Contract Verified</div>
                 <div class="contract-info-value" id="contract-verified">
-                  <span id="verified-status">Checking...</span>
-                  <span id="verified-checkmark" style="display: none;">✅</span>
+                  <a id="verified-link" href="#" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+                    ✅ Yes
+                  </a>
                 </div>
               </div>
               
@@ -183,8 +185,8 @@
               </div>
               
               <div class="contract-info-item">
-                <div class="contract-info-label">Current Round</div>
-                <div class="contract-info-value" id="current-round">Loading...</div>
+                <div class="contract-info-label">Version</div>
+                <div class="contract-info-value" id="contract-version-display">Loading...</div>
               </div>
             </div>
           </div>
@@ -193,5 +195,21 @@
     </div>
 
     <script type="module" src="/src/main.js"></script>
+    <script type="module">
+      import { CONTRACT_CONFIG, VERSION } from '/src/contract-config.js';
+      
+      // Update network info based on DEV_MODE
+      const networkName = CONTRACT_CONFIG.DEV_MODE ? 'Ethereum Sepolia Testnet' : 'Ethereum Mainnet';
+      const networkShort = CONTRACT_CONFIG.DEV_MODE ? 'Sepolia testnet' : 'Mainnet';
+      const etherscanBase = CONTRACT_CONFIG.DEV_MODE ? 'sepolia.etherscan.io' : 'etherscan.io';
+      
+      document.getElementById('network-name-display').textContent = networkName;
+      document.getElementById('network-full-display').textContent = networkName;
+      document.getElementById('chain-id-display').textContent = CONTRACT_CONFIG.chainId;
+      document.getElementById('contract-address-display').textContent = CONTRACT_CONFIG.address;
+      document.getElementById('etherscan-link').href = `https://${etherscanBase}/address/${CONTRACT_CONFIG.address}#code`;
+      document.getElementById('contract-version-display').textContent = VERSION;
+      document.getElementById('verified-link').href = `https://${etherscanBase}/address/${CONTRACT_CONFIG.address}#code`;
+    </script>
   </body>
 </html>

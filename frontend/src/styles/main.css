@@ -12,6 +12,7 @@
 
 /* 2. LAYOUT - Structural elements */
 @import './2-layout/header.css';
+@import './2-layout/footer.css';
 
 /* 3. COMPONENTS - Reusable UI components */
 @import './3-components/buttons.css';

@@ -46,6 +46,22 @@ let currentRoundStatus = null; // Track current round status for UI updates
 let eventListenersSetup = false; // Prevent duplicate event listener setup
 const processedEvents = new Set(); // Track processed events to prevent duplicates
 
+// Initialize Eruda console for mobile debugging in DEV mode
+if (CONTRACT_CONFIG.DEV_MODE && isMobileDevice()) {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+  script.onload = () => {
+    window.eruda.init();
+    console.log('🔧 Eruda mobile console initialized (DEV MODE)');
+  };
+  document.head.appendChild(script);
+}
+
+// Helper to check if we're on mobile
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 // Simple event logging for small-scale site
 function logEvent(eventType, eventData) {
   console.log(`🎲 ${eventType}:`, eventData);
@@ -211,11 +227,6 @@ window.closeTicketOffice = function() {
     ticketOffice.classList.remove('open');
   }
   document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
-}
-
-// Detect mobile device
-function isMobileDevice() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
 // Detect if user is on mobile Brave browser
@@ -755,34 +766,51 @@ window.copyToClipboard = copyToClipboard;
 // Connect to wallet with enhanced security validations
 async function connectWallet() {
   try {
+    // === DIAGNOSTIC LOGGING (DEV MODE ONLY) ===
+    if (CONTRACT_CONFIG.DEV_MODE) {
+      console.log('=== WALLET CONNECTION DIAGNOSTIC ===');
+      console.log('User Agent:', navigator.userAgent);
+      console.log('Is Mobile Device:', isMobileDevice());
+      console.log('Is Mobile Brave:', isMobileBrave());
+      console.log('window.ethereum exists:', !!window.ethereum);
+      
+      if (window.ethereum) {
+        console.log('window.ethereum.isMetaMask:', window.ethereum.isMetaMask);
+        console.log('window.ethereum.isBraveWallet:', window.ethereum.isBraveWallet);
+        console.log('window.ethereum.isCoinbaseWallet:', window.ethereum.isCoinbaseWallet);
+        console.log('window.ethereum.providers:', window.ethereum.providers);
+        console.log('window.ethereum keys:', Object.keys(window.ethereum).slice(0, 20));
+      }
+      
+      console.log('navigator.brave exists:', !!navigator.brave);
+      console.log('Discovered wallets (EIP-6963):', discoveredWallets.size);
+      discoveredWallets.forEach((wallet, uuid) => {
+        console.log('  - Wallet:', wallet.info.name, 'UUID:', uuid);
+      });
+      console.log('=== END DIAGNOSTIC ===');
+    }
+    
     // Check if mobile Brave FIRST - known to have issues with dapps
     if (isMobileBrave()) {
       console.log('⚠️ Mobile Brave detected - Brave Wallet has limited dapp support on mobile');
       
-      // Check if Brave wallet is even available
-      if (!window.ethereum || !window.ethereum.isBraveWallet) {
-        showTransactionStatus(
-          'Brave Wallet on mobile has limited dapp support. Please use MetaMask Mobile app browser for best experience.',
-          'warning',
-          10000 // Show for 10 seconds
-        );
-        
-        // Offer to open in MetaMask
-        setTimeout(() => {
-          const currentUrl = window.location.href;
-          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
-          
-          if (confirm('Open this site in MetaMask Mobile Browser instead? (Recommended)')) {
-            window.location.href = metamaskDeepLink;
-          }
-        }, 2000);
-        
-        return;
-      }
+      // Show warning immediately for mobile Brave
+      showTransactionStatus(
+        'Brave Wallet on mobile has limited dapp support. For best experience, use MetaMask Mobile app browser.',
+        'warning',
+        8000
+      );
       
-      // Brave wallet exists, but warn about potential issues
-      console.log('⚠️ Brave Wallet detected on mobile. Attempting connection but may fail...');
-      showTransactionStatus('Brave Wallet detected. If connection fails, please use MetaMask Mobile.', 'warning');
+      // Offer to open in MetaMask after a delay
+      setTimeout(() => {
+        const currentUrl = window.location.href;
+        const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+        
+        if (confirm('Brave Wallet mobile has known issues. Open this site in MetaMask Mobile Browser instead? (Recommended)')) {
+          window.location.href = metamaskDeepLink;
+          return;
+        }
+      }, 3000);
     }
     
     // On mobile, give wallet providers extra time to initialize
@@ -833,24 +861,64 @@ async function connectWallet() {
     showTransactionStatus('Connecting to wallet...', 'info');
     
     // Request account access using the detected provider
-    await detectedProvider.request({ method: 'eth_requestAccounts' });
+    if (CONTRACT_CONFIG.DEV_MODE) console.log('🔐 Requesting accounts from provider...');
+    const accounts = await detectedProvider.request({ method: 'eth_requestAccounts' });
+    if (CONTRACT_CONFIG.DEV_MODE) console.log('✅ Accounts received:', accounts);
     
     // Create provider and signer using the detected provider
+    if (CONTRACT_CONFIG.DEV_MODE) console.log('🔧 Creating ethers.BrowserProvider...');
     provider = new ethers.BrowserProvider(detectedProvider);
+    if (CONTRACT_CONFIG.DEV_MODE) console.log('🔧 Getting signer...');
     signer = await provider.getSigner();
+    if (CONTRACT_CONFIG.DEV_MODE) console.log('🔧 Getting address...');
     userAddress = await signer.getAddress();
     
-    console.log('Wallet connected:', userAddress);
+    console.log('✅ Wallet connected:', userAddress);
     
     await setupWalletConnection(true); // true = show success toast
     
   } catch (error) {
     console.error('❌ Error connecting wallet:', error);
     
+    // === DIAGNOSTIC ERROR LOGGING (DEV MODE ONLY) ===
+    if (CONTRACT_CONFIG.DEV_MODE) {
+      console.log('=== ERROR DIAGNOSTIC ===');
+      console.log('Error type:', typeof error);
+      console.log('Error constructor:', error?.constructor?.name);
+      console.log('Error code:', error?.code);
+      console.log('Error message:', error?.message);
+      console.log('Error reason:', error?.reason);
+      console.log('Error data:', error?.data);
+      console.log('Error keys:', error ? Object.keys(error) : 'null');
+      console.log('Error JSON:', JSON.stringify(error, null, 2));
+      console.log('Error stack:', error?.stack);
+      console.log('=== END ERROR DIAGNOSTIC ===');
+    }
+    
     // Handle user rejection
     if (error.code === 4001) {
       showTransactionStatus('Connection cancelled by user', 'warning');
     } else {
+      // Special handling for mobile Brave empty error
+      if (isMobileBrave() && (!error.message || error.message === '[]' || JSON.stringify(error) === '{}')) {
+        showTransactionStatus(
+          'Brave Wallet mobile connection failed. Please use MetaMask Mobile app browser for reliable connection.',
+          'error'
+        );
+        
+        // Offer MetaMask redirect
+        setTimeout(() => {
+          const currentUrl = window.location.href;
+          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+          
+          if (confirm('Open in MetaMask Mobile Browser? (Recommended for mobile)')) {
+            window.location.href = metamaskDeepLink;
+          }
+        }, 2000);
+        
+        return;
+      }
+      
       // Robust error message extraction for various error types
       let errorMsg = 'Unknown error';
       
@@ -1098,10 +1166,15 @@ async function reconnectWallet(newAddress) {
 // Create fallback public provider for read-only access
 async function createFallbackProvider() {
   // Try multiple public RPC endpoints in order (in case of rate limiting)
-  const rpcEndpoints = [
+  // Dynamic based on DEV_MODE
+  const rpcEndpoints = CONTRACT_CONFIG.DEV_MODE ? [
     'https://rpc.sepolia.org',
     'https://ethereum-sepolia.publicnode.com',
     'https://1rpc.io/sepolia'
+  ] : [
+    'https://eth.llamarpc.com',
+    'https://eth.merkle.io',
+    'https://rpc.ankr.com/eth'
   ];
   
   for (const rpcUrl of rpcEndpoints) {

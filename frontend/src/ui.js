@@ -1,11 +1,19 @@
 import { ethers } from 'ethers';
-import { validateNetwork, SECURITY_CONFIG, CONTRACT_CONFIG } from './contract-config.js';
+import { validateNetwork, SECURITY_CONFIG, CONTRACT_CONFIG, VERSION } from './contract-config.js';
 import { formatAddress } from './utils/formatters.js';
 import { createCountdownTimer } from './utils/timers.js';
 
 // Initialize UI components
 export function initUI() {
   console.log('Initializing UI components...');
+  
+  // Show DEV mode badge at top of main.html if in DEV_MODE
+  const devBadge = document.getElementById('dev-version-badge');
+  const devVersionNumber = document.getElementById('dev-version-number');
+  if (devBadge && devVersionNumber && CONTRACT_CONFIG.DEV_MODE) {
+    devBadge.style.display = 'block';
+    devVersionNumber.textContent = VERSION;
+  }
   
   // Set up navigation highlighting
   highlightCurrentPage();
@@ -140,6 +148,19 @@ export async function updateWalletInfo(address, provider) {
         console.error('❌ Network validation error:', validationError.message);
         showNetworkSwitchPrompt();
       }
+    }
+    
+    // Update verification link based on DEV_MODE
+    const verificationLink = document.getElementById('verification-link');
+    if (verificationLink) {
+      const etherscanBase = CONTRACT_CONFIG.DEV_MODE ? 'sepolia.etherscan.io' : 'etherscan.io';
+      verificationLink.href = `https://${etherscanBase}/address/${CONTRACT_CONFIG.address}#code`;
+    }
+    
+    // Update version display in contract verification (ALL MODES)
+    const contractVersion = document.getElementById('contract-version');
+    if (contractVersion) {
+      contractVersion.textContent = `• ${VERSION}`;
     }
     
     // Show wallet info section and hide connect button
@@ -796,7 +817,7 @@ export function showNetworkSwitchPrompt() {
     switchBtn.onclick = async () => {
       try {
         console.log('🔄 User clicked switch network button');
-        await switchToSepolia();
+        await switchToRequiredNetwork();
         hideTransactionStatus();
       } catch (error) {
         console.error('Failed to switch network:', error);
@@ -811,34 +832,47 @@ export function showNetworkSwitchPrompt() {
   }
 }
 
-// Switch to Sepolia testnet
-export async function switchToSepolia() {
+// Switch to required network (dynamic based on DEV_MODE)
+export async function switchToRequiredNetwork() {
   if (!window.ethereum) {
-    throw new Error('MetaMask not detected');
+    throw new Error('Wallet not detected');
   }
   
+  const chainIdHex = '0x' + CONTRACT_CONFIG.chainId.toString(16);
+  const networkConfig = CONTRACT_CONFIG.DEV_MODE ? {
+    chainId: chainIdHex,
+    chainName: 'Sepolia Testnet',
+    nativeCurrency: {
+      name: 'SepoliaETH',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: ['https://sepolia.infura.io/v3/'],
+    blockExplorerUrls: ['https://sepolia.etherscan.io/'],
+  } : {
+    chainId: chainIdHex,
+    chainName: 'Ethereum Mainnet',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: ['https://eth.llamarpc.com'],
+    blockExplorerUrls: ['https://etherscan.io/'],
+  };
+  
   try {
-    // Try to switch to Sepolia
+    // Try to switch to required network
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0xaa36a7' }], // Sepolia chainId in hex
+      params: [{ chainId: chainIdHex }],
     });
   } catch (switchError) {
-    // If Sepolia is not added, add it
+    // If network is not added, add it
     if (switchError.code === 4902) {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0xaa36a7',
-          chainName: 'Sepolia Testnet',
-          nativeCurrency: {
-            name: 'SepoliaETH',
-            symbol: 'ETH',
-            decimals: 18,
-          },
-          rpcUrls: ['https://sepolia.infura.io/v3/'],
-          blockExplorerUrls: ['https://sepolia.etherscan.io/'],
-        }],
+        params: [networkConfig],
       });
     } else {
       throw switchError;

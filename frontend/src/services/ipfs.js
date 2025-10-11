@@ -42,11 +42,11 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT) {
           console.log(`✅ Successfully fetched from local file: ${localUrl}`);
           return data;
         }
-      } catch (localError) {
+      } catch {
         // Continue to next local file
       }
     }
-  } catch (error) {
+  } catch {
     console.log('🏠 Local files not available, trying IPFS gateways...');
   }
   

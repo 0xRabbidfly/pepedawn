@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { validateNetwork, SECURITY_CONFIG, CONTRACT_CONFIG } from './contract-config.js';
-import { formatAddress, formatEther, formatPercentage } from './utils/formatters.js';
+import { formatAddress } from './utils/formatters.js';
 import { createCountdownTimer } from './utils/timers.js';
 
 // Initialize UI components
@@ -272,7 +272,7 @@ export async function updateRoundStatus(contract, provider = null, roundState = 
         const balance = await provider.getBalance(CONTRACT_CONFIG.address);
         const balanceEth = ethers.formatEther(balance);
         vaultedEth.textContent = parseFloat(balanceEth).toFixed(4);
-      } catch (balanceError) {
+      } catch {
         vaultedEth.textContent = '--';
       }
     }
@@ -341,42 +341,6 @@ export async function updateProgressIndicator(contract, roundState = null) {
     
   } catch (error) {
     console.error('Error updating dispenser progress:', error);
-  }
-}
-
-// Get winners data for a distributed round
-async function getWinnersData(contract, roundId) {
-  try {
-    // This would need to be implemented in the contract
-    // For now, we'll simulate the winners based on sorted participants
-    const participants = await contract.getRoundParticipants(roundId);
-    const roundData = await contract.getRound(roundId);
-    
-    // Sort participants by weight (descending) to determine winners
-    const participantsWithStats = [];
-    for (let i = 0; i < participants.length; i++) {
-      const participant = participants[i];
-      try {
-        const stats = await contract.getUserStats(roundId, participant);
-        participantsWithStats.push({
-          address: participant,
-          weight: Number(stats.weight)
-        });
-      } catch (error) {
-        console.warn(`Could not get stats for participant ${participant}:`, error.message);
-      }
-    }
-    
-    participantsWithStats.sort((a, b) => b.weight - a.weight);
-    
-    return {
-      fakePackWinner: participantsWithStats[0]?.address || null,
-      kekPackWinner: participantsWithStats[1]?.address || null,
-      pepePackWinners: participantsWithStats.slice(2, 10).map(p => p.address) // 8 winners
-    };
-  } catch (error) {
-    console.error('Error getting winners data:', error);
-    return null;
   }
 }
 
@@ -494,16 +458,13 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
     
     // Determine which round to display
     let displayRoundId;
-    let isCurrentRound = false;
     
     if (selectedRoundId) {
       // User selected a specific round
       displayRoundId = selectedRoundId;
-      isCurrentRound = false;
     } else {
       // Default to current round
       displayRoundId = await contract.currentRoundId();
-      isCurrentRound = true;
     }
     
     // Update title
@@ -550,9 +511,6 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
       return;
     }
     
-    // Check if round is distributed (status 6)
-    const isDistributed = roundStatus === 6;
-    
     // Winners section removed - winners are displayed in their own dedicated section
     
     // Get ALL participants (fixed: was only showing current user)
@@ -575,7 +533,7 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
             try {
               const proofData = await contract.userProofInRound(displayRoundId, participant);
               hasVerifiedProof = proofData.verified;
-            } catch (proofError) {
+            } catch {
               // If we can't get proof data, default to false
               hasVerifiedProof = false;
             }
@@ -729,7 +687,7 @@ export async function updateUserStats(contract, userAddress, roundState = null) 
             userProofStatus.innerHTML = 'Yes (<span style="color: red;">failed</span>)';
             userProofStatus.className = 'proof-failed';
           }
-        } catch (error) {
+        } catch {
           // Fallback if we can't get proof data
           userProofStatus.textContent = 'Yes';
         }

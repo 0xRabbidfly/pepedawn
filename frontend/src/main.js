@@ -219,7 +219,7 @@ function isMobileDevice() {
 }
 
 // EIP-6963: Discover all available wallets (Modern Standard - supports Rabby, Trust, etc.)
-let discoveredWallets = new Map();
+const discoveredWallets = new Map();
 
 function initWalletDiscovery() {
   // Listen for EIP-6963 announcements
@@ -685,7 +685,7 @@ async function updateContractInfo(contract) {
       const emblemVault = new ethers.Contract(emblemVaultAddress, ['function balanceOf(address) view returns (uint256)'], provider);
       const nftBalance = await emblemVault.balanceOf(contractAddress);
       document.getElementById('contract-nfts').textContent = `${nftBalance.toString()} NFTs`;
-    } catch (error) {
+    } catch {
       document.getElementById('contract-nfts').textContent = 'Unable to fetch';
     }
     
@@ -713,7 +713,7 @@ async function checkContractVerification(contractAddress) {
       document.getElementById('verified-status').textContent = 'Not verified';
       document.getElementById('verified-status').style.color = '#f44336';
     }
-  } catch (error) {
+  } catch {
     document.getElementById('verified-status').textContent = 'Unable to check';
     document.getElementById('verified-status').style.color = '#f44336';
   }
@@ -1687,56 +1687,6 @@ function selectTickets(event) {
       ticketOffice.classList.add('open');
     }
   }
-}
-
-// Draw animated connector between card and ticket office
-function drawTicketConnector(card, office) {
-  const svg = document.getElementById('ticket-connector');
-  const path = document.getElementById('connector-path');
-  const particles = document.querySelectorAll('.particle-ticket');
-  
-  if (!svg || !path || !card || !office) return;
-  
-  // Get bounding boxes relative to the betting section
-  const section = document.getElementById('betting-section');
-  const sectionRect = section.getBoundingClientRect();
-  const cardRect = card.getBoundingClientRect();
-  const officeRect = office.getBoundingClientRect();
-  
-  // Calculate start point (right-center of card)
-  const startX = cardRect.right - sectionRect.left;
-  const startY = cardRect.top + cardRect.height / 2 - sectionRect.top;
-  
-  // Calculate end point (left-center of office)
-  const endX = officeRect.left - sectionRect.left;
-  const endY = officeRect.top + officeRect.height / 2 - sectionRect.top;
-  
-  // Create a smooth curved path (cubic bezier)
-  const controlX1 = startX + (endX - startX) * 0.3;
-  const controlY1 = startY - 30; // Curve upward
-  const controlX2 = startX + (endX - startX) * 0.7;
-  const controlY2 = endY + 30; // Curve downward
-  
-  const pathData = `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`;
-  path.setAttribute('d', pathData);
-  
-  // Show and animate the SVG
-  svg.classList.add('active');
-  path.classList.add('animated');
-  
-  // Particle animations removed - keeping only the beam
-}
-
-// Hide ticket connector
-function hideTicketConnector() {
-  const svg = document.getElementById('ticket-connector');
-  const path = document.getElementById('connector-path');
-  
-  if (!svg || !path) return;
-  
-  // Hide animations
-  svg.classList.remove('active');
-  path.classList.remove('animated');
 }
 
 // Buy tickets with enhanced security validations (unified for desktop & mobile)

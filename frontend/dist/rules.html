@@ -5,8 +5,9 @@
     <link rel="icon" type="image/png" href="/PEPEDAWN_thumbnail.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.infura.io https://*.alchemy.com https://*.etherscan.io https://arweave.net https://gateway.pinata.cloud; img-src 'self' data: https:; frame-ancestors 'none';">
-    <meta name="description" content="PEPEDAWN Raffle Rules - Legitimate skill-weighted raffle on Ethereum. Contract verified on Etherscan. Gambling involves risk." />
-    <title>PEPEDAWN - Rules</title>
+    <meta name="description" content="PEPEDAWN Rules - Provably fair art distribution with puzzle proofs. Verifiable randomness via Chainlink VRF. Fixed supply of 133 Counterparty assets." />
+    <title>PEPEDAWN - Rules</title>
+
     <script type="module" crossorigin src="/assets/rules-Bqz5cg75.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/main-0Rx_1gw0.js">
     <link rel="stylesheet" crossorigin href="/assets/main-DnZ6iJ4n.css">
@@ -33,22 +34,22 @@
         <section class="gambling-warning">
           <div class="warning-content">
             <h3>⚠️ Important Security Notice</h3>
-            <p><strong>This is a legitimate raffle contract on <span id="network-name-display">Ethereum</span>.</strong></p>
-            <p>Wallets may show security warnings because this is a gambling contract. This is normal and expected behavior for raffle/lottery applications.</p>
+            <p><strong>This is a legitimate art distribution contract on <span id="network-name-display">Ethereum</span>.</strong></p>
+            <p>This site distributes a fixed set of 133 Counterparty Rare Pepe assets via verifiable randomness (Chainlink VRF). This is not a casino or profit-generating wagering site. Participation enables art distribution. If fees are charged, they cover distribution costs and operations only. No financial returns are promised or implied.</p>
             <p><strong>Contract Address:</strong> <code id="contract-address-display">Loading...</code></p>
             <p><strong>Network:</strong> <span id="network-full-display">Ethereum</span> (Chain ID: <span id="chain-id-display">1</span>)</p>
             <p><strong>Verification:</strong> <a id="etherscan-link" href="#" target="_blank" rel="noopener noreferrer">View on Etherscan</a></p>
-            <p class="risk-notice">⚠️ Gambling involves risk. Only bet what you can afford to lose.</p>
+            <p class="risk-notice">⚠️ This is an art distribution mechanism. Puzzle proofs affect selection weight but do not guarantee receiving assets.</p>
           </div>
         </section>
 
         <section id="rules-content">
-          <h2>How PEPEDAWN Decentralized Lottery Works</h2>
+          <h2>How PEPEDAWN Art Distribution Works</h2>
           
           <h3>Round Lifecycle</h3>
           <ul>
             <li><strong>Round Duration:</strong> 2 weeks per round</li>
-            <li><strong>Buy Your Tickets:</strong> Round opens for betting, track your stats in real-time</li>
+            <li><strong>Buy Your Tickets:</strong> Round opens for participation, track your stats in real-time</li>
             <li><strong>Proof Submission:</strong> Submit puzzle proof after your first ticket purchase for +40% weight bonus</li>
             <li><strong>Drawing Winners:</strong> Chainlink VRF provides verifiable randomness</li>
             <li><strong>Prize Distribution:</strong> Automatic Emblem Vault NFT distribution to winners</li>
@@ -84,7 +85,7 @@
             <li><strong>VRF Provider:</strong> Chainlink VRF v2/v2.5</li>
             <li><strong>Snapshot:</strong> Eligible tickets and weights captured before VRF request</li>
             <li><strong>Reproducibility:</strong> All randomness derived from request ID, seed, and block</li>
-            <li><strong>No Manipulation:</strong> No off-chain salts after wagering begins</li>
+            <li><strong>No Manipulation:</strong> No off-chain salts after round begins</li>
           </ul>
 
           <h3>Prize Distribution</h3>
@@ -143,7 +144,7 @@
           <ul>
             <li><strong>Minimum Threshold:</strong> Rounds with fewer than 10 tickets result in full refunds</li>
             <li><strong>No Guarantees:</strong> Prize distribution only occurs if minimum threshold is met</li>
-            <li><strong>Weighted Lottery:</strong> Higher weight increases odds but does not guarantee wins</li>
+            <li><strong>Weighted Selection:</strong> Higher weight increases selection probability but does not guarantee receiving assets</li>
             <li><strong>One Proof Attempt:</strong> Only one puzzle proof submission allowed per wallet per round</li>
             <li><strong>Network Only:</strong> Ethereum mainnet/testnet only, no L2 networks</li>
           </ul>
@@ -195,6 +196,8 @@
         </section>
       </main>
     </div>
-
+
+
+
   </body>
 </html>

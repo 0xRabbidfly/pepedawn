@@ -2893,7 +2893,7 @@ export async function validateSecurityState(contract, userAddress) {
       if (isDenylisted) {
         throw new Error('Your address is not allowed to interact with this contract');
       }
-  } catch (error) {
+  } catch {
       // Function might not exist, ignore this check
       console.log('Denylist check not available');
     }

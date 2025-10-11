@@ -11,7 +11,8 @@ import {
   showSecurityStatus,
   validateTransactionParams,
   handleTransactionError,
-  populateRoundSelector
+  populateRoundSelector,
+  showWalletWarningModal
 } from './ui.js';
 import { 
   CONTRACT_CONFIG, 
@@ -1893,6 +1894,13 @@ async function buyTickets() {
       await validateSecurityState(contract, userAddress);
     } catch (securityError) {
       showTransactionStatus(securityError.message, 'error');
+      return;
+    }
+    
+    // Show wallet warning modal BEFORE proceeding
+    const userConfirmed = await showWalletWarningModal();
+    if (!userConfirmed) {
+      showTransactionStatus('Purchase cancelled', 'info');
       return;
     }
     

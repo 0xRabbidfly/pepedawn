@@ -11,7 +11,7 @@
     "update-configs": "node scripts/update-configs.js",
     "check-all": "npm run post-commit && npm run update-docs && npm run update-configs",
     "dev": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build && cd .. && node scripts/inject-build-info.js",
+    "build": "cd frontend && npm run build",
     "test": "cd contracts && forge test",
     "deploy": "cd contracts && forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify",
     "release:major": "node scripts/bump-version.js major",

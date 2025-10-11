@@ -45,39 +45,17 @@ console.log(`✅ Updated package.json to v${newVersion}`);
 const rulesHtmlPath = path.join(__dirname, '..', 'frontend', 'rules.html');
 let rulesHtml = fs.readFileSync(rulesHtmlPath, 'utf8');
 
-// Add or update version in footer
-if (rulesHtml.includes('<!-- VERSION_PLACEHOLDER -->')) {
-  rulesHtml = rulesHtml.replace(
-    /<!-- VERSION_PLACEHOLDER -->.*?<!-- \/VERSION_PLACEHOLDER -->/s,
-    `<!-- VERSION_PLACEHOLDER --><div class="version">v${newVersion}</div><!-- /VERSION_PLACEHOLDER -->`
-  );
-} else {
-  // Add version placeholder before closing footer or body tag
-  if (rulesHtml.includes('</footer>')) {
-    rulesHtml = rulesHtml.replace(
-      '</footer>',
-      '        <!-- VERSION_PLACEHOLDER --><div class="version">v' + newVersion + '</div><!-- /VERSION_PLACEHOLDER -->\n      </footer>'
-    );
-  } else if (rulesHtml.includes('</main>')) {
-    rulesHtml = rulesHtml.replace(
-      '</main>',
-      '</main>\n      <footer>\n        <!-- VERSION_PLACEHOLDER --><div class="version">v' + newVersion + '</div><!-- /VERSION_PLACEHOLDER -->\n      </footer>'
-    );
-  }
-}
+// Simple version update - just find and replace the version number
+rulesHtml = rulesHtml.replace(
+  /<div class="version">v[\d.]+<\/div>/,
+  `<div class="version">v${newVersion}</div>`
+);
 
 fs.writeFileSync(rulesHtmlPath, rulesHtml);
 console.log(`✅ Updated rules.html with v${newVersion}`);
 
-// Build frontend with new version
-console.log('🔨 Building frontend...');
-try {
-  execSync('cd frontend && npm run build', { stdio: 'inherit' });
-  console.log('✅ Frontend built successfully');
-} catch (error) {
-  console.error('❌ Frontend build failed');
-  process.exit(1);
-}
+// Note: User will build frontend manually
+console.log('⚠️  Remember to run: npm run build');
 
 // Git operations
 console.log('📝 Creating git commit...');

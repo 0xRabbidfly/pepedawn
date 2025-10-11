@@ -211,10 +211,9 @@ window.toggleProofSection = function() {
 window.closeTicketOffice = function() {
   const ticketOffice = document.getElementById('ticket-office');
   if (ticketOffice) {
-    ticketOffice.classList.remove('open', 'receiving');
+    ticketOffice.classList.remove('open');
   }
   document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
-  hideTicketConnector();
 }
 
 // Detect mobile device
@@ -1441,9 +1440,8 @@ function selectTickets(event) {
       // Hide desktop ticket office
       const ticketOffice = document.getElementById('ticket-office');
       if (ticketOffice) {
-        ticketOffice.classList.remove('open', 'receiving');
+        ticketOffice.classList.remove('open');
       }
-      hideTicketConnector();
     }
     return;
   }
@@ -1466,30 +1464,19 @@ function selectTickets(event) {
       mobileSlideout.classList.add('open');
     }
   } else {
-    // Desktop: Update desktop UI and show ticket office
+    // Desktop: Update desktop UI and show ticket office (simple show/hide like mobile)
     document.getElementById('selected-tickets').textContent = String(tickets);
     document.getElementById('selected-amount').textContent = String(amount);
-    
-    // Show ticket office with slide animation
-    const ticketOffice = document.getElementById('ticket-office');
-    if (ticketOffice) {
-      setTimeout(() => {
-        ticketOffice.classList.add('open');
-        // Add receiving animation after office opens
-        setTimeout(() => {
-          ticketOffice.classList.add('receiving');
-        }, 200);
-      }, 10);
-    }
     
     // Highlight selected card and remove selection from others
     document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     
-    // Draw and animate the connector
-    setTimeout(() => {
-      drawTicketConnector(card, ticketOffice);
-    }, 50);
+    // Show ticket office with simple open class (no animations)
+    const ticketOffice = document.getElementById('ticket-office');
+    if (ticketOffice) {
+      ticketOffice.classList.add('open');
+    }
   }
 }
 
@@ -1623,10 +1610,9 @@ async function buyTickets() {
       // Reset form
       const ticketOffice = document.getElementById('ticket-office');
       if (ticketOffice) {
-        ticketOffice.classList.remove('open', 'receiving');
+        ticketOffice.classList.remove('open');
       }
       document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
-      hideTicketConnector();
       
       // Update user stats and security status
       await updateUserStats(contract, userAddress);

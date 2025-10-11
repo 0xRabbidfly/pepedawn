@@ -951,32 +951,21 @@ section h2 {
   display: block;
 }
 
-/* Ticket Connector SVG Overlay */
+/* Ticket Connector SVG Overlay - DISABLED (removed animation) */
 .ticket-connector-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  display: none !important; /* Hide connector completely */
 }
 
 .ticket-connector-svg.active {
-  opacity: 1;
+  display: none !important;
 }
 
 .connector-path {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none !important;
 }
 
 .connector-path.animated {
-  stroke-dashoffset: 0;
-  animation: pulse-beam 2s ease-in-out infinite;
+  display: none !important;
 }
 
 @keyframes pulse-beam {
@@ -1214,35 +1203,7 @@ section h2 {
   padding: var(--spacing-lg);
 }
 
-.ticket-office.receiving {
-  animation: office-receive 1s ease-out;
-  border-color: var(--primary-color);
-}
-
-.ticket-office.receiving::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: -8px;
-  width: 16px;
-  height: 16px;
-  background: radial-gradient(circle, rgba(33, 150, 243, 0.8), transparent);
-  border-radius: 50%;
-  transform: translateY(-50%);
-  animation: pulse-dot 1.5s ease-in-out infinite;
-}
-
-@keyframes office-receive {
-  0% {
-    box-shadow: 0 0 0 rgba(76, 175, 80, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(76, 175, 80, 0.6), 0 0 60px rgba(76, 175, 80, 0.3);
-  }
-  100% {
-    box-shadow: 0 0 0 rgba(76, 175, 80, 0.4);
-  }
-}
+/* Removed receiving animation - desktop now uses simple show/hide like mobile */
 
 .close-office {
   position: absolute;
@@ -2168,21 +2129,24 @@ section h2 {
   margin-left: var(--spacing-xs);
 }
 
-/* Mobile ticket counter refactor */
-.betting-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
+/* Mobile ticket counter refactor - MOVED TO MEDIA QUERY */
 
-/* Mobile ticket options - horizontal row at top */
-.ticket-options-column {
-  display: flex !important;
-  flex-direction: row !important;
-  gap: 8px !important;
-  justify-content: space-between !important;
-  margin-bottom: var(--spacing-md);
-}
+@media (max-width: 768px) {
+  /* Mobile ticket counter refactor */
+  .betting-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Mobile ticket options - horizontal row at top */
+  .ticket-options-column {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    justify-content: space-between !important;
+    margin-bottom: var(--spacing-md);
+  }
 
 .ticket-option-card {
   flex: 1 !important;
@@ -2279,6 +2243,8 @@ section h2 {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+
 }
 
 /* Winners Section - Podium Style */

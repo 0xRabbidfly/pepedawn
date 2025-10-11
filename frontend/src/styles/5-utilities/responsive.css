@@ -296,14 +296,19 @@
 
   .ticket-option-card {
     flex: 1 !important;
-    min-height: 80px !important;
-    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100px !important;
+    height: 100px !important;
     max-width: calc(33.333% - 4px) !important;
     width: auto !important;
     cursor: pointer !important;
     transition: all var(--transition-slow) !important;
     padding: var(--spacing-sm) var(--spacing-xs) !important;
     gap: var(--spacing-xs) !important;
+    grid-template-columns: unset !important;
   }
 
   .ticket-option-card.mobile-selected {
@@ -312,20 +317,35 @@
     transform: scale(1.05) !important;
   }
 
-  /* Mobile ticket visual adjustments */
+  /* Hide icons on mobile to save space */
   .ticket-visual {
-    width: 45px !important;
-    height: 45px !important;
-    min-width: 45px !important;
+    display: none !important;
   }
 
-  .ticket-single {
-    font-size: 1.8em !important;
+  /* Center ticket info on mobile */
+  .ticket-info {
+    text-align: center !important;
+    padding: 0 !important;
+    gap: 4px !important;
+    flex: 0 !important;
   }
 
-  .ticket-stack {
-    width: 35px !important;
-    height: 30px !important;
+  .ticket-label {
+    font-size: 0.95rem !important;
+    white-space: nowrap !important;
+  }
+
+  .ticket-price {
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Stack discount badge below text */
+  .ticket-discount {
+    font-size: 0.65rem !important;
+    padding: 4px 8px !important;
+    min-width: 60px !important;
+    margin-top: 4px !important;
   }
 
   .ticket-stacked {

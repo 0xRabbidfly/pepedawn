@@ -218,39 +218,129 @@ function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-// Get the best available provider (handles multiple wallet scenarios)
-function detectProvider() {
-  // Check for MetaMask specifically (preferred)
-  if (window.ethereum?.isMetaMask) {
-    console.log('✅ MetaMask detected');
-    return window.ethereum;
-  }
+// EIP-6963: Discover all available wallets (Modern Standard - supports Rabby, Trust, etc.)
+let discoveredWallets = new Map();
+
+function initWalletDiscovery() {
+  // Listen for EIP-6963 announcements
+  window.addEventListener('eip6963:announceProvider', (event) => {
+    const { info, provider } = event.detail;
+    console.log('🔍 EIP-6963 wallet discovered:', info.name);
+    discoveredWallets.set(info.uuid, { info, provider });
+  });
+
+  // Request wallets to announce themselves
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+}
+
+// Get all available wallet providers (EIP-6963 + legacy)
+function getAllProviders() {
+  const providers = [];
   
-  // Check for Coinbase Wallet
-  if (window.ethereum?.isCoinbaseWallet) {
-    console.log('✅ Coinbase Wallet detected');
-    return window.ethereum;
-  }
+  // Add EIP-6963 discovered wallets
+  discoveredWallets.forEach(({ info, provider }) => {
+    providers.push({
+      name: info.name,
+      icon: info.icon,
+      provider: provider,
+      uuid: info.uuid,
+      rdns: info.rdns
+    });
+  });
   
-  // If multiple providers exist (e.g., Brave + MetaMask), prefer MetaMask
-  if (window.ethereum?.providers?.length > 0) {
-    const metamask = window.ethereum.providers.find(p => p.isMetaMask);
-    if (metamask) {
-      console.log('✅ MetaMask detected in multi-wallet environment');
-      return metamask;
-    }
-    console.log('✅ Using first available provider in multi-wallet environment');
-    return window.ethereum.providers[0];
-  }
-  
-  // Standard ethereum provider
+  // Fallback: Check legacy window.ethereum (for older wallets)
   if (window.ethereum) {
-    console.log('✅ Web3 provider detected');
-    return window.ethereum;
+    // Check if already added via EIP-6963
+    const alreadyAdded = providers.some(p => p.provider === window.ethereum);
+    
+    if (!alreadyAdded) {
+      // Add window.ethereum with detected name
+      let name = 'Browser Wallet';
+      if (window.ethereum.isMetaMask) name = 'MetaMask';
+      else if (window.ethereum.isCoinbaseWallet) name = 'Coinbase Wallet';
+      else if (window.ethereum.isBraveWallet) name = 'Brave Wallet';
+      else if (window.ethereum.isRabby) name = 'Rabby Wallet';
+      else if (window.ethereum.isTrust) name = 'Trust Wallet';
+      
+      providers.push({
+        name: name,
+        provider: window.ethereum,
+        uuid: 'legacy-ethereum'
+      });
+    }
+    
+    // Check for multiple providers in array (old multi-wallet pattern)
+    if (window.ethereum.providers?.length > 0) {
+      window.ethereum.providers.forEach((provider, index) => {
+        const alreadyAdded = providers.some(p => p.provider === provider);
+        if (!alreadyAdded) {
+          let name = 'Wallet ' + (index + 1);
+          if (provider.isMetaMask) name = 'MetaMask';
+          else if (provider.isCoinbaseWallet) name = 'Coinbase Wallet';
+          else if (provider.isBraveWallet) name = 'Brave Wallet';
+          else if (provider.isRabby) name = 'Rabby Wallet';
+          else if (provider.isTrust) name = 'Trust Wallet';
+          
+          providers.push({
+            name: name,
+            provider: provider,
+            uuid: 'legacy-' + index
+          });
+        }
+      });
+    }
   }
   
-  console.log('❌ No Web3 provider detected');
-  return null;
+  console.log(`✅ Found ${providers.length} wallet provider(s):`, providers.map(p => p.name).join(', '));
+  return providers;
+}
+
+// Get the best available provider (handles multiple wallet scenarios)
+// Now returns the first available, but can be extended with user selection UI
+function detectProvider() {
+  const providers = getAllProviders();
+  
+  if (providers.length === 0) {
+    console.log('❌ No Web3 provider detected');
+    return null;
+  }
+  
+  // Priority order for auto-selection when multiple wallets exist
+  const priorityOrder = [
+    'MetaMask',           // Most popular
+    'Rabby Wallet',       // Popular for DeFi
+    'Coinbase Wallet',    // Major exchange wallet
+    'Trust Wallet',       // Mobile-first
+    'Rainbow',            // Mobile-friendly
+    'Brave Wallet',       // Browser wallet (lower priority)
+    'Browser Wallet'      // Generic fallback
+  ];
+  
+  // If MetaMask Mobile Browser, use it
+  if (navigator.userAgent.includes('MetaMaskMobile') && providers.length > 0) {
+    console.log('✅ MetaMask Mobile Browser detected');
+    return providers[0].provider;
+  }
+  
+  // Try to find preferred wallet from priority list
+  for (const preferredName of priorityOrder) {
+    const wallet = providers.find(p => p.name === preferredName);
+    if (wallet) {
+      console.log(`✅ Auto-selected: ${wallet.name}`);
+      
+      // Warn if using Brave Wallet when others available
+      if (wallet.name === 'Brave Wallet' && providers.length > 1) {
+        console.log('⚠️ Brave Wallet detected. Other wallets available:', 
+          providers.filter(p => p.name !== 'Brave Wallet').map(p => p.name).join(', '));
+      }
+      
+      return wallet.provider;
+    }
+  }
+  
+  // Fallback: return first provider
+  console.log(`✅ Using first available provider: ${providers[0].name}`);
+  return providers[0].provider;
 }
 
 // Initialize page-specific data (read-only, no wallet required)
@@ -661,28 +751,36 @@ async function connectWallet() {
     const detectedProvider = detectProvider();
     
     if (!detectedProvider) {
-      // On mobile, provide deep link to MetaMask
+      // On mobile, check if we're in a mobile browser (not MetaMask browser)
       if (isMobileDevice()) {
-        const currentUrl = window.location.href;
-        const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
-        
-        showTransactionStatus('Opening MetaMask app...', 'info');
-        
-        // Try to open MetaMask app
-        setTimeout(() => {
-          window.location.href = metamaskDeepLink;
-        }, 500);
-        
-        // Show instructions after a delay
-        setTimeout(() => {
-          showTransactionStatus('If MetaMask doesn\'t open, please use the MetaMask app browser to visit this site', 'warning');
-        }, 3000);
-        
-        return;
+        // Only redirect to MetaMask app if we're NOT already in MetaMask Mobile Browser
+        if (!navigator.userAgent.includes('MetaMaskMobile')) {
+          const currentUrl = window.location.href;
+          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+          
+          showTransactionStatus('Opening MetaMask app...', 'info');
+          
+          // Try to open MetaMask app
+          setTimeout(() => {
+            window.location.href = metamaskDeepLink;
+          }, 500);
+          
+          // Show instructions after a delay
+          setTimeout(() => {
+            showTransactionStatus('If MetaMask doesn\'t open, please install MetaMask app or use the MetaMask app browser to visit this site', 'warning');
+          }, 3000);
+          
+          return;
+        }
       }
       
-      showTransactionStatus('Please install MetaMask or another Web3 wallet', 'error');
+      showTransactionStatus('Please install MetaMask extension or use MetaMask Mobile Browser', 'error');
       return;
+    }
+    
+    // Warn if using Brave Wallet (suboptimal experience)
+    if (detectedProvider.isBraveWallet && !detectedProvider.isMetaMask) {
+      showTransactionStatus('Brave Wallet detected. For best experience, install MetaMask extension.', 'warning');
     }
     
     showTransactionStatus('Connecting to wallet...', 'info');
@@ -1975,6 +2073,9 @@ function startPeriodicUpdates() {
     });
   }
 }
+
+// Initialize wallet discovery (EIP-6963) as early as possible
+initWalletDiscovery();
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {

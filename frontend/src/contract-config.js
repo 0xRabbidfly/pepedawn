@@ -14,6 +14,10 @@ export const CONTRACT_CONFIG = {
   network: 'sepolia',
   chainId: 11155111,
   
+  // Development mode - shows debug UI elements
+  // Automatically true on testnet (Sepolia), false on mainnet
+  DEV_MODE: true, // Set to false for production mainnet deployment
+  
   // Latest ABI for PepedawnRaffle contract with binary search and enhanced security features
     abi:   [
     {

@@ -63,6 +63,7 @@ export async function updateWalletInfo(address, provider) {
     const walletInfo = document.getElementById('wallet-info');
     const walletBalance = document.getElementById('wallet-balance');
     const walletAddressDisplay = document.getElementById('wallet-address-display');
+    const walletNetworkDisplay = document.getElementById('wallet-network-display');
     const connectBtn = document.getElementById('connect-wallet');
     
     // Update address display
@@ -70,20 +71,73 @@ export async function updateWalletInfo(address, provider) {
       walletAddressDisplay.textContent = formatAddress(address);
     }
     
+    // Debug network indicator (only in dev mode)
+    if (CONTRACT_CONFIG.DEV_MODE && walletNetworkDisplay && provider) {
+      try {
+        const network = await provider.getNetwork();
+        const networkName = SECURITY_CONFIG.NETWORK_NAMES[Number(network.chainId)] || 'Unknown';
+        const chainId = Number(network.chainId);
+        
+        // Check if wrong network
+        const isWrongNetwork = chainId !== CONTRACT_CONFIG.chainId;
+        
+        if (isWrongNetwork) {
+          walletNetworkDisplay.textContent = ` (⚠️ ${networkName}: ${chainId} - WRONG!)`;
+          walletNetworkDisplay.style.color = 'var(--error-color, #ff6b6b)';
+          walletNetworkDisplay.style.fontWeight = 'bold';
+        } else {
+          walletNetworkDisplay.textContent = ` (${networkName}: ${chainId})`;
+          walletNetworkDisplay.style.color = '';
+          walletNetworkDisplay.style.fontWeight = '';
+        }
+        
+        console.log('🌐 Network check:', {
+          current: chainId,
+          expected: CONTRACT_CONFIG.chainId,
+          isCorrect: !isWrongNetwork
+        });
+      } catch (networkError) {
+        walletNetworkDisplay.textContent = ' (Network: Unknown)';
+        console.error('❌ Could not check network:', networkError);
+      }
+    } else if (walletNetworkDisplay) {
+      // Hide in production mode
+      walletNetworkDisplay.style.display = 'none';
+    }
+    
     // Update balance
     if (provider && walletBalance) {
-      const balance = await provider.getBalance(address);
-      const balanceEth = ethers.formatEther(balance);
-      walletBalance.textContent = parseFloat(balanceEth).toFixed(4);
+      try {
+        console.log('💰 Fetching balance for:', address);
+        const balance = await provider.getBalance(address);
+        const balanceEth = ethers.formatEther(balance);
+        console.log('💰 Balance fetched:', balanceEth, 'ETH');
+        walletBalance.textContent = parseFloat(balanceEth).toFixed(4);
+      } catch (balanceError) {
+        console.error('❌ Error fetching balance:', balanceError);
+        walletBalance.textContent = 'Error';
+      }
+    } else {
+      console.warn('⚠️ Cannot update balance - provider or element missing:', { provider: !!provider, walletBalance: !!walletBalance });
     }
     
     // Validate network (show error if wrong network)
     if (provider) {
       try {
         const network = await provider.getNetwork();
-        validateNetwork(network.chainId);
-      } catch {
-        // Show network switch prompt if on wrong network
+        const chainId = Number(network.chainId);
+        
+        if (chainId !== CONTRACT_CONFIG.chainId) {
+          console.error('🚨 WRONG NETWORK DETECTED!');
+          console.error('   Current:', chainId, SECURITY_CONFIG.NETWORK_NAMES[chainId] || 'Unknown');
+          console.error('   Expected:', CONTRACT_CONFIG.chainId, CONTRACT_CONFIG.network);
+          showNetworkSwitchPrompt();
+        } else {
+          validateNetwork(network.chainId);
+        }
+      } catch (validationError) {
+        // Show network switch prompt if validation fails
+        console.error('❌ Network validation error:', validationError.message);
         showNetworkSwitchPrompt();
       }
     }
@@ -767,20 +821,23 @@ export function hideTransactionStatus() {
 
 // Show network switch prompt
 export function showNetworkSwitchPrompt() {
-  const supportedNetworks = SECURITY_CONFIG.SUPPORTED_NETWORKS
-    .map(id => SECURITY_CONFIG.NETWORK_NAMES[id] || `Chain ID ${id}`)
-    .join(', ');
+  // Show clear error message with network details
+  const expectedNetwork = SECURITY_CONFIG.NETWORK_NAMES[CONTRACT_CONFIG.chainId];
+  const message = `⚠️ Wrong Network! Please switch to ${expectedNetwork} (${CONTRACT_CONFIG.chainId})`;
   
-  const message = `Please switch to a supported network: ${supportedNetworks}`;
-  showTransactionStatus(message, 'warning');
+  console.error('🚨 NETWORK MISMATCH - Showing switch prompt');
+  showTransactionStatus(message, 'error');
   
   // Add switch network button if MetaMask is available
   if (window.ethereum && window.ethereum.request) {
+    console.log('📱 Adding network switch button for MetaMask');
     const switchBtn = document.createElement('button');
-    switchBtn.textContent = 'Switch to Sepolia';
+    switchBtn.textContent = `Switch to ${expectedNetwork}`;
     switchBtn.className = 'switch-network-btn';
+    switchBtn.style.marginTop = '10px';
     switchBtn.onclick = async () => {
       try {
+        console.log('🔄 User clicked switch network button');
         await switchToSepolia();
         hideTransactionStatus();
       } catch (error) {

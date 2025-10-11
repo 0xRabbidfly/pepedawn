@@ -981,6 +981,17 @@ async function loadContract() {
       // User has signed in - use signer for write operations
       providerToUse = signer;
       console.log('✅ Using signer for read/write access');
+      
+      // Log network info on mobile for debugging (but don't block - let validateNetwork handle it)
+      if (isMobileDevice()) {
+        try {
+          const network = await provider.getNetwork();
+          console.log('📱 Mobile network detected:', network.chainId.toString(), network.name);
+          console.log('📱 Expected network:', CONTRACT_CONFIG.chainId, CONTRACT_CONFIG.network);
+        } catch (networkError) {
+          console.warn('⚠️ Could not check network:', networkError.message);
+        }
+      }
     } else if (provider) {
       // Provider available but no signer - use provider for read-only
       providerToUse = provider;
@@ -1019,39 +1030,60 @@ async function loadContract() {
     
     console.log('✅ Contract instance created:', CONTRACT_CONFIG.address, isReadOnly ? '(read-only)' : '(read/write)');
     
-    // Verify contract is accessible (single attempt for wallet connections, multiple for fallback)
-    const maxRetries = isReadOnly ? 2 : 1;
+    // Verify contract is accessible (more retries on mobile due to network issues)
+    const isMobile = isMobileDevice();
+    const maxRetries = isMobile ? 3 : (isReadOnly ? 2 : 1);
     let retryCount = 0;
     let contractAccessible = false;
+    
+    if (isMobile) {
+      console.log('📱 Mobile device detected - using extended retry logic for contract verification');
+    }
     
     while (retryCount < maxRetries && !contractAccessible) {
       try {
         console.log(`🔍 Verifying contract accessibility (attempt ${retryCount + 1}/${maxRetries})...`);
-        const roundId = await contract.currentRoundId();
+        console.log('🔍 Contract address:', CONTRACT_CONFIG.address);
+        console.log('🔍 Provider type:', isReadOnly ? 'read-only' : 'wallet signer');
+        
+        // Add timeout for mobile (mobile networks can be slow)
+        const timeoutMs = isMobile ? 10000 : 5000;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Contract call timeout')), timeoutMs)
+        );
+        
+        const roundIdPromise = contract.currentRoundId();
+        const roundId = await Promise.race([roundIdPromise, timeoutPromise]);
+        
         console.log('✅ Contract accessibility verified. Current round:', roundId.toString());
         contractAccessible = true;
       } catch (contractError) {
         retryCount++;
-        console.warn(`⚠️ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError.message);
+        console.error(`❌ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError);
+        console.error('❌ Error details:', {
+          message: contractError.message,
+          code: contractError.code,
+          data: contractError.data
+        });
         
         if (retryCount < maxRetries) {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Wait before retrying (longer wait on mobile due to network issues)
+          const retryDelay = isMobile ? 3000 : 1500;
+          console.log(`⏳ Waiting ${retryDelay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
         } else {
-          console.error('❌ Contract not accessible:', contractError.message);
+          console.error('❌ Contract not accessible after all retries');
           
-          // If this was a wallet connection, don't use fallback - show error
+          // If this was a wallet connection, show warning but DON'T reset wallet state
+          // User's wallet should stay connected even if contract isn't accessible
           if (!isReadOnly) {
-            showTransactionStatus('Unable to verify contract. Please check your wallet connection.', 'error');
-            // Reset wallet state
-            provider = null;
-            signer = null;
-            userAddress = null;
-            contract = null;
+            showTransactionStatus('Unable to verify contract. Contract may not be deployed or network may be wrong.', 'error');
+            contract = null; // Clear contract but keep wallet connected
             return;
           }
           
           showTransactionStatus('Unable to load contract data. Please check your connection.', 'error');
+          contract = null;
           return;
         }
       }

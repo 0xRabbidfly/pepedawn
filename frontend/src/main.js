@@ -794,30 +794,23 @@ async function connectWallet() {
     if (isMobileBrave()) {
       console.log('⚠️ Mobile Brave detected - Brave Wallet has limited dapp support on mobile');
       
-      // Check if Brave wallet is even available
-      if (!window.ethereum || !window.ethereum.isBraveWallet) {
-        showTransactionStatus(
-          'Brave Wallet on mobile has limited dapp support. Please use MetaMask Mobile app browser for best experience.',
-          'warning',
-          10000 // Show for 10 seconds
-        );
-        
-        // Offer to open in MetaMask
-        setTimeout(() => {
-          const currentUrl = window.location.href;
-          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
-          
-          if (confirm('Open this site in MetaMask Mobile Browser instead? (Recommended)')) {
-            window.location.href = metamaskDeepLink;
-          }
-        }, 2000);
-        
-        return;
-      }
+      // Show warning immediately for mobile Brave
+      showTransactionStatus(
+        'Brave Wallet on mobile has limited dapp support. For best experience, use MetaMask Mobile app browser.',
+        'warning',
+        8000
+      );
       
-      // Brave wallet exists, but warn about potential issues
-      console.log('⚠️ Brave Wallet detected on mobile. Attempting connection but may fail...');
-      showTransactionStatus('Brave Wallet detected. If connection fails, please use MetaMask Mobile.', 'warning');
+      // Offer to open in MetaMask after a delay
+      setTimeout(() => {
+        const currentUrl = window.location.href;
+        const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+        
+        if (confirm('Brave Wallet mobile has known issues. Open this site in MetaMask Mobile Browser instead? (Recommended)')) {
+          window.location.href = metamaskDeepLink;
+          return;
+        }
+      }, 3000);
     }
     
     // On mobile, give wallet providers extra time to initialize
@@ -906,6 +899,26 @@ async function connectWallet() {
     if (error.code === 4001) {
       showTransactionStatus('Connection cancelled by user', 'warning');
     } else {
+      // Special handling for mobile Brave empty error
+      if (isMobileBrave() && (!error.message || error.message === '[]' || JSON.stringify(error) === '{}')) {
+        showTransactionStatus(
+          'Brave Wallet mobile connection failed. Please use MetaMask Mobile app browser for reliable connection.',
+          'error'
+        );
+        
+        // Offer MetaMask redirect
+        setTimeout(() => {
+          const currentUrl = window.location.href;
+          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+          
+          if (confirm('Open in MetaMask Mobile Browser? (Recommended for mobile)')) {
+            window.location.href = metamaskDeepLink;
+          }
+        }, 2000);
+        
+        return;
+      }
+      
       // Robust error message extraction for various error types
       let errorMsg = 'Unknown error';
       

@@ -1,0 +1,33 @@
+/* ===================================================================
+   PEPEDAWN STYLES - MAIN IMPORT FILE
+   
+   This file imports all CSS modules in the correct order.
+   Order matters - later imports can override earlier ones.
+   =================================================================== */
+
+/* 1. FOUNDATIONS - Must load first */
+@import './1-foundations/variables.css';
+@import './1-foundations/reset.css';
+@import './1-foundations/typography.css';
+
+/* 2. LAYOUT - Structural elements */
+@import './2-layout/header.css';
+
+/* 3. COMPONENTS - Reusable UI components */
+@import './3-components/buttons.css';
+@import './3-components/cards.css';
+@import './3-components/forms.css';
+@import './3-components/sections.css';
+@import './3-components/status-badges.css';
+@import './3-components/animations.css';
+
+/* 4. PAGES - Page-specific styles */
+@import './4-pages/home.css';
+@import './4-pages/leaderboard.css';
+
+/* 5. UTILITIES - Helper classes and responsive overrides */
+@import './5-utilities/responsive.css';
+
+/* 6. LEGACY STYLES - Remaining styles to be extracted */
+@import '../styles-legacy.css';
+

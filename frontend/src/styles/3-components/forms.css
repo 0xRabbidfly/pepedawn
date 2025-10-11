@@ -1,0 +1,126 @@
+/* ===================================================================
+   FORMS & INPUTS
+   Form elements, textareas, selects, proof submission
+   =================================================================== */
+
+/* Disabled input/textarea styling */
+textarea:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* Proof Form */
+#proof-form {
+  margin-top: var(--spacing-md);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.05), rgba(33, 150, 243, 0.05));
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+}
+
+#proof-form p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.5;
+  text-align: center;
+}
+
+#proof-form p strong {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+#proof-input {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
+  resize: vertical;
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-slow);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#proof-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+#proof-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+#proof-status {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  display: none;
+  text-align: center;
+  font-weight: 600;
+  border: 2px solid;
+  animation: slideIn var(--transition-slow) ease-out;
+}
+
+#proof-status.success {
+  background-color: rgba(76, 175, 80, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
+}
+
+#proof-status.error {
+  background-color: rgba(244, 67, 54, 0.1);
+  border-color: var(--error-color);
+  color: var(--error-color);
+}
+
+#proof-status.info {
+  background-color: rgba(33, 150, 243, 0.1);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+/* Round Selector */
+.round-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.round-selector label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.round-selector select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  min-width: 120px;
+}
+
+.round-selector select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+/* Mobile-friendly form inputs */
+input, select, textarea {
+  min-height: 44px;
+  font-size: 16px; /* Prevents zoom on iOS */
+}
+

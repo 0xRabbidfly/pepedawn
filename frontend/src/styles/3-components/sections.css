@@ -1,0 +1,380 @@
+/* ===================================================================
+   SECTIONS & CONTAINERS
+   Page sections, wallet section, round status, ticket office, etc.
+   =================================================================== */
+
+/* Base Section Styles */
+section {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--border-color);
+}
+
+section h2 {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Wallet Section */
+#wallet-section {
+  text-align: center;
+  padding: var(--spacing-md);
+}
+
+#wallet-info {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--primary-color);
+}
+
+.wallet-details {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.wallet-address {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--primary-color);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.wallet-balance {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.wallet-balance span {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Round Status Section */
+#round-status {
+  position: relative;
+}
+
+#round-status hr {
+  width: 100%;
+  border: none;
+  border-top: 2px solid var(--border-color);
+  margin: 0;
+}
+
+.round-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+#current-round-title {
+  margin: 0;
+  padding: 0 0 var(--spacing-sm) 0;
+  border-bottom: none !important;
+}
+
+.round-content {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  align-items: start;
+}
+
+/* Status Column (vertical flow) */
+.status-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0;
+}
+
+.status-row-with-badge {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Info Column */
+.info-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+}
+
+.info-section-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.info-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  border: 2px solid var(--border-color);
+  text-align: center;
+  height: fit-content;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.info-icon {
+  font-size: 1em;
+}
+
+.info-text {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xl);
+  white-space: nowrap;
+}
+
+.info-value {
+  font-weight: 700;
+  color: #b0b0b0;
+  font-family: monospace;
+  font-size: var(--font-size-lg);
+  padding: 2px var(--spacing-xs);
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: var(--border-radius);
+}
+
+/* Betting Section Layout */
+#betting-section {
+  position: relative;
+}
+
+.betting-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--spacing-xl) * 2);
+  align-items: stretch;
+  width: 100%;
+  position: relative;
+}
+
+.ticket-options-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+/* Ticket Office Slide-out Panel */
+.ticket-office {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(33, 150, 243, 0.08));
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-slower) cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ticket-office .office-content {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all var(--transition-slower) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ticket-office.open .office-content {
+  max-height: 100%;
+  opacity: 1;
+  padding: var(--spacing-lg);
+}
+
+.office-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  flex: 1;
+  justify-content: center;
+}
+
+/* Raven Background */
+.raven-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/raven_cutout_800.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center right;
+  background-blend-mode: overlay;
+  opacity: 1;
+  transition: opacity var(--transition-slow);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ticket-office.open .raven-background {
+  opacity: 0;
+}
+
+/* Collapsible Sections */
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all var(--transition-base);
+}
+
+.collapsible-header:hover {
+  color: var(--primary-color);
+}
+
+.collapse-icon {
+  transition: transform var(--transition-base);
+  font-size: 0.8em;
+}
+
+.collapsible-content {
+  transition: all var(--transition-slow);
+  overflow: hidden;
+}
+
+/* User Stats Section */
+#user-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+#user-stats p {
+  background-color: var(--background-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Contract Information Section */
+.contract-info-section {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(3, 169, 244, 0.1));
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.contract-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.contract-info-copy {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+}
+
+/* Gambling Warning Section */
+.gambling-warning {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15), rgba(255, 193, 7, 0.1));
+  border: 2px solid var(--warning-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.warning-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.gambling-warning h3 {
+  color: var(--warning-color);
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-xl);
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gambling-warning p {
+  margin: var(--spacing-sm) 0;
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.gambling-warning p strong {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.gambling-warning code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
+  color: var(--accent-color);
+  word-break: break-all;
+}
+
+.gambling-warning a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-base);
+}
+
+.gambling-warning a:hover {
+  color: #1976D2;
+  text-decoration: underline;
+}
+
+.gambling-warning .risk-notice {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(255, 152, 0, 0.3);
+  font-weight: 600;
+  color: var(--warning-color);
+  font-size: var(--font-size-base);
+}
+

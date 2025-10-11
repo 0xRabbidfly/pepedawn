@@ -1,0 +1,137 @@
+---
+title: Solidity Smart Contract Development Rules
+description: Guidelines for PepedawnRaffle smart contract development and security
+glob: "contracts/**/*.sol"
+alwaysApply: false
+---
+
+# Solidity Development Rules for PEPEDAWN
+
+## Contract Structure
+
+```
+contracts/src/
+└── PepedawnRaffle.sol  (1,637 lines - monolithic by design)
+```
+
+**IMPORTANT**: This is intentionally a single contract file for gas optimization and deployment simplicity. Do NOT split into multiple contracts unless there's a compelling reason.
+
+## Testing Requirements
+
+- **Framework**: Foundry
+- **Test Coverage**: 100% of functional requirements
+- **Current Tests**: 151 tests across multiple suites
+- **Test Organization**:
+  ```
+  test/
+  ├── Core.t.sol              ← Core functionality
+  ├── BettingAndProofs.t.sol  ← Wagering & proofs
+  ├── RoundLifecycle.t.sol    ← Round state transitions
+  ├── WinnerSelection.t.sol   ← VRF & prize distribution
+  ├── Claims.t.sol            ← Merkle claims
+  ├── Governance.t.sol        ← Admin functions
+  ├── Security.t.sol          ← Security features
+  ├── Refunds.t.sol           ← Refund logic
+  └── Integration.t.sol       ← Full flow tests
+  ```
+
+### Testing Rules
+- **MUST** write tests before deploying changes
+- **MUST** maintain 100% coverage of requirements
+- **MUST** test both happy path and edge cases
+- **MUST** test security features (pausable, denylist, circuit breaker)
+- **MUST** run full test suite: `forge test -vvv`
+
+## Security Patterns (LOCKED IN)
+
+### Access Control
+- Use OpenZeppelin `Ownable2Step` for ownership
+- Implement emergency pause functionality
+- Maintain denylist for address blocking
+- Circuit breaker for VRF timeouts
+
+### State Management
+- Use proper state machine (RoundStatus enum)
+- Validate state transitions
+- Use ReentrancyGuard on all state-changing functions
+- Emit events for ALL state changes
+
+### VRF Integration
+- Use Chainlink VRF v2.5
+- Implement timeout detection
+- Never manipulate randomness after request
+- Take snapshot before VRF request
+
+## Code Conventions
+
+### Naming
+- State variables: `camelCase`
+- Constants: `UPPER_SNAKE_CASE`
+- Functions: `camelCase`
+- Events: `PascalCase`
+- Modifiers: `camelCase`
+
+### Documentation
+- **MUST** use NatSpec comments for all public/external functions
+- **MUST** document security considerations
+- **MUST** document state transitions
+- **SHOULD** include @param and @return tags
+
+### Gas Optimization
+- Pack structs efficiently
+- Use `uint256` for gas savings (not uint8/uint16)
+- Cache array lengths in loops
+- Use `calldata` for read-only arrays
+- Batch operations where possible
+
+## Deployment
+
+### Deployment Scripts
+- Location: `contracts/scripts/forge/`
+- Pattern: `Deploy.s.sol`, `MintTestNFTs.s.sol`
+- Use forge scripts, not manual deployment
+
+### Configuration
+- Store deployment artifacts in `contracts/deploy/artifacts/`
+- Update `frontend/public/deploy/` after deployment
+- Verify on Etherscan immediately
+
+## Security Checklist (PRE-DEPLOYMENT)
+
+- [ ] All tests passing (`forge test`)
+- [ ] Slither analysis clean (or justified exceptions)
+- [ ] Manual code review
+- [ ] Access control verified
+- [ ] Emergency pause tested
+- [ ] VRF integration tested
+- [ ] Merkle proof logic verified
+- [ ] Gas optimization reviewed
+- [ ] Deployment script tested on testnet
+
+## Anti-Patterns (DO NOT DO THIS)
+
+❌ **DON'T** split PepedawnRaffle into multiple contracts (gas optimization)  
+❌ **DON'T** use delegatecall/proxy patterns (complexity not needed)  
+❌ **DON'T** manipulate randomness after VRF request  
+❌ **DON'T** skip state validation in transitions  
+❌ **DON'T** use `transfer()` - use `call{value}` instead  
+❌ **DON'T** deploy without running full test suite  
+❌ **DON'T** skip Slither analysis  
+
+## Current Contract Features (DO NOT REMOVE)
+
+- Round lifecycle management (7 states)
+- Skill-weighted wagering (puzzle proofs)
+- Merkle-based prize claims
+- Emblem Vault NFT integration
+- Chainlink VRF randomness
+- Emergency pause & denylist
+- Refund mechanism (<10 tickets)
+- Fee distribution (80% creators, 20% next round)
+
+## Version Control
+
+- **Branch**: Create feature branches for changes
+- **Commits**: Descriptive messages with test results
+- **Testing**: MUST test before committing contract changes
+- **Security**: Note security implications in commits

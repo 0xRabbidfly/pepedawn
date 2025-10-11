@@ -34,7 +34,10 @@ dist-ssr/
 
 # Cursor and VS Code workspace files
 *.code-workspace
-.cursor/
+# .cursor/ now tracked in repo (contains project rules)
+
+# Playwright MCP artifacts (browser testing screenshots/data)
+.playwright-mcp/
 
 # OS generated files
 .DS_Store

@@ -1,5 +1,7 @@
 import { ethers } from 'ethers';
 import { validateNetwork, SECURITY_CONFIG, CONTRACT_CONFIG } from './contract-config.js';
+import { formatAddress, formatEther, formatPercentage } from './utils/formatters.js';
+import { createCountdownTimer } from './utils/timers.js';
 
 // Initialize UI components
 export function initUI() {
@@ -709,34 +711,12 @@ export async function updateUserStats(contract, userAddress, roundState = null) 
   }
 }
 
-// Update countdown timer
+// Update countdown timer (now using utility)
 function updateCountdown(element, endTime) {
-  function update() {
-    const now = Date.now();
-    const remaining = endTime - now;
-    
-    if (remaining <= 0) {
-      element.textContent = 'Round Ended';
-      return;
-    }
-    
-    const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
-    const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
-    
-    element.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-  }
-  
-  update();
-  setInterval(update, 1000);
+  return createCountdownTimer(element, endTime);
 }
 
-// Format Ethereum address for display
-function formatAddress(address) {
-  if (!address) return '';
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+// formatAddress is now imported from ./utils/formatters.js
 
 // Show transaction status
 export function showTransactionStatus(message, type = 'info') {

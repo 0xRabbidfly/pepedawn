@@ -378,3 +378,204 @@ section h2 {
   font-size: var(--font-size-base);
 }
 
+/* Tribute Floating Tab */
+.tribute-floating-tab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--primary-color), rgba(76, 175, 80, 0.8));
+  border: 2px solid var(--primary-color);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.5);
+  cursor: pointer;
+  z-index: 9999;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.tribute-floating-tab:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.7);
+}
+
+.tribute-tab-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+/* Tribute Slideout Panel */
+.tribute-slideout {
+  position: fixed;
+  top: 0;
+  right: -500px;
+  width: 450px;
+  height: 100vh;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.98), rgba(40, 40, 40, 0.98));
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  transition: right var(--transition-slower) cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.tribute-slideout.open {
+  right: 0;
+}
+
+.tribute-slideout-content {
+  padding: var(--spacing-xl);
+  position: relative;
+}
+
+.tribute-close-btn {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: var(--text-color);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.tribute-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.tribute-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.tribute-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: var(--spacing-md);
+}
+
+.tribute-header h2 {
+  color: var(--primary-color);
+  font-size: var(--font-size-xl);
+  margin: 0;
+}
+
+.tribute-body p {
+  margin: var(--spacing-md) 0;
+  line-height: 1.8;
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
+}
+
+.tribute-body strong {
+  color: var(--primary-color);
+}
+
+.tribute-highlight {
+  background: rgba(76, 175, 80, 0.2);
+  border-left: 4px solid var(--primary-color);
+  padding: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  border-radius: 4px;
+}
+
+.tribute-highlight p {
+  margin: var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+}
+
+.tribute-links {
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  padding: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  border-radius: var(--border-radius);
+}
+
+.tribute-links p {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-weight: 600;
+}
+
+.tribute-links ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.tribute-links li {
+  margin: var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+}
+
+.tribute-links a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.tribute-links a:hover {
+  color: #1976D2;
+  text-decoration: underline;
+}
+
+.tribute-footer {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(76, 175, 80, 0.3);
+  text-align: center;
+  font-style: italic;
+  font-size: var(--font-size-sm);
+}
+
+.tribute-footer p {
+  margin: var(--spacing-xs) 0;
+  color: var(--text-secondary);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .tribute-floating-tab {
+    width: 50px;
+    height: 50px;
+    bottom: 15px;
+    right: 15px;
+  }
+  
+  .tribute-tab-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .tribute-slideout {
+    width: 100%;
+    right: -100%;
+  }
+  
+  .tribute-slideout.open {
+    right: 0;
+  }
+  
+  .tribute-slideout-content {
+    padding: var(--spacing-lg);
+  }
+}
+

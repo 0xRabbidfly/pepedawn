@@ -11,7 +11,8 @@ import {
   showSecurityStatus,
   validateTransactionParams,
   handleTransactionError,
-  populateRoundSelector
+  populateRoundSelector,
+  showWalletWarningModal
 } from './ui.js';
 import { 
   CONTRACT_CONFIG, 
@@ -24,6 +25,7 @@ import {
 } from './contract-config.js';
 import { displayClaimablePrizes, displayRefundButton } from './components/claims.js';
 import { formatAddress } from './utils/formatters.js';
+import { initTributeSlideout } from './components/tribute-slideout.js';
 
 // Suppress harmless MetaMask filter errors
 const originalError = console.error;
@@ -442,6 +444,9 @@ async function init() {
   // Initialize UI components
   initUI();
   
+  // Initialize tribute slideout (global component)
+  initTributeSlideout();
+  
   // Set up event listeners
   setupEventListeners();
   
@@ -687,37 +692,51 @@ async function updateContractInfo(contract) {
     
     // Get contract owner
     const owner = await contract.owner();
-    document.getElementById('contract-owner').textContent = owner;
+    const ownerEl = document.getElementById('contract-owner');
+    if (ownerEl) ownerEl.textContent = owner;
     
     // Get contract ETH balance
     const balance = await provider.getBalance(contractAddress);
     const balanceEth = ethers.formatEther(balance);
-    document.getElementById('contract-balance').textContent = `${parseFloat(balanceEth).toFixed(4)} ETH`;
+    const balanceEl = document.getElementById('contract-balance');
+    if (balanceEl) balanceEl.textContent = `${parseFloat(balanceEth).toFixed(4)} ETH`;
     
     // Get current round
     const currentRoundId = await contract.currentRoundId();
-    document.getElementById('current-round').textContent = currentRoundId.toString() !== '0' ? `Round ${currentRoundId}` : 'No active rounds';
+    const currentRoundEl = document.getElementById('current-round');
+    if (currentRoundEl) currentRoundEl.textContent = currentRoundId.toString() !== '0' ? `Round ${currentRoundId}` : 'No active rounds';
     
     // Get NFT count (check emblem vault balance)
-    try {
-      const emblemVaultAddress = await contract.emblemVaultAddress();
-      const emblemVault = new ethers.Contract(emblemVaultAddress, ['function balanceOf(address) view returns (uint256)'], provider);
-      const nftBalance = await emblemVault.balanceOf(contractAddress);
-      document.getElementById('contract-nfts').textContent = `${nftBalance.toString()} NFTs`;
-    } catch {
-      document.getElementById('contract-nfts').textContent = 'Unable to fetch';
+    const nftsEl = document.getElementById('contract-nfts');
+    if (nftsEl) {
+      try {
+        const emblemVaultAddress = await contract.emblemVaultAddress();
+        const emblemVault = new ethers.Contract(emblemVaultAddress, ['function balanceOf(address) view returns (uint256)'], provider);
+        const nftBalance = await emblemVault.balanceOf(contractAddress);
+        nftsEl.textContent = `${nftBalance.toString()} NFTs`;
+      } catch {
+        nftsEl.textContent = 'Unable to fetch';
+      }
     }
     
-    // Check contract verification (simplified check)
-    checkContractVerification(contractAddress);
+    // Check contract verification (simplified check) - only on rules page
+    const verifiedStatusEl = document.getElementById('verified-status');
+    if (verifiedStatusEl) {
+      checkContractVerification(contractAddress);
+    }
     
   } catch (error) {
     console.error('Error updating contract info:', error);
-    // Set error states
-    document.getElementById('contract-owner').textContent = 'Error loading';
-    document.getElementById('contract-balance').textContent = 'Error loading';
-    document.getElementById('contract-nfts').textContent = 'Error loading';
-    document.getElementById('current-round').textContent = 'Error loading';
+    // Set error states only if elements exist
+    const ownerEl = document.getElementById('contract-owner');
+    const balanceEl = document.getElementById('contract-balance');
+    const nftsEl = document.getElementById('contract-nfts');
+    const currentRoundEl = document.getElementById('current-round');
+    
+    if (ownerEl) ownerEl.textContent = 'Error loading';
+    if (balanceEl) balanceEl.textContent = 'Error loading';
+    if (nftsEl) nftsEl.textContent = 'Error loading';
+    if (currentRoundEl) currentRoundEl.textContent = 'Error loading';
   }
 }
 
@@ -1879,6 +1898,13 @@ async function buyTickets() {
       await validateSecurityState(contract, userAddress);
     } catch (securityError) {
       showTransactionStatus(securityError.message, 'error');
+      return;
+    }
+    
+    // Show wallet warning modal BEFORE proceeding
+    const userConfirmed = await showWalletWarningModal();
+    if (!userConfirmed) {
+      showTransactionStatus('Purchase cancelled', 'info');
       return;
     }
     

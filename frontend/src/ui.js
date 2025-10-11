@@ -798,6 +798,94 @@ export function hideTransactionStatus() {
   }
 }
 
+// Show wallet warning modal before purchase
+export function showWalletWarningModal() {
+  return new Promise((resolve) => {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'wallet-warning-modal';
+    
+    // Create modal content
+    overlay.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-icon">🐸</span>
+          <h2 class="modal-title">Wallet Security Warning Expected</h2>
+        </div>
+        <div class="modal-body">
+          <p><strong>Your wallet (MetaMask, etc.) will likely show a security warning.</strong> This is completely normal and expected.</p>
+          
+          <p><strong>Why does this happen?</strong></p>
+          <p>This contract uses ETH transfers with verifiable randomness (Chainlink VRF) to distribute 133 Counterparty Rare Pepe art assets. Wallets automatically flag any contract involving payments + randomness as a potential "gambling" contract.</p>
+          
+          <div class="modal-highlight">
+            <p><strong>✅ This is a legitimate art distribution mechanism, not a casino.</strong></p>
+            <p>• Fixed supply: 133 Bitcoin/Counterparty assets</p>
+            <p>• No house edge or profit generation</p>
+            <p>• Fees cover distribution/operations only</p>
+            <p>• No financial returns promised</p>
+            <p>• Contract verified on Etherscan</p>
+            <p>• Security audited with Slither 🛡️</p>
+          </div>
+          
+          <p><strong>What should you do?</strong></p>
+          <p>Review the transaction details in your wallet and proceed if you understand the risks. You are participating in an art drop with verifiable randomness.</p>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" id="modal-cancel">Cancel</button>
+          <button class="modal-btn modal-btn-confirm" id="modal-confirm">I Understand, Continue</button>
+        </div>
+      </div>
+    `;
+    
+    // Append to body
+    document.body.appendChild(overlay);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+      overlay.classList.add('show');
+    });
+    
+    // Handle cancel
+    const cancelBtn = overlay.querySelector('#modal-cancel');
+    cancelBtn.addEventListener('click', () => {
+      closeModal(overlay, false, resolve);
+    });
+    
+    // Handle confirm
+    const confirmBtn = overlay.querySelector('#modal-confirm');
+    confirmBtn.addEventListener('click', () => {
+      closeModal(overlay, true, resolve);
+    });
+    
+    // Handle backdrop click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal(overlay, false, resolve);
+      }
+    });
+    
+    // Handle escape key
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal(overlay, false, resolve);
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
+  });
+}
+
+// Close modal helper
+function closeModal(overlay, confirmed, resolve) {
+  overlay.classList.remove('show');
+  setTimeout(() => {
+    overlay.remove();
+    resolve(confirmed);
+  }, 300); // Match CSS transition duration
+}
+
 // Show network switch prompt
 export function showNetworkSwitchPrompt() {
   // Show clear error message with network details

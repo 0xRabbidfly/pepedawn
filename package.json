@@ -1,6 +1,6 @@
 {
   "name": "pepedawn",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Pepedawn Raffle Smart Contract and Frontend",
   "private": true,
   "scripts": {

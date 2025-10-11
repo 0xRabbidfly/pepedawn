@@ -218,6 +218,14 @@ function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
+// Detect if user is on mobile Brave browser
+function isMobileBrave() {
+  return isMobileDevice() && (
+    (navigator.brave && typeof navigator.brave.isBrave === 'function') ||
+    /Brave/i.test(navigator.userAgent)
+  );
+}
+
 // EIP-6963: Discover all available wallets (Modern Standard - supports Rabby, Trust, etc.)
 const discoveredWallets = new Map();
 
@@ -747,14 +755,44 @@ window.copyToClipboard = copyToClipboard;
 // Connect to wallet with enhanced security validations
 async function connectWallet() {
   try {
-    // On mobile, give wallet providers extra time to initialize (especially Brave)
+    // Check if mobile Brave FIRST - known to have issues with dapps
+    if (isMobileBrave()) {
+      console.log('⚠️ Mobile Brave detected - Brave Wallet has limited dapp support on mobile');
+      
+      // Check if Brave wallet is even available
+      if (!window.ethereum || !window.ethereum.isBraveWallet) {
+        showTransactionStatus(
+          'Brave Wallet on mobile has limited dapp support. Please use MetaMask Mobile app browser for best experience.',
+          'warning',
+          10000 // Show for 10 seconds
+        );
+        
+        // Offer to open in MetaMask
+        setTimeout(() => {
+          const currentUrl = window.location.href;
+          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+          
+          if (confirm('Open this site in MetaMask Mobile Browser instead? (Recommended)')) {
+            window.location.href = metamaskDeepLink;
+          }
+        }, 2000);
+        
+        return;
+      }
+      
+      // Brave wallet exists, but warn about potential issues
+      console.log('⚠️ Brave Wallet detected on mobile. Attempting connection but may fail...');
+      showTransactionStatus('Brave Wallet detected. If connection fails, please use MetaMask Mobile.', 'warning');
+    }
+    
+    // On mobile, give wallet providers extra time to initialize
     let detectedProvider = detectProvider();
     
     if (!detectedProvider && isMobileDevice()) {
       console.log('📱 No provider detected on mobile, waiting for wallet to initialize...');
       showTransactionStatus('Waiting for wallet to initialize...', 'info');
       
-      // Wait 500ms and try again (Brave wallet on mobile can be slow)
+      // Wait 500ms and try again (wallets on mobile can be slow)
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Re-check for wallet discovery
@@ -765,35 +803,22 @@ async function connectWallet() {
     }
     
     if (!detectedProvider) {
-      // On mobile, check if we're in a mobile browser (not MetaMask browser)
-      if (isMobileDevice()) {
-        // Check if we're in Brave browser specifically
-        const isBrave = navigator.brave && typeof navigator.brave.isBrave === 'function';
+      // On mobile, redirect to MetaMask app
+      if (isMobileDevice() && !navigator.userAgent.includes('MetaMaskMobile')) {
+        const currentUrl = window.location.href;
+        const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
         
-        if (isBrave) {
-          showTransactionStatus('Please enable Brave Wallet in Brave Settings > Web3', 'error');
-          return;
-        }
+        showTransactionStatus('Opening MetaMask app...', 'info');
         
-        // Only redirect to MetaMask app if we're NOT already in MetaMask Mobile Browser
-        if (!navigator.userAgent.includes('MetaMaskMobile')) {
-          const currentUrl = window.location.href;
-          const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
-          
-          showTransactionStatus('Opening MetaMask app...', 'info');
-          
-          // Try to open MetaMask app
-          setTimeout(() => {
-            window.location.href = metamaskDeepLink;
-          }, 500);
-          
-          // Show instructions after a delay
-          setTimeout(() => {
-            showTransactionStatus('If MetaMask doesn\'t open, please install MetaMask app or use the MetaMask app browser to visit this site', 'warning');
-          }, 3000);
-          
-          return;
-        }
+        setTimeout(() => {
+          window.location.href = metamaskDeepLink;
+        }, 500);
+        
+        setTimeout(() => {
+          showTransactionStatus('If MetaMask doesn\'t open, please install MetaMask app', 'warning');
+        }, 3000);
+        
+        return;
       }
       
       showTransactionStatus('Please install MetaMask extension or use MetaMask Mobile Browser', 'error');
@@ -820,7 +845,7 @@ async function connectWallet() {
     await setupWalletConnection(true); // true = show success toast
     
   } catch (error) {
-    console.error('Error connecting wallet:', error);
+    console.error('❌ Error connecting wallet:', error);
     
     // Handle user rejection
     if (error.code === 4001) {

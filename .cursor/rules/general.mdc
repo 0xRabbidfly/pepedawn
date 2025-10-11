@@ -1,0 +1,160 @@
+---
+title: PEPEDAWN General Development Guidelines
+description: Project-wide development practices and workflow rules
+glob: "**/*"
+alwaysApply: true
+---
+
+# PEPEDAWN General Development Guidelines
+
+## Development Philosophy
+
+This is a **small-scale, production-bound project**. We prioritize:
+1. **Simplicity over complexity** - No enterprise patterns unless needed
+2. **Risk minimization** - Going to prod soon, be careful
+3. **Incremental testing** - Test at each step
+4. **Clear explanations** - Explain logic before making changes
+
+## Communication Style
+
+### Before Making Changes
+- **MUST** explain the underlying logic/reasoning
+- **MUST** ask for clarification if requirements unclear
+- **SHOULD** propose approach before implementing
+- **SHOULD** note any risks or trade-offs
+
+### Code Changes
+- Make changes incrementally
+- Test after each significant change
+- Document non-obvious decisions
+- Keep commits focused and atomic
+
+## Project Structure
+
+```
+pepedawn/
+├── contracts/          ← Solidity smart contracts (Foundry)
+├── frontend/           ← Web UI (Vanilla JS + Vite)
+├── scripts/            ← Automation scripts (Node.js)
+└── specs/              ← Requirements & planning docs
+```
+
+## Testing Requirements
+
+### Smart Contracts
+- Run `forge test` before any contract changes
+- Maintain 100% functional coverage
+- Test on Sepolia testnet before mainnet
+
+### Frontend
+- Test desktop (1920×1080) and mobile (375×667)
+- Check all pages: home, main, claim, leaderboard, rules
+- Verify wallet connection works
+- Test with MetaMask on testnet
+
+### Scripts
+- Test on testnet before using on mainnet
+- Verify against actual deployed contract
+- Handle errors gracefully
+
+## Git Workflow
+
+### Branching
+- `main` - Production code
+- `frontend-refactor` - Current refactor branch
+- Feature branches: `feature/description`
+- Fix branches: `fix/description`
+
+### Commits
+- Descriptive messages
+- Include what was tested
+- Note breaking changes if any
+- Use conventional commits format: `type(scope): description`
+
+### Before Merging to Main
+- All tests passing
+- Code reviewed
+- Tested on staging/testnet
+- Documentation updated
+
+## Documentation
+
+### Required Documentation
+- Update README.md for new features
+- Update deployment plans for contract changes
+- Comment complex logic in code
+- Keep specs up to date
+
+### Don't Over-Document
+- Small project, don't need enterprise-level docs
+- Focus on "why" not "what"
+- Inline comments for complex logic only
+
+## Dependencies
+
+### Adding New Dependencies
+- **Frontend**: Justify why (keep bundle small)
+- **Contracts**: Security review required (OpenZeppelin preferred)
+- **Scripts**: Use built-in Node.js when possible
+
+### Existing Dependencies (Don't Change Without Reason)
+- ethers.js v6 (NOT v5)
+- Vite 5.x
+- Foundry (latest)
+- OpenZeppelin contracts
+- Chainlink VRF v2.5
+
+## Python Environment
+
+- **MUST** use `uv` command-line tool for Python
+- Commands: `uv init`, `uv venv`, `uv add`
+- Do NOT use pip/virtualenv directly
+
+## Risk Management
+
+### Production Risk Assessment
+- **High Risk**: Smart contract changes (thorough testing required)
+- **Medium Risk**: Frontend JavaScript changes (test thoroughly)
+- **Low Risk**: CSS changes (visual regression testing)
+- **Very Low Risk**: Documentation changes
+
+### Before Production Deploy
+- Test on Sepolia testnet (contracts)
+- Test on staging (frontend)
+- Get user approval for contract changes
+- Verify on Etherscan (contracts)
+
+## Performance Guidelines
+
+### Frontend Bundle Size
+- Target: <100KB gzipped for CSS + JS
+- Monitor with each build
+- Lazy load if bundle grows >200KB
+
+### Gas Optimization
+- Optimize for deployment gas
+- Batch operations where possible
+- Use events instead of storage when possible
+
+## Code Quality
+
+### Linting
+- Run ESLint on frontend: `npm run lint`
+- Fix linter errors before committing
+- Run Slither on contracts before deploying
+
+### Code Review Checklist
+- [ ] Logic explained clearly
+- [ ] Tests passing
+- [ ] No security issues
+- [ ] Performance acceptable
+- [ ] Documentation updated
+- [ ] Follows project structure
+
+## Project Principles
+
+1. **Keep it simple** - This is not an enterprise project
+2. **Test everything** - Especially before production
+3. **Minimize risk** - Be cautious with changes
+4. **Stay organized** - Follow the established structure
+5. **Document decisions** - Future you will thank present you

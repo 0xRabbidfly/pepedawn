@@ -471,6 +471,15 @@ node scripts/update-abi.js
 
 **Note**: Only run this if you've modified the contract code. For new deployments of the same contract, the address update in step 1.5 is sufficient.
 
+**Verify DEV_MODE Setting**:
+- For Sepolia testing: `DEV_MODE: true` (shows network indicator)
+- For mainnet: `DEV_MODE: false` (hides debug UI)
+
+Check `frontend/src/contract-config.js`:
+```javascript
+DEV_MODE: true, // Should be true for Sepolia testing
+```
+
 ### 3.2 Install Frontend Dependencies (First Time Only)
 
 ```powershell

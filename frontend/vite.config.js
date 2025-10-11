@@ -6,6 +6,10 @@ export default defineConfig({
     host: '0.0.0.0', // Listen on all network interfaces
     port: 5173,      // Default Vite port
     strictPort: true, // Fail if port is already in use
+    // HTTPS disabled for now - causes certificate issues in local dev
+    // The SSL error in Brave/Chrome when connecting to MetaMask is expected behavior
+    // It WILL work in production with proper HTTPS
+    https: false
   },
   
   // Multi-page application configuration

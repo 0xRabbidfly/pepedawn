@@ -1,0 +1,160 @@
+---
+title: Frontend Architecture - Post-Refactor Structure
+description: Frontend code organization rules - LOCKED IN after October 2025 refactor
+glob: "frontend/**/*.{js,css,html}"
+alwaysApply: false
+---
+
+# Frontend Architecture (LOCKED STRUCTURE)
+
+## CSS Organization (DO NOT BREAK THIS STRUCTURE!)
+
+All CSS is organized in `frontend/src/styles/` with numbered directories:
+
+```
+styles/
+├── main.css                    ← Import hub ONLY (no styles here)
+├── 1-foundations/              ← Design tokens (load first)
+│   ├── variables.css           ← ALL CSS custom properties
+│   ├── reset.css               ← CSS reset & body defaults
+│   └── typography.css          ← Headings & text
+├── 2-layout/                   ← Page structure
+│   └── header.css              ← Header & navigation
+├── 3-components/               ← Reusable components
+│   ├── buttons.css
+│   ├── cards.css
+│   ├── forms.css
+│   ├── sections.css
+│   ├── status-badges.css
+│   └── animations.css          ← ALL animations here
+├── 4-pages/                    ← Page-specific styles
+│   ├── home.css
+│   └── leaderboard.css
+└── 5-utilities/                ← Overrides & responsive
+    └── responsive.css          ← ALL MOBILE STYLES HERE!
+```
+
+### CSS Rules (MUST FOLLOW)
+1. **New styles go in appropriate module** - NOT in styles-legacy.css
+2. **Mobile styles ONLY in responsive.css** - No scattered @media queries
+3. **Variables in variables.css** - Don't hardcode colors/spacing
+4. **Animations in animations.css** - Keep them organized
+5. **Import order in main.css** - Foundations → Layout → Components → Pages → Utilities
+6. **Max file size**: ~300 lines per file - split if larger
+
+## JavaScript Organization
+
+```
+src/
+├── main.js                     ← Entry point (wallet, contract, orchestration)
+├── ui.js                       ← UI updates & display logic
+├── contract-config.js          ← Contract ABI & config
+├── utils/                      ← Shared utilities
+│   ├── formatters.js           ← formatAddress, formatEther, etc.
+│   ├── timers.js               ← Countdown, debounce, throttle
+│   └── validation.js           ← Input validation
+├── components/
+│   └── claims.js               ← Claims & prizes display
+└── services/
+    ├── ipfs.js                 ← IPFS data fetching
+    └── merkle.js               ← Merkle proof handling
+```
+
+### JavaScript Rules (MUST FOLLOW)
+1. **No duplicate functions** - Use shared utilities from `utils/`
+2. **formatAddress** - Import from `utils/formatters.js`, don't redefine
+3. **Mobile vs Desktop** - Use `isMobile` parameter, NOT duplicate functions
+4. **Imports** - Always use relative paths (`./utils/formatters.js`)
+5. **ES6 modules** - Use `import/export`, not CommonJS
+
+## Common Utilities (USE THESE, DON'T RECREATE)
+
+### Formatters (utils/formatters.js)
+```javascript
+import { formatAddress, formatEther, formatPercentage } from './utils/formatters.js';
+
+formatAddress('0x1234...5678')  // Use this
+formatEther(weiAmount)           // Use this
+formatPercentage(12.5)           // Use this
+```
+
+### Timers (utils/timers.js)
+```javascript
+import { createCountdownTimer, debounce, throttle } from './utils/timers.js';
+
+createCountdownTimer(element, endTime)  // Use this for countdowns
+debounce(func, 300)                      // Use this for debouncing
+```
+
+### Validation (utils/validation.js)
+```javascript
+import { isValidAddress, validateTransactionParams } from './utils/validation.js';
+```
+
+## HTML Structure
+
+All HTML files use:
+```html
+<link rel="stylesheet" href="/src/styles/main.css" />
+<script type="module" src="/src/main.js"></script>
+```
+
+**DO NOT** use inline styles - use CSS classes instead.
+
+## Mobile-First Responsive Design
+
+### Mobile Styles Location
+**ONLY in `5-utilities/responsive.css`** - organized by component:
+
+```css
+@media (max-width: 768px) {
+  /* --- HEADER & NAVIGATION --- */
+  /* --- LAYOUT --- */
+  /* --- ROUND STATUS --- */
+  /* --- TICKET COUNTER --- */
+  /* --- etc. --- */
+}
+```
+
+### Mobile Development Rules
+1. All mobile overrides go in `responsive.css` - NO exceptions
+2. Test at 375×667 (iPhone SE) as baseline
+3. Touch-friendly sizes: min 44px for buttons
+4. No horizontal scroll
+5. Hamburger menu for navigation
+
+## Common Patterns
+
+### Adding a New Button
+1. Add to `3-components/buttons.css`
+2. Follow existing naming pattern
+3. Use CSS variables for colors
+
+### Adding a New Component
+1. Create new file in `3-components/` (if reusable)
+2. Or add to `4-pages/` (if page-specific)
+3. Import in `main.css`
+4. Add mobile styles to `responsive.css` if needed
+
+### Adding a New Page
+1. Create HTML file in `frontend/`
+2. Add page-specific CSS to `4-pages/`
+3. Import in `main.css`
+4. Update navigation in all pages
+
+## Anti-Patterns (DO NOT DO THIS)
+
+❌ **DON'T** add styles to `styles-legacy.css` (it's for gradual migration only)  
+❌ **DON'T** create scattered `@media` queries - use `responsive.css`  
+❌ **DON'T** duplicate formatAddress/formatEther - use utilities  
+❌ **DON'T** create buyTicketsMobile-style duplicates - use parameters  
+❌ **DON'T** use inline styles in HTML  
+❌ **DON'T** add React/Vue/frameworks without discussion  
+❌ **DON'T** hardcode colors/spacing - use CSS variables  
+
+## Bundle Size Targets
+- CSS: <60KB (currently 57KB) ✅
+- JavaScript: <200KB gzipped (currently 161KB) ✅
+- Total: <500KB uncompressed ✅
+
+Keep it lean!

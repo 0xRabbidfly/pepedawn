@@ -1050,6 +1050,9 @@ export const CONTRACT_CONFIG = {
   network: 'mainnet',
   chainId: 1,
   
+  // ⚠️ CRITICAL: Set to false for production!
+  DEV_MODE: false, // Hides debug UI elements (network indicator, etc.)
+  
   abi: [/* ABI array */]
 };
 
@@ -1216,7 +1219,9 @@ if (window.location.hostname !== 'pepedawn.art' &&
 ### 7. DEPLOYMENT CHECKLIST
 
 #### Pre-Deployment
+- [ ] **Set `DEV_MODE: false`** in `frontend/src/contract-config.js` (removes debug UI)
 - [ ] Test build locally: `npm run build && npm run preview`
+- [ ] Verify network indicator is HIDDEN (should not show chain ID)
 - [ ] Test on mobile devices (iOS Safari, Android Chrome)
 - [ ] Test with MetaMask, WalletConnect, Coinbase Wallet
 - [ ] Verify all links work
@@ -2459,6 +2464,7 @@ With 10+ participants at 0.5 ETH average: profitable
 
 #### Configuration
 - [ ] All mainnet addresses updated
+- [ ] **`DEV_MODE: false`** set in contract-config.js
 - [ ] VRF subscription created and funded (20+ LINK)
 - [ ] Emblem Vault mainnet contract verified
 - [ ] Environment variables set correctly

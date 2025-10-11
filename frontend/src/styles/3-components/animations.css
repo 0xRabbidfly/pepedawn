@@ -1,0 +1,223 @@
+/* ===================================================================
+   ANIMATIONS
+   All @keyframes animations consolidated in one place
+   =================================================================== */
+
+/* Pulse Animations */
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 0.3; 
+  }
+  50% { 
+    transform: scale(1.1); 
+    opacity: 0.6; 
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.5);
+  }
+}
+
+@keyframes pulse-glow-blue {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(33, 150, 243, 0.5), 0 0 40px rgba(33, 150, 243, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(33, 150, 243, 0.8), 0 0 60px rgba(33, 150, 243, 0.5);
+  }
+}
+
+@keyframes pulse-glow-orange {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.5), 0 0 40px rgba(255, 152, 0, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(255, 152, 0, 0.8), 0 0 60px rgba(255, 152, 0, 0.5);
+  }
+}
+
+@keyframes pulse-glow-green {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.5);
+  }
+}
+
+@keyframes pulse-target {
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  50% { 
+    transform: scale(1.2); 
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { 
+    opacity: 0.4;
+    transform: translateY(-50%) scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: translateY(-50%) scale(1.5);
+  }
+}
+
+/* Bounce Animation */
+@keyframes bounce {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-5px); 
+  }
+}
+
+/* Spin/Rotate Animations */
+@keyframes spin-dice {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes rotate-lock {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+/* Float Animation */
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
+}
+
+/* Card & Component Animations */
+@keyframes card-energize {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(76, 175, 80, 0.6), 0 0 40px rgba(76, 175, 80, 0.3);
+  }
+}
+
+@keyframes prize-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(76, 175, 80, 0.35);
+  }
+}
+
+@keyframes ticket-pop {
+  0% { 
+    transform: scale(0.8); 
+    opacity: 0.3; 
+  }
+  50% { 
+    transform: scale(1.1); 
+  }
+  100% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+}
+
+/* Text Animations */
+@keyframes text-glow-orange {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(255, 152, 0, 0.8), 0 0 20px rgba(255, 152, 0, 0.6);
+  }
+  50% { 
+    text-shadow: 0 0 15px rgba(255, 152, 0, 1), 0 0 30px rgba(255, 152, 0, 0.8);
+  }
+}
+
+@keyframes text-pulse {
+  0%, 100% { 
+    transform: scale(1);
+  }
+  50% { 
+    transform: scale(1.05);
+  }
+}
+
+@keyframes badge-glow-orange {
+  0%, 100% { 
+    box-shadow: 0 0 15px rgba(255, 152, 0, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 25px rgba(255, 152, 0, 0.7);
+  }
+}
+
+/* Fade Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ticket Connector Animation (disabled but kept for reference) */
+@keyframes pulse-beam {
+  0%, 100% { 
+    opacity: 0.6;
+    stroke-width: 3;
+  }
+  50% { 
+    opacity: 1;
+    stroke-width: 5;
+  }
+}
+
+/* Ticket Connector SVG (disabled) */
+.ticket-connector-svg {
+  display: none !important;
+}
+
+.ticket-connector-svg.active {
+  display: none !important;
+}
+
+.connector-path {
+  display: none !important;
+}
+
+.connector-path.animated {
+  display: none !important;
+}
+
+.particle-ticket {
+  display: none; /* Hide ticket particles */
+}
+

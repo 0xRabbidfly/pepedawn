@@ -1,0 +1,106 @@
+/* ===================================================================
+   HEADER & NAVIGATION
+   Site header, navigation menu, and hamburger menu
+   =================================================================== */
+
+/* Header */
+header {
+  background-color: var(--surface-color);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  position: relative;
+}
+
+header h1 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: var(--font-size-2xl);
+}
+
+/* Hamburger Menu Button */
+.hamburger-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: calc(var(--z-modal) + 1);
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: var(--text-color);
+  transition: all var(--transition-slow);
+  border-radius: 2px;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Main Navigation */
+.main-nav {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.main-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  transition: all var(--transition-base);
+}
+
+.main-nav a:hover {
+  color: var(--text-color);
+  background-color: var(--border-color);
+}
+
+.main-nav a.active {
+  color: var(--primary-color);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+/* Regular nav (for pages without hamburger) */
+nav:not(.main-nav) {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+nav:not(.main-nav) a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  transition: all var(--transition-base);
+}
+
+nav:not(.main-nav) a:hover {
+  color: var(--text-color);
+  background-color: var(--border-color);
+}
+
+nav:not(.main-nav) a.active {
+  color: var(--primary-color);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+

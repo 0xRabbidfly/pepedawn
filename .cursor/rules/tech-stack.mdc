@@ -1,0 +1,51 @@
+---
+title: PEPEDAWN Tech Stack Definition
+description: Technology stack and architecture for the PEPEDAWN raffle system
+glob: "**/*"
+alwaysApply: true
+---
+
+# PEPEDAWN Tech Stack
+
+## Smart Contracts (Backend)
+- **Language**: Solidity 0.8.x
+- **Framework**: Foundry (forge, anvil, cast)
+- **Testing**: Foundry test suite (151 tests, 100% coverage target)
+- **Libraries**: 
+  - OpenZeppelin (security, ERC721, access control)
+  - Chainlink VRF v2.5 (verifiable randomness)
+- **Network**: Ethereum (Sepolia testnet → Mainnet)
+- **Deployment**: Forge scripts in `contracts/scripts/forge/`
+
+## Frontend
+- **Language**: Vanilla JavaScript (ES6+ modules)
+- **Bundler**: Vite 5.x
+- **Web3**: ethers.js v6
+- **CSS**: Modular CSS (organized in `styles/` directory)
+- **Build**: Static HTML/CSS/JS (no framework)
+- **Deployment**: Static files from `dist/`
+
+## Build & Deployment
+- **Node Version**: Modern LTS (18+)
+- **Package Manager**: npm
+- **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`)
+- **Deployment**: Copy `frontend/dist/` to hosting
+
+## Data Storage
+- **Winners**: IPFS (pinned via Pinata/similar)
+- **Merkle Proofs**: On-chain Merkle roots, off-chain data
+- **Leaderboard**: On-chain participant data
+
+## Development Tools
+- **Python**: uv for environment management
+- **Linting**: ESLint for JavaScript
+- **Security**: Slither for Solidity analysis
+
+## IMPORTANT: No Framework Decision
+This project intentionally uses **vanilla JavaScript** instead of React/Vue/etc.
+- Keeps bundle size small
+- Simple, understandable code
+- Easy to debug
+- Perfect for small-scale site
+
+**DO NOT suggest adding frameworks unless explicitly requested.**

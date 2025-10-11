@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import './styles.css';
+import './styles/main.css';
 import { 
   initUI, 
   updateWalletInfo, 
@@ -23,6 +23,7 @@ import {
   SECURITY_CONFIG
 } from './contract-config.js';
 import { displayClaimablePrizes, displayRefundButton } from './components/claims.js';
+import { formatAddress } from './utils/formatters.js';
 
 // Suppress harmless MetaMask filter errors
 const originalError = console.error;
@@ -50,11 +51,7 @@ function logEvent(eventType, eventData) {
   console.log(`🎲 ${eventType}:`, eventData);
 }
 
-// Format Ethereum address for display
-function formatAddress(address) {
-  if (!address) return '';
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
+// formatAddress is now imported from ./utils/formatters.js
 
 // Update button states based on round status and user state
 async function updateButtonStates(roundState = null) {
@@ -256,6 +253,79 @@ function detectProvider() {
   return null;
 }
 
+// Initialize page-specific data (read-only, no wallet required)
+async function initializePageData() {
+  if (!contract) {
+    console.log('⚠️ Contract not available - showing fallback UI');
+    
+    // Show error message instead of "Loading..." on leaderboard page
+    if (window.location.pathname.includes('leaderboard.html')) {
+      const winnersSelect = document.getElementById('winners-round-select');
+      const roundSelect = document.getElementById('round-select');
+      const winnersList = document.getElementById('winners-list');
+      const leaderboardList = document.getElementById('leaderboard-list');
+      
+      if (winnersSelect) {
+        winnersSelect.innerHTML = '<option value="">Contract unavailable</option>';
+      }
+      if (roundSelect) {
+        roundSelect.innerHTML = '<option value="">Contract unavailable</option>';
+      }
+      if (winnersList) {
+        winnersList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Unable to load contract data. Please check your connection and refresh.</p>';
+      }
+      if (leaderboardList) {
+        leaderboardList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Unable to load contract data. Please check your connection and refresh.</p>';
+      }
+    }
+    
+    // Show error message on claim page
+    if (window.location.pathname.includes('claim.html')) {
+      const claimsSelect = document.getElementById('claims-round-select');
+      if (claimsSelect) {
+        claimsSelect.innerHTML = '<option value="">Contract unavailable</option>';
+      }
+    }
+    
+    return;
+  }
+  
+  try {
+    const currentRoundId = await contract.currentRoundId();
+    
+    // Initialize leaderboard page
+    if (window.location.pathname.includes('leaderboard.html')) {
+      console.log('📊 Initializing leaderboard page...');
+      
+      // Populate round selectors
+      await populateRoundSelector(contract);
+      
+      // Display winners and leaderboard for current round
+      if (currentRoundId.toString() !== '0') {
+        const { displayWinners } = await import('./components/claims.js');
+        await displayWinners(contract, Number(currentRoundId));
+        await updateLeaderboard(contract);
+      }
+    }
+    
+    // Initialize claim page (populate selector, but claims require wallet)
+    if (window.location.pathname.includes('claim.html')) {
+      console.log('🎁 Initializing claim page...');
+      await populateRoundSelector(contract);
+      // Note: displayClaimablePrizes will be called in setupWalletConnection() when user connects
+    }
+    
+    // Initialize rules page
+    if (window.location.pathname.includes('rules.html')) {
+      console.log('📜 Initializing rules page...');
+      await updateContractInfo(contract);
+    }
+    
+  } catch (error) {
+    console.error('Error initializing page data:', error);
+  }
+}
+
 // Initialize the application
 async function init() {
   console.log('Initializing PEPEDAWN application...');
@@ -294,6 +364,9 @@ async function init() {
   
   // Load contract (will use fallback provider if needed)
   await loadContract();
+  
+  // Initialize page-specific data (even without wallet connection)
+  await initializePageData();
   
   // Start periodic updates
   startPeriodicUpdates();
@@ -708,28 +781,16 @@ async function setupWalletConnection(showSuccessToast = true) {
       }
     }
     
-    // Populate round selector and show claims if on claim page
+    // Show user's claimable prizes if on claim page
+    // (Round selector already populated in initializePageData)
     if (window.location.pathname.includes('claim.html')) {
-      await populateRoundSelector(contract);
       if (currentRoundId.toString() !== '0') {
         await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
       }
     }
     
-    // Populate round selector and show winners if on leaderboard page
-    if (window.location.pathname.includes('leaderboard.html')) {
-      await populateRoundSelector(contract);
-      // Display all winners
-      if (currentRoundId.toString() !== '0') {
-        const { displayWinners } = await import('./components/claims.js');
-        await displayWinners(contract, Number(currentRoundId));
-      }
-    }
-    
-    // Update contract information if on rules page
-    if (window.location.pathname.includes('rules.html')) {
-      await updateContractInfo(contract);
-    }
+    // Note: Leaderboard and rules pages are initialized in initializePageData()
+    // (they work without wallet, so no need to reinitialize on wallet connect)
   }
   
   if (showSuccessToast) {
@@ -868,25 +929,37 @@ async function reconnectWallet(newAddress) {
 
 // Create fallback public provider for read-only access
 async function createFallbackProvider() {
-  try {
-    // Use Sepolia public RPC endpoint
-    const rpcUrl = 'https://rpc.sepolia.org';
-    console.log('📡 Creating fallback provider for read-only access:', rpcUrl);
-    const fallbackProvider = new ethers.JsonRpcProvider(rpcUrl);
-    
-    // Test the connection
+  // Try multiple public RPC endpoints in order (in case of rate limiting)
+  const rpcEndpoints = [
+    'https://rpc.sepolia.org',
+    'https://ethereum-sepolia.publicnode.com',
+    'https://1rpc.io/sepolia'
+  ];
+  
+  for (const rpcUrl of rpcEndpoints) {
     try {
-      await fallbackProvider.getBlockNumber();
-      console.log('✅ Fallback provider connected successfully');
+      console.log('📡 Trying fallback provider:', rpcUrl);
+      const fallbackProvider = new ethers.JsonRpcProvider(rpcUrl);
+      
+      // Test the connection with a timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 5000)
+      );
+      
+      const blockPromise = fallbackProvider.getBlockNumber();
+      
+      await Promise.race([blockPromise, timeoutPromise]);
+      console.log('✅ Fallback provider connected successfully:', rpcUrl);
       return fallbackProvider;
-    } catch (testError) {
-      console.error('❌ Fallback provider test failed:', testError.message);
-      return null;
+      
+    } catch (error) {
+      console.warn(`⚠️ Failed to connect to ${rpcUrl}:`, error.message);
+      // Continue to next RPC endpoint
     }
-  } catch (error) {
-    console.error('Failed to create fallback provider:', error);
-    return null;
   }
+  
+  console.error('❌ All fallback providers failed');
+  return null;
 }
 
 // Load contract from configuration with enhanced security
@@ -908,6 +981,17 @@ async function loadContract() {
       // User has signed in - use signer for write operations
       providerToUse = signer;
       console.log('✅ Using signer for read/write access');
+      
+      // Log network info on mobile for debugging (but don't block - let validateNetwork handle it)
+      if (isMobileDevice()) {
+        try {
+          const network = await provider.getNetwork();
+          console.log('📱 Mobile network detected:', network.chainId.toString(), network.name);
+          console.log('📱 Expected network:', CONTRACT_CONFIG.chainId, CONTRACT_CONFIG.network);
+        } catch (networkError) {
+          console.warn('⚠️ Could not check network:', networkError.message);
+        }
+      }
     } else if (provider) {
       // Provider available but no signer - use provider for read-only
       providerToUse = provider;
@@ -946,39 +1030,60 @@ async function loadContract() {
     
     console.log('✅ Contract instance created:', CONTRACT_CONFIG.address, isReadOnly ? '(read-only)' : '(read/write)');
     
-    // Verify contract is accessible (single attempt for wallet connections, multiple for fallback)
-    const maxRetries = isReadOnly ? 2 : 1;
+    // Verify contract is accessible (more retries on mobile due to network issues)
+    const isMobile = isMobileDevice();
+    const maxRetries = isMobile ? 3 : (isReadOnly ? 2 : 1);
     let retryCount = 0;
     let contractAccessible = false;
+    
+    if (isMobile) {
+      console.log('📱 Mobile device detected - using extended retry logic for contract verification');
+    }
     
     while (retryCount < maxRetries && !contractAccessible) {
       try {
         console.log(`🔍 Verifying contract accessibility (attempt ${retryCount + 1}/${maxRetries})...`);
-        const roundId = await contract.currentRoundId();
+        console.log('🔍 Contract address:', CONTRACT_CONFIG.address);
+        console.log('🔍 Provider type:', isReadOnly ? 'read-only' : 'wallet signer');
+        
+        // Add timeout for mobile (mobile networks can be slow)
+        const timeoutMs = isMobile ? 10000 : 5000;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Contract call timeout')), timeoutMs)
+        );
+        
+        const roundIdPromise = contract.currentRoundId();
+        const roundId = await Promise.race([roundIdPromise, timeoutPromise]);
+        
         console.log('✅ Contract accessibility verified. Current round:', roundId.toString());
         contractAccessible = true;
       } catch (contractError) {
         retryCount++;
-        console.warn(`⚠️ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError.message);
+        console.error(`❌ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError);
+        console.error('❌ Error details:', {
+          message: contractError.message,
+          code: contractError.code,
+          data: contractError.data
+        });
         
         if (retryCount < maxRetries) {
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Wait before retrying (longer wait on mobile due to network issues)
+          const retryDelay = isMobile ? 3000 : 1500;
+          console.log(`⏳ Waiting ${retryDelay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
         } else {
-          console.error('❌ Contract not accessible:', contractError.message);
+          console.error('❌ Contract not accessible after all retries');
           
-          // If this was a wallet connection, don't use fallback - show error
+          // If this was a wallet connection, show warning but DON'T reset wallet state
+          // User's wallet should stay connected even if contract isn't accessible
           if (!isReadOnly) {
-            showTransactionStatus('Unable to verify contract. Please check your wallet connection.', 'error');
-            // Reset wallet state
-            provider = null;
-            signer = null;
-            userAddress = null;
-            contract = null;
+            showTransactionStatus('Unable to verify contract. Contract may not be deployed or network may be wrong.', 'error');
+            contract = null; // Clear contract but keep wallet connected
             return;
           }
           
           showTransactionStatus('Unable to load contract data. Please check your connection.', 'error');
+          contract = null;
           return;
         }
       }
@@ -1530,16 +1635,20 @@ function hideTicketConnector() {
   path.classList.remove('animated');
 }
 
-// Buy tickets with enhanced security validations
-async function buyTickets() {
+// Buy tickets with enhanced security validations (unified for desktop & mobile)
+async function buyTickets(isMobile = false) {
   try {
     if (!contract || !signer || !userAddress) {
       showTransactionStatus('Please connect your wallet first', 'error');
       return;
     }
     
-    const tickets = parseInt(document.getElementById('selected-tickets').textContent);
-    const amount = parseFloat(document.getElementById('selected-amount').textContent);
+    // Get ticket/amount data from appropriate source (desktop or mobile)
+    const ticketsElementId = isMobile ? 'mobile-selected-tickets' : 'selected-tickets';
+    const amountElementId = isMobile ? 'mobile-selected-amount' : 'selected-amount';
+    
+    const tickets = parseInt(document.getElementById(ticketsElementId).textContent);
+    const amount = parseFloat(document.getElementById(amountElementId).textContent);
     
     if (!tickets || !amount) {
       showTransactionStatus('Please select a ticket bundle first', 'error');
@@ -1607,12 +1716,23 @@ async function buyTickets() {
       console.log('Bet placed successfully:', receipt);
       showTransactionStatus(`✅ Bet placed successfully! ${tickets} tickets for ${amount} ETH`, 'success');
       
-      // Reset form
-      const ticketOffice = document.getElementById('ticket-office');
-      if (ticketOffice) {
-        ticketOffice.classList.remove('open');
+      // Reset UI based on desktop or mobile
+      if (isMobile) {
+        // Hide mobile slide-out after successful purchase
+        const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+        if (mobileSlideout) {
+          mobileSlideout.classList.remove('open');
+        }
+        // Remove mobile selection from cards
+        document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('mobile-selected'));
+      } else {
+        // Reset desktop form
+        const ticketOffice = document.getElementById('ticket-office');
+        if (ticketOffice) {
+          ticketOffice.classList.remove('open');
+        }
+        document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
       }
-      document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
       
       // Update user stats and security status
       await updateUserStats(contract, userAddress);
@@ -1630,78 +1750,9 @@ async function buyTickets() {
   }
 }
 
-// Buy tickets from mobile slide-out
+// Buy tickets from mobile slide-out (wrapper for unified function)
 async function buyTicketsMobile() {
-  try {
-    if (!contract || !signer || !userAddress) {
-      showTransactionStatus('Please connect your wallet first', 'error');
-      return;
-    }
-    
-    const tickets = parseInt(document.getElementById('mobile-selected-tickets').textContent);
-    const amount = parseFloat(document.getElementById('mobile-selected-amount').textContent);
-    
-    if (!tickets || !amount) {
-      showTransactionStatus('Please select a ticket bundle first', 'error');
-      return;
-    }
-    
-    // Use the same validation and purchase logic as desktop
-    // Validate transaction parameters
-    try {
-      validateTransactionParams({ amount, tickets, userAddress });
-    } catch (validationError) {
-      showTransactionStatus(validationError.message, 'error');
-      return;
-    }
-    
-    // Check rate limiting
-    try {
-      checkRateLimit(userAddress);
-    } catch (rateLimitError) {
-      showTransactionStatus(rateLimitError.message, 'warning');
-      return;
-    }
-    
-    // Validate security state
-    try {
-      validateSecurityState(contract, userAddress);
-    } catch (securityError) {
-      showTransactionStatus(securityError.message, 'error');
-      return;
-    }
-    
-    const amountWei = ethers.parseEther(amount.toString());
-    
-    // Call contract method
-    const tx = await contract.placeBet(tickets, { value: amountWei });
-    
-    showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
-    console.log('Transaction hash:', tx.hash);
-    
-    // Wait for transaction confirmation
-    const receipt = await tx.wait();
-    console.log('Transaction confirmed:', receipt);
-    
-    // Hide mobile slide-out after successful purchase
-    const mobileSlideout = document.getElementById('mobile-purchase-slideout');
-    if (mobileSlideout) {
-      mobileSlideout.classList.remove('open');
-    }
-    
-    // Remove selection from cards
-    document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('mobile-selected'));
-    
-    // Update user stats and security status
-    await updateUserStats(contract, userAddress);
-    showSecurityStatus(contract, userAddress);
-    
-    showTransactionStatus('Tickets purchased successfully!', 'success');
-    
-  } catch (error) {
-    console.error('Error placing mobile bet:', error);
-    showTransactionStatus('Failed to place bet: ' + error.message, 'error');
-  }
+  return buyTickets(true); // Call unified function with mobile flag
 }
 
 // Submit puzzle proof with enhanced security validations

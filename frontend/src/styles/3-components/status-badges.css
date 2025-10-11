@@ -1,0 +1,346 @@
+/* ===================================================================
+   STATUS BADGES & INDICATORS
+   Round status items, merkle badge, dispenser, notifications
+   =================================================================== */
+
+/* Status Arrow */
+.status-arrow-vertical {
+  font-size: 2.5em;
+  color: var(--primary-color);
+  opacity: 0.5;
+  transition: all var(--transition-slow);
+  line-height: 1;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Status Items */
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--background-color);
+  border-radius: 50%;
+  border: 3px solid var(--border-color);
+  transition: all var(--transition-slow);
+  opacity: 0.5;
+  width: 135px;
+  height: 135px;
+  text-align: center;
+}
+
+.status-item.active {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: var(--primary-color);
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.status-item.open-phase.active {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.3), rgba(3, 169, 244, 0.3));
+  border: 3px solid #2196F3;
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.5), 0 0 40px rgba(33, 150, 243, 0.3);
+  animation: pulse-glow-blue 2s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+.status-item.open-phase.active .status-icon {
+  font-size: 3em;
+  animation: pulse-target 1.5s ease-in-out infinite;
+}
+
+.status-item.drawing-phase.active {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.3), rgba(255, 193, 7, 0.3));
+  border: 3px solid #FF9800;
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.5), 0 0 40px rgba(255, 152, 0, 0.3);
+  animation: pulse-glow-orange 2s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+.status-item.drawing-phase.active .status-icon {
+  font-size: 3em;
+  animation: spin-dice 2s ease-in-out infinite;
+}
+
+.status-item.claim-phase.active {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.3), rgba(139, 195, 74, 0.3));
+  border: 3px solid #4CAF50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.5), 0 0 40px rgba(76, 175, 80, 0.3);
+  animation: pulse-glow-green 2s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+.status-item.claim-phase.active .status-icon {
+  font-size: 3em;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+.status-icon {
+  font-size: 2.625em;
+  line-height: 1;
+}
+
+.status-text {
+  font-size: 0.85em;
+  font-weight: 600;
+  line-height: 1.2;
+  max-width: 110px;
+  word-wrap: break-word;
+  color: var(--text-color);
+}
+
+/* Merkle Badge */
+.merkle-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-xs);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(3, 169, 244, 0.2));
+  border: 1px solid #2196F3;
+  border-radius: var(--border-radius);
+  width: 85px;
+  height: 85px;
+  position: absolute;
+  left: -135px;
+  top: 55%;
+  transform: translateY(-50%);
+  margin-top: -8px;
+}
+
+.badge-icon {
+  font-size: 1.8em;
+}
+
+.badge-text {
+  font-size: 0.55em;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #2196F3;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align: center;
+  word-wrap: break-word;
+  max-width: 70px;
+  padding-bottom: 10px;
+}
+
+/* Make merkle badge text glow when drawing phase is active */
+.status-row-with-badge .status-item.drawing-phase.active ~ * .merkle-badge .badge-text,
+.status-row-with-badge:has(.status-item.drawing-phase.active) .merkle-badge .badge-text {
+  color: #FF9800;
+  text-shadow: 0 0 10px rgba(255, 152, 0, 0.8), 0 0 20px rgba(255, 152, 0, 0.6);
+  animation: text-glow-orange 2s ease-in-out infinite, text-pulse 2s ease-in-out infinite;
+}
+
+/* Atomic Dispenser */
+.dispenser-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xl);
+}
+
+.ticket-graphic {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-xs);
+  row-gap: 4px;
+  padding: var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  background-color: var(--background-color);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  position: relative;
+}
+
+.dispenser-label {
+  position: absolute;
+  top: var(--spacing-xs);
+  left: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.xcp-icon-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  opacity: 0.7;
+}
+
+.ticket-icon {
+  font-size: 2.2em;
+  transition: all var(--transition-slow);
+  opacity: 0.3;
+  filter: grayscale(100%) brightness(0.5);
+  text-align: center;
+}
+
+.ticket-icon.purchased {
+  opacity: 1;
+  filter: grayscale(0%) brightness(1);
+  animation: ticket-pop var(--transition-slow) ease;
+}
+
+.dispenser-badge {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-slow);
+  margin-top: var(--spacing-sm);
+}
+
+.dispenser-badge.waiting {
+  color: var(--warning-color);
+}
+
+.dispenser-badge.dispensing {
+  color: var(--text-color);
+}
+
+#dispenser-text {
+  display: block;
+}
+
+/* Unclaimed Prizes Notification */
+#unclaimed-prizes-notification {
+  margin-top: var(--spacing-sm);
+  animation: fadeIn 0.5s ease-in;
+}
+
+.unclaimed-link {
+  display: inline-block !important;
+  padding: 3px 8px !important;
+  background: rgba(255, 152, 0, 0.15) !important;
+  border: 1px solid #FF9800 !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-size: 0.75rem !important;
+  color: #FFF !important;
+  transition: all var(--transition-base) !important;
+}
+
+.unclaimed-link:hover {
+  background: rgba(255, 152, 0, 0.25) !important;
+  border-color: #FFC107 !important;
+  transform: translateY(-1px) !important;
+}
+
+.unclaimed-icon {
+  font-size: 0.9em !important;
+  margin-right: 4px !important;
+}
+
+.unclaimed-text {
+  font-size: inherit !important;
+  font-weight: 500 !important;
+}
+
+/* Transaction Status */
+.tx-status {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  z-index: var(--z-toast);
+  max-width: 500px;
+  display: none;
+  text-align: center;
+}
+
+.tx-status.info {
+  background-color: rgba(33, 150, 243, 0.3);
+  border: 1px solid var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+.tx-status.success {
+  background-color: #90EE90;
+  border: 1px solid var(--success-color);
+  color: #2E7D32;
+}
+
+.tx-status.warning {
+  background-color: rgba(255, 152, 0, 0.3);
+  border: 1px solid var(--warning-color);
+  color: var(--warning-color);
+}
+
+.tx-status.error {
+  background-color: rgba(244, 67, 54, 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+}
+
+/* Info and Error Messages */
+.info {
+  padding: var(--spacing-md);
+  background-color: rgba(33, 150, 243, 0.1);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  color: var(--secondary-color);
+  text-align: center;
+}
+
+.error {
+  padding: var(--spacing-md);
+  background-color: rgba(244, 67, 54, 0.1);
+  border: 1px solid var(--error-color);
+  border-radius: var(--border-radius);
+  color: var(--error-color);
+  text-align: center;
+}
+
+/* Claim Status */
+.claim-status {
+  text-align: center;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.claim-status.claimed {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+/* Verification Badge */
+.verification-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: rgba(76, 175, 80, 0.1);
+  border: 1px solid var(--success-color);
+  border-radius: var(--border-radius);
+  color: var(--success-color);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-left: var(--spacing-xs);
+}
+
+#verified-status {
+  color: #FFA726;
+}
+
+#verified-checkmark {
+  color: #4CAF50;
+  font-size: 1.1em;
+}
+

@@ -2384,6 +2384,8 @@ section h2 {
     display: none !important;
   }
   
+  /* Trigger deployment */
+  
   .ticket-visual {
     min-width: 60px;
   }

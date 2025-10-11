@@ -2384,7 +2384,7 @@ section h2 {
     display: none !important;
   }
   
-  /* Trigger deployment */
+  /* Trigger deployment - workflow fix applied */
   
   .ticket-visual {
     min-width: 60px;

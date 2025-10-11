@@ -747,12 +747,34 @@ window.copyToClipboard = copyToClipboard;
 // Connect to wallet with enhanced security validations
 async function connectWallet() {
   try {
-    // Detect the best available provider
-    const detectedProvider = detectProvider();
+    // On mobile, give wallet providers extra time to initialize (especially Brave)
+    let detectedProvider = detectProvider();
+    
+    if (!detectedProvider && isMobileDevice()) {
+      console.log('📱 No provider detected on mobile, waiting for wallet to initialize...');
+      showTransactionStatus('Waiting for wallet to initialize...', 'info');
+      
+      // Wait 500ms and try again (Brave wallet on mobile can be slow)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Re-check for wallet discovery
+      window.dispatchEvent(new Event('eip6963:requestProvider'));
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      detectedProvider = detectProvider();
+    }
     
     if (!detectedProvider) {
       // On mobile, check if we're in a mobile browser (not MetaMask browser)
       if (isMobileDevice()) {
+        // Check if we're in Brave browser specifically
+        const isBrave = navigator.brave && typeof navigator.brave.isBrave === 'function';
+        
+        if (isBrave) {
+          showTransactionStatus('Please enable Brave Wallet in Brave Settings > Web3', 'error');
+          return;
+        }
+        
         // Only redirect to MetaMask app if we're NOT already in MetaMask Mobile Browser
         if (!navigator.userAgent.includes('MetaMaskMobile')) {
           const currentUrl = window.location.href;
@@ -804,7 +826,30 @@ async function connectWallet() {
     if (error.code === 4001) {
       showTransactionStatus('Connection cancelled by user', 'warning');
     } else {
-      const errorMsg = error.message || 'Unknown error';
+      // Robust error message extraction for various error types
+      let errorMsg = 'Unknown error';
+      
+      if (error) {
+        if (typeof error === 'string') {
+          errorMsg = error;
+        } else if (error.message && typeof error.message === 'string') {
+          errorMsg = error.message;
+        } else if (error.reason && typeof error.reason === 'string') {
+          errorMsg = error.reason;
+        } else if (error.data && error.data.message) {
+          errorMsg = error.data.message;
+        } else if (Array.isArray(error) && error.length > 0) {
+          errorMsg = error[0]?.message || error[0] || 'Array error';
+        } else if (typeof error === 'object') {
+          // Try to extract any useful info from the error object
+          errorMsg = JSON.stringify(error);
+          // If it's just an empty object or array, provide a better message
+          if (errorMsg === '{}' || errorMsg === '[]') {
+            errorMsg = 'Connection failed - please ensure your wallet is unlocked and try again';
+          }
+        }
+      }
+      
       showTransactionStatus('Failed to connect wallet: ' + errorMsg, 'error');
     }
   }

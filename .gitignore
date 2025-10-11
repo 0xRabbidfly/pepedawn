@@ -144,25 +144,7 @@ install.ps1
 tmp/
 temp/
 
-# Large files and media assets
-*.gif
-*.mp4
-*.mov
-*.avi
-*.mkv
-*.webm
-*.png
-*.jpg
-*.jpeg
-*.bmp
-*.tiff
-*.svg
-*.ico
 
-# Exception: Allow favicon files
-!frontend/public/PEPEDAWN_thumbnail.png
-!frontend/public/*.ico
-!frontend/public/*.svg
 
 # Exception: Allow built assets in dist/
 !frontend/dist/*.png

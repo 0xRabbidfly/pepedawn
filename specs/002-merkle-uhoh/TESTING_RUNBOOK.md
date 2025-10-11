@@ -403,6 +403,7 @@ cast send $env:CONTRACT_ADDRESS "setValidProof(uint256,bytes32)" 1 $(cast keccak
 ### 2.5 Open Round for Betting
 
 ```powershell
+cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "openRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 

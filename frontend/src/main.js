@@ -59,7 +59,7 @@ function formatAddress(address) {
 // Update button states based on round status and user state
 async function updateButtonStates(roundState = null) {
   const submitProofBtn = document.getElementById('submit-proof');
-  const placeBetBtn = document.getElementById('place-bet');
+  const buyTicketsBtn = document.getElementById('buy-tickets');
   const ticketCards = document.querySelectorAll('.ticket-option-card');
   const proofInput = document.getElementById('proof-input');
   
@@ -69,9 +69,9 @@ async function updateButtonStates(roundState = null) {
       submitProofBtn.disabled = true;
       submitProofBtn.title = 'Contract not available';
     }
-    if (placeBetBtn) {
-      placeBetBtn.disabled = true;
-      placeBetBtn.title = 'Contract not available';
+    if (buyTicketsBtn) {
+      buyTicketsBtn.disabled = true;
+      buyTicketsBtn.title = 'Contract not available';
     }
     ticketCards.forEach(card => {
       card.style.pointerEvents = 'none';
@@ -103,15 +103,15 @@ async function updateButtonStates(roundState = null) {
     // Check if round is open for betting (status 1 = Open)
     const isRoundOpen = currentRoundStatus === 1;
     
-    // Update betting buttons
-    if (placeBetBtn) {
-      placeBetBtn.disabled = !isRoundOpen || !userAddress;
+    // Update ticket purchase buttons
+    if (buyTicketsBtn) {
+      buyTicketsBtn.disabled = !isRoundOpen || !userAddress;
       if (!userAddress) {
-        placeBetBtn.title = 'Connect wallet to place bets';
+        buyTicketsBtn.title = 'Connect wallet to purchase tickets';
       } else if (!isRoundOpen) {
-        placeBetBtn.title = 'Round is not open for betting';
+        buyTicketsBtn.title = 'Round is not open for ticket purchases';
       } else {
-        placeBetBtn.title = '';
+        buyTicketsBtn.title = '';
       }
     }
     
@@ -149,7 +149,7 @@ async function updateButtonStates(roundState = null) {
           
           if (userStats.tickets.toString() === '0') {
             proofDisabled = true;
-            proofTooltip = 'Place a bet before submitting proof';
+            proofTooltip = 'Purchase tickets before submitting proof';
           } else if (userStats.hasProof) {
             proofDisabled = true;
             proofTooltip = 'Proof already submitted for this round';
@@ -181,9 +181,9 @@ async function updateButtonStates(roundState = null) {
       submitProofBtn.disabled = true;
       submitProofBtn.title = 'Error checking round status';
     }
-    if (placeBetBtn) {
-      placeBetBtn.disabled = true;
-      placeBetBtn.title = 'Error checking round status';
+    if (buyTicketsBtn) {
+      buyTicketsBtn.disabled = true;
+      buyTicketsBtn.title = 'Error checking round status';
     }
     ticketCards.forEach(card => {
       card.style.pointerEvents = 'none';
@@ -211,10 +211,49 @@ window.toggleProofSection = function() {
 window.closeTicketOffice = function() {
   const ticketOffice = document.getElementById('ticket-office');
   if (ticketOffice) {
-    ticketOffice.classList.remove('open', 'receiving');
+    ticketOffice.classList.remove('open');
   }
   document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
-  hideTicketConnector();
+}
+
+// Detect mobile device
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Get the best available provider (handles multiple wallet scenarios)
+function detectProvider() {
+  // Check for MetaMask specifically (preferred)
+  if (window.ethereum?.isMetaMask) {
+    console.log('✅ MetaMask detected');
+    return window.ethereum;
+  }
+  
+  // Check for Coinbase Wallet
+  if (window.ethereum?.isCoinbaseWallet) {
+    console.log('✅ Coinbase Wallet detected');
+    return window.ethereum;
+  }
+  
+  // If multiple providers exist (e.g., Brave + MetaMask), prefer MetaMask
+  if (window.ethereum?.providers?.length > 0) {
+    const metamask = window.ethereum.providers.find(p => p.isMetaMask);
+    if (metamask) {
+      console.log('✅ MetaMask detected in multi-wallet environment');
+      return metamask;
+    }
+    console.log('✅ Using first available provider in multi-wallet environment');
+    return window.ethereum.providers[0];
+  }
+  
+  // Standard ethereum provider
+  if (window.ethereum) {
+    console.log('✅ Web3 provider detected');
+    return window.ethereum;
+  }
+  
+  console.log('❌ No Web3 provider detected');
+  return null;
 }
 
 // Initialize the application
@@ -232,10 +271,13 @@ async function init() {
     setupLeaderboardRoundSelector();
   }
   
+  // Detect the best provider
+  const detectedProvider = detectProvider();
+  
   // Check if wallet is already connected (with conflict protection)
-  if (window.ethereum) {
+  if (detectedProvider) {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      const accounts = await detectedProvider.request({ method: 'eth_accounts' });
       if (accounts.length > 0) {
         await connectWalletSilent(); // Silent connection - no toast
       }
@@ -246,9 +288,11 @@ async function init() {
         console.log('Wallet extension conflict detected - user should disable conflicting extensions');
       }
     }
+  } else if (isMobileDevice()) {
+    console.log('📱 Mobile device detected without wallet - loading read-only mode');
   }
   
-  // Load contract if available
+  // Load contract (will use fallback provider if needed)
   await loadContract();
   
   // Start periodic updates
@@ -262,6 +306,34 @@ function setupEventListeners() {
     connectBtn.addEventListener('click', connectWallet);
   }
   
+  // Hamburger menu functionality
+  const hamburgerMenu = document.getElementById('hamburger-menu');
+  const mainNav = document.getElementById('main-nav');
+  
+  if (hamburgerMenu && mainNav) {
+    hamburgerMenu.addEventListener('click', function() {
+      hamburgerMenu.classList.toggle('active');
+      mainNav.classList.toggle('active');
+    });
+    
+    // Close menu when clicking on nav links
+    const navLinks = mainNav.querySelectorAll('a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        hamburgerMenu.classList.remove('active');
+        mainNav.classList.remove('active');
+      });
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!hamburgerMenu.contains(event.target) && !mainNav.contains(event.target)) {
+        hamburgerMenu.classList.remove('active');
+        mainNav.classList.remove('active');
+      }
+    });
+  }
+  
   // Use event delegation to handle ticket card clicks
   const bettingForm = document.getElementById('betting-form');
   if (bettingForm) {
@@ -273,9 +345,15 @@ function setupEventListeners() {
     });
   }
   
-  const placeBetBtn = document.getElementById('place-bet');
-  if (placeBetBtn) {
-    placeBetBtn.addEventListener('click', placeBet);
+  const buyTicketsBtn = document.getElementById('buy-tickets');
+  if (buyTicketsBtn) {
+    buyTicketsBtn.addEventListener('click', buyTickets);
+  }
+  
+  // Mobile purchase button
+  const mobileBuyTicketsBtn = document.getElementById('mobile-place-bet');
+  if (mobileBuyTicketsBtn) {
+    mobileBuyTicketsBtn.addEventListener('click', buyTicketsMobile);
   }
   
   const submitProofBtn = document.getElementById('submit-proof');
@@ -506,31 +584,69 @@ window.copyToClipboard = copyToClipboard;
 // Connect to wallet with enhanced security validations
 async function connectWallet() {
   try {
-    if (!window.ethereum) {
+    // Detect the best available provider
+    const detectedProvider = detectProvider();
+    
+    if (!detectedProvider) {
+      // On mobile, provide deep link to MetaMask
+      if (isMobileDevice()) {
+        const currentUrl = window.location.href;
+        const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+        
+        showTransactionStatus('Opening MetaMask app...', 'info');
+        
+        // Try to open MetaMask app
+        setTimeout(() => {
+          window.location.href = metamaskDeepLink;
+        }, 500);
+        
+        // Show instructions after a delay
+        setTimeout(() => {
+          showTransactionStatus('If MetaMask doesn\'t open, please use the MetaMask app browser to visit this site', 'warning');
+        }, 3000);
+        
+        return;
+      }
+      
       showTransactionStatus('Please install MetaMask or another Web3 wallet', 'error');
       return;
     }
     
     showTransactionStatus('Connecting to wallet...', 'info');
     
-    // Request account access
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    // Request account access using the detected provider
+    await detectedProvider.request({ method: 'eth_requestAccounts' });
+    
+    // Create provider and signer using the detected provider
+    provider = new ethers.BrowserProvider(detectedProvider);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
+    
+    console.log('Wallet connected:', userAddress);
     
     await setupWalletConnection(true); // true = show success toast
     
   } catch (error) {
     console.error('Error connecting wallet:', error);
-    showTransactionStatus('Failed to connect wallet: ' + error.message, 'error');
+    
+    // Handle user rejection
+    if (error.code === 4001) {
+      showTransactionStatus('Connection cancelled by user', 'warning');
+    } else {
+      const errorMsg = error.message || 'Unknown error';
+      showTransactionStatus('Failed to connect wallet: ' + errorMsg, 'error');
+    }
   }
 }
 
 // Silent wallet connection for auto-connection on page load
 async function connectWalletSilent() {
   try {
-    if (!window.ethereum) return;
+    const detectedProvider = detectProvider();
+    if (!detectedProvider) return;
     
     // Create provider and signer without requesting permission
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.BrowserProvider(detectedProvider);
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
     
@@ -556,10 +672,11 @@ async function setupWalletConnection(showSuccessToast = true) {
     showTransactionStatus(networkError.message, 'warning');
   }
   
-  // Set up network change listener
-  if (window.ethereum.on) {
-    window.ethereum.on('chainChanged', handleNetworkChange);
-    window.ethereum.on('accountsChanged', handleAccountChange);
+  // Set up network change listener with detected provider
+  const detectedProvider = detectProvider();
+  if (detectedProvider && detectedProvider.on) {
+    detectedProvider.on('chainChanged', handleNetworkChange);
+    detectedProvider.on('accountsChanged', handleAccountChange);
   }
   
   // Update UI
@@ -694,8 +811,14 @@ async function reconnectWallet(newAddress) {
     // Update global state
     userAddress = newAddress;
     
-    // Create new provider and signer
-    provider = new ethers.BrowserProvider(window.ethereum);
+    // Detect provider and create new provider and signer
+    const detectedProvider = detectProvider();
+    if (!detectedProvider) {
+      console.error('No provider detected during reconnection');
+      return;
+    }
+    
+    provider = new ethers.BrowserProvider(detectedProvider);
     signer = await provider.getSigner();
     
     // Reset event listeners flag
@@ -743,6 +866,29 @@ async function reconnectWallet(newAddress) {
   }
 }
 
+// Create fallback public provider for read-only access
+async function createFallbackProvider() {
+  try {
+    // Use Sepolia public RPC endpoint
+    const rpcUrl = 'https://rpc.sepolia.org';
+    console.log('📡 Creating fallback provider for read-only access:', rpcUrl);
+    const fallbackProvider = new ethers.JsonRpcProvider(rpcUrl);
+    
+    // Test the connection
+    try {
+      await fallbackProvider.getBlockNumber();
+      console.log('✅ Fallback provider connected successfully');
+      return fallbackProvider;
+    } catch (testError) {
+      console.error('❌ Fallback provider test failed:', testError.message);
+      return null;
+    }
+  } catch (error) {
+    console.error('Failed to create fallback provider:', error);
+    return null;
+  }
+}
+
 // Load contract from configuration with enhanced security
 async function loadContract() {
   try {
@@ -754,8 +900,21 @@ async function loadContract() {
       return;
     }
     
-    // Check if we're on the correct network
-    if (provider) {
+    let providerToUse = null;
+    let isReadOnly = false;
+    
+    // Determine which provider to use
+    if (signer) {
+      // User has signed in - use signer for write operations
+      providerToUse = signer;
+      console.log('✅ Using signer for read/write access');
+    } else if (provider) {
+      // Provider available but no signer - use provider for read-only
+      providerToUse = provider;
+      isReadOnly = true;
+      console.log('✅ Using provider for read-only access');
+      
+      // Check if we're on the correct network
       try {
         const network = await provider.getNetwork();
         validateNetwork(network.chainId);
@@ -763,35 +922,70 @@ async function loadContract() {
       } catch (networkError) {
         console.warn('⚠️ Network validation failed:', networkError.message);
         showTransactionStatus(networkError.message, 'warning');
-        return;
+        
+        // Fall back to public provider
+        console.log('📡 Falling back to public RPC provider');
+        providerToUse = await createFallbackProvider();
+        isReadOnly = true;
       }
+    } else {
+      // No wallet provider - use fallback public provider for read-only access
+      console.log('📱 No wallet detected - using fallback public provider for read-only access');
+      providerToUse = await createFallbackProvider();
+      isReadOnly = true;
+    }
+    
+    if (!providerToUse) {
+      console.error('❌ No provider available');
+      showTransactionStatus('Unable to connect to blockchain. Please try again.', 'error');
+      return;
     }
     
     // Create contract instance
-    if (signer) {
-      contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, signer);
-    } else if (provider) {
-      contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, provider);
-    } else {
-      // No provider available yet - wallet not connected
-      console.log('⏳ Waiting for wallet connection to load contract');
-      return;
+    contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, providerToUse);
+    
+    console.log('✅ Contract instance created:', CONTRACT_CONFIG.address, isReadOnly ? '(read-only)' : '(read/write)');
+    
+    // Verify contract is accessible (single attempt for wallet connections, multiple for fallback)
+    const maxRetries = isReadOnly ? 2 : 1;
+    let retryCount = 0;
+    let contractAccessible = false;
+    
+    while (retryCount < maxRetries && !contractAccessible) {
+      try {
+        console.log(`🔍 Verifying contract accessibility (attempt ${retryCount + 1}/${maxRetries})...`);
+        const roundId = await contract.currentRoundId();
+        console.log('✅ Contract accessibility verified. Current round:', roundId.toString());
+        contractAccessible = true;
+      } catch (contractError) {
+        retryCount++;
+        console.warn(`⚠️ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError.message);
+        
+        if (retryCount < maxRetries) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } else {
+          console.error('❌ Contract not accessible:', contractError.message);
+          
+          // If this was a wallet connection, don't use fallback - show error
+          if (!isReadOnly) {
+            showTransactionStatus('Unable to verify contract. Please check your wallet connection.', 'error');
+            // Reset wallet state
+            provider = null;
+            signer = null;
+            userAddress = null;
+            contract = null;
+            return;
+          }
+          
+          showTransactionStatus('Unable to load contract data. Please check your connection.', 'error');
+          return;
+        }
+      }
     }
     
-    console.log('✅ Contract loaded:', CONTRACT_CONFIG.address);
-    
-    // Verify contract is accessible
-    try {
-      await contract.currentRoundId();
-      console.log('✅ Contract accessibility verified');
-    } catch (contractError) {
-      console.error('❌ Contract not accessible:', contractError.message);
-      showTransactionStatus('Contract not accessible. Please check deployment.', 'error');
-      return;
-    }
-    
-    // Set up event listeners
-    if (contract) {
+    // Set up event listeners (only if we have a wallet connection)
+    if (contract && !isReadOnly) {
       setupContractEventListeners();
     }
     
@@ -1230,45 +1424,60 @@ function setupContractEventListeners() {
 // Select ticket bundle
 function selectTickets(event) {
   const card = event.currentTarget;
+  const isMobile = window.innerWidth <= 768;
   
   // If this card is already selected, unselect it
-  if (card.classList.contains('selected')) {
-    card.classList.remove('selected');
-    const ticketOffice = document.getElementById('ticket-office');
-    if (ticketOffice) {
-      ticketOffice.classList.remove('open', 'receiving');
+  if (card.classList.contains('selected') || card.classList.contains('mobile-selected')) {
+    card.classList.remove('selected', 'mobile-selected');
+    
+    if (isMobile) {
+      // Hide mobile slide-out
+      const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+      if (mobileSlideout) {
+        mobileSlideout.classList.remove('open');
+      }
+    } else {
+      // Hide desktop ticket office
+      const ticketOffice = document.getElementById('ticket-office');
+      if (ticketOffice) {
+        ticketOffice.classList.remove('open');
+      }
     }
-    hideTicketConnector();
     return;
   }
   
   const tickets = parseInt(card.dataset.tickets);
   const amount = parseFloat(card.dataset.amount);
   
-  // Update UI
-  document.getElementById('selected-tickets').textContent = String(tickets);
-  document.getElementById('selected-amount').textContent = String(amount);
-  
-  // Show ticket office with slide animation
-  const ticketOffice = document.getElementById('ticket-office');
-  if (ticketOffice) {
-    setTimeout(() => {
+  if (isMobile) {
+    // Mobile: Update mobile slide-out and show it
+    document.getElementById('mobile-selected-tickets').textContent = String(tickets);
+    document.getElementById('mobile-selected-amount').textContent = String(amount);
+    
+    // Highlight selected card and remove selection from others
+    document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('mobile-selected'));
+    card.classList.add('mobile-selected');
+    
+    // Show mobile slide-out
+    const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+    if (mobileSlideout) {
+      mobileSlideout.classList.add('open');
+    }
+  } else {
+    // Desktop: Update desktop UI and show ticket office (simple show/hide like mobile)
+    document.getElementById('selected-tickets').textContent = String(tickets);
+    document.getElementById('selected-amount').textContent = String(amount);
+    
+    // Highlight selected card and remove selection from others
+    document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    
+    // Show ticket office with simple open class (no animations)
+    const ticketOffice = document.getElementById('ticket-office');
+    if (ticketOffice) {
       ticketOffice.classList.add('open');
-      // Add receiving animation after office opens
-      setTimeout(() => {
-        ticketOffice.classList.add('receiving');
-      }, 200);
-    }, 10);
+    }
   }
-  
-  // Highlight selected card and remove selection from others
-  document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
-  card.classList.add('selected');
-  
-  // Draw and animate the connector
-  setTimeout(() => {
-    drawTicketConnector(card, ticketOffice);
-  }, 50);
 }
 
 // Draw animated connector between card and ticket office
@@ -1321,8 +1530,8 @@ function hideTicketConnector() {
   path.classList.remove('animated');
 }
 
-// Place bet with enhanced security validations
-async function placeBet() {
+// Buy tickets with enhanced security validations
+async function buyTickets() {
   try {
     if (!contract || !signer || !userAddress) {
       showTransactionStatus('Please connect your wallet first', 'error');
@@ -1401,10 +1610,9 @@ async function placeBet() {
       // Reset form
       const ticketOffice = document.getElementById('ticket-office');
       if (ticketOffice) {
-        ticketOffice.classList.remove('open', 'receiving');
+        ticketOffice.classList.remove('open');
       }
       document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
-      hideTicketConnector();
       
       // Update user stats and security status
       await updateUserStats(contract, userAddress);
@@ -1413,11 +1621,85 @@ async function placeBet() {
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
-      handleTransactionError(contractError, 'Place Bet');
+      handleTransactionError(contractError, 'Buy Tickets');
     }
     
   } catch (error) {
     console.error('Error placing bet:', error);
+    showTransactionStatus('Failed to place bet: ' + error.message, 'error');
+  }
+}
+
+// Buy tickets from mobile slide-out
+async function buyTicketsMobile() {
+  try {
+    if (!contract || !signer || !userAddress) {
+      showTransactionStatus('Please connect your wallet first', 'error');
+      return;
+    }
+    
+    const tickets = parseInt(document.getElementById('mobile-selected-tickets').textContent);
+    const amount = parseFloat(document.getElementById('mobile-selected-amount').textContent);
+    
+    if (!tickets || !amount) {
+      showTransactionStatus('Please select a ticket bundle first', 'error');
+      return;
+    }
+    
+    // Use the same validation and purchase logic as desktop
+    // Validate transaction parameters
+    try {
+      validateTransactionParams({ amount, tickets, userAddress });
+    } catch (validationError) {
+      showTransactionStatus(validationError.message, 'error');
+      return;
+    }
+    
+    // Check rate limiting
+    try {
+      checkRateLimit(userAddress);
+    } catch (rateLimitError) {
+      showTransactionStatus(rateLimitError.message, 'warning');
+      return;
+    }
+    
+    // Validate security state
+    try {
+      validateSecurityState(contract, userAddress);
+    } catch (securityError) {
+      showTransactionStatus(securityError.message, 'error');
+      return;
+    }
+    
+    const amountWei = ethers.parseEther(amount.toString());
+    
+    // Call contract method
+    const tx = await contract.placeBet(tickets, { value: amountWei });
+    
+    showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
+    console.log('Transaction hash:', tx.hash);
+    
+    // Wait for transaction confirmation
+    const receipt = await tx.wait();
+    console.log('Transaction confirmed:', receipt);
+    
+    // Hide mobile slide-out after successful purchase
+    const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+    if (mobileSlideout) {
+      mobileSlideout.classList.remove('open');
+    }
+    
+    // Remove selection from cards
+    document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('mobile-selected'));
+    
+    // Update user stats and security status
+    await updateUserStats(contract, userAddress);
+    showSecurityStatus(contract, userAddress);
+    
+    showTransactionStatus('Tickets purchased successfully!', 'success');
+    
+  } catch (error) {
+    console.error('Error placing mobile bet:', error);
     showTransactionStatus('Failed to place bet: ' + error.message, 'error');
   }
 }
@@ -1650,6 +1932,6 @@ window.pepedawn = {
   contract,
   userAddress,
   connectWallet,
-  placeBet,
+  buyTickets,
   submitProof
 };

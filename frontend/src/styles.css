@@ -74,6 +74,7 @@ header {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-md);
+  position: relative;
 }
 
 header h1 {
@@ -82,12 +83,47 @@ header h1 {
   font-size: var(--font-size-2xl);
 }
 
-nav {
+/* Hamburger Menu Button */
+.hamburger-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: var(--text-color);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Main Navigation */
+.main-nav {
   display: flex;
   gap: var(--spacing-lg);
 }
 
-nav a {
+.main-nav a {
   color: var(--text-secondary);
   text-decoration: none;
   padding: var(--spacing-sm) var(--spacing-md);
@@ -95,12 +131,36 @@ nav a {
   transition: all 0.2s ease;
 }
 
-nav a:hover {
+.main-nav a:hover {
   color: var(--text-color);
   background-color: var(--border-color);
 }
 
-nav a.active {
+.main-nav a.active {
+  color: var(--primary-color);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+/* Regular nav (for pages without hamburger) */
+nav:not(.main-nav) {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+nav:not(.main-nav) a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+nav:not(.main-nav) a:hover {
+  color: var(--text-color);
+  background-color: var(--border-color);
+}
+
+nav:not(.main-nav) a.active {
   color: var(--primary-color);
   background-color: rgba(76, 175, 80, 0.1);
 }
@@ -225,6 +285,11 @@ main {
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 0.3; }
   50% { transform: scale(1.1); opacity: 0.6; }
+}
+
+/* Mobile Purchase Slide-out (hidden on desktop) */
+.mobile-purchase-slideout {
+  display: none;
 }
 
 /* Buttons */
@@ -507,40 +572,36 @@ section h2 {
 
 /* Unclaimed Prizes Notification */
 #unclaimed-prizes-notification {
-  margin-top: 15px;
+  margin-top: var(--spacing-sm);
   animation: fadeIn 0.5s ease-in;
 }
 
 .unclaimed-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 193, 7, 0.2));
-  border: 2px solid #FF9800;
-  border-radius: 12px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+  display: inline-block !important;
+  padding: 3px 8px !important;
+  background: rgba(255, 152, 0, 0.15) !important;
+  border: 1px solid #FF9800 !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  font-size: 0.75rem !important;
+  color: #FFF !important;
+  transition: all 0.2s ease !important;
 }
 
 .unclaimed-link:hover {
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.3), rgba(255, 193, 7, 0.3));
-  border-color: #FFC107;
-  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
-  transform: translateY(-2px);
+  background: rgba(255, 152, 0, 0.25) !important;
+  border-color: #FFC107 !important;
+  transform: translateY(-1px) !important;
 }
 
 .unclaimed-icon {
-  font-size: 1.5em;
-  animation: bounce 1.5s ease-in-out infinite;
+  font-size: 0.9em !important;
+  margin-right: 4px !important;
 }
 
 .unclaimed-text {
-  color: #FFF;
-  font-size: 1em;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-size: inherit !important;
+  font-weight: 500 !important;
 }
 
 @keyframes pulse-glow {
@@ -890,32 +951,21 @@ section h2 {
   display: block;
 }
 
-/* Ticket Connector SVG Overlay */
+/* Ticket Connector SVG Overlay - DISABLED (removed animation) */
 .ticket-connector-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  display: none !important; /* Hide connector completely */
 }
 
 .ticket-connector-svg.active {
-  opacity: 1;
+  display: none !important;
 }
 
 .connector-path {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none !important;
 }
 
 .connector-path.animated {
-  stroke-dashoffset: 0;
-  animation: pulse-beam 2s ease-in-out infinite;
+  display: none !important;
 }
 
 @keyframes pulse-beam {
@@ -1153,35 +1203,7 @@ section h2 {
   padding: var(--spacing-lg);
 }
 
-.ticket-office.receiving {
-  animation: office-receive 1s ease-out;
-  border-color: var(--primary-color);
-}
-
-.ticket-office.receiving::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: -8px;
-  width: 16px;
-  height: 16px;
-  background: radial-gradient(circle, rgba(33, 150, 243, 0.8), transparent);
-  border-radius: 50%;
-  transform: translateY(-50%);
-  animation: pulse-dot 1.5s ease-in-out infinite;
-}
-
-@keyframes office-receive {
-  0% {
-    box-shadow: 0 0 0 rgba(76, 175, 80, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(76, 175, 80, 0.6), 0 0 60px rgba(76, 175, 80, 0.3);
-  }
-  100% {
-    box-shadow: 0 0 0 rgba(76, 175, 80, 0.4);
-  }
-}
+/* Removed receiving animation - desktop now uses simple show/hide like mobile */
 
 .close-office {
   position: absolute;
@@ -1322,31 +1344,92 @@ section h2 {
   overflow: hidden;
 }
 
-/* Proof Section */
+/* Proof Section - Enhanced Styling */
 #proof-form {
   margin-top: var(--spacing-md);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.05), rgba(33, 150, 243, 0.05));
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
 }
 
-#proof-form textarea {
+#proof-form p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.5;
+  text-align: center;
+}
+
+#proof-form p strong {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+#proof-input {
   width: 100%;
   min-height: 120px;
   padding: var(--spacing-md);
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
   color: var(--text-color);
-  font-family: var(--font-family);
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
   resize: vertical;
   margin-bottom: var(--spacing-md);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-#proof-form textarea:focus {
+#proof-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+#proof-input:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 #submit-proof {
   width: 100%;
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, var(--primary-color), #45a049);
+  border: none;
+  border-radius: var(--border-radius);
+  color: white;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+#submit-proof::before {
+  content: '🧩 ';
+  font-size: 1.2em;
+  margin-right: var(--spacing-xs);
+}
+
+#submit-proof:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+}
+
+#submit-proof:active {
+  transform: translateY(0);
+}
+
+#submit-proof:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background: linear-gradient(135deg, #666, #555);
 }
 
 #proof-status {
@@ -1354,18 +1437,39 @@ section h2 {
   padding: var(--spacing-md);
   border-radius: var(--border-radius);
   display: none;
+  text-align: center;
+  font-weight: 600;
+  border: 2px solid;
+  animation: slideIn 0.3s ease-out;
 }
 
 #proof-status.success {
   background-color: rgba(76, 175, 80, 0.1);
-  border: 1px solid var(--success-color);
+  border-color: var(--success-color);
   color: var(--success-color);
 }
 
 #proof-status.error {
   background-color: rgba(244, 67, 54, 0.1);
-  border: 1px solid var(--error-color);
+  border-color: var(--error-color);
   color: var(--error-color);
+}
+
+#proof-status.info {
+  background-color: rgba(33, 150, 243, 0.1);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Progress Indicator */
@@ -1680,19 +1784,56 @@ section h2 {
 /* Mobile landscape and portrait */
 @media (max-width: 768px) {
   header {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row;
+    justify-content: space-between;
     padding: var(--spacing-md);
+    position: relative;
   }
   
-  nav {
-    justify-content: center;
-    flex-wrap: wrap;
+  header h1 {
+    font-size: var(--font-size-xl);
   }
   
-  nav a {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: var(--font-size-sm);
+  /* Show hamburger menu on mobile */
+  .hamburger-menu {
+    display: flex;
+  }
+  
+  /* Hide main nav by default on mobile */
+  .main-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    flex-direction: column;
+    gap: 0;
+    padding: var(--spacing-md);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+  }
+  
+  /* Show nav when hamburger is active */
+  .main-nav.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .main-nav a {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-xs);
+    text-align: center;
+    font-size: var(--font-size-base);
+  }
+  
+  .main-nav a:last-child {
+    margin-bottom: 0;
   }
   
   main {
@@ -1704,27 +1845,86 @@ section h2 {
     margin-bottom: var(--spacing-md);
   }
   
+  .round-header {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
+  }
+  
   .round-content {
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
+    display: flex;
+    flex-direction: column-reverse; /* Info column on top, status column below */
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
   }
   
   .status-column {
     flex-direction: row;
     justify-content: center;
     flex-wrap: wrap;
+    order: 2; /* Status column goes after info */
+    width: 100%;
+    padding: 0;
   }
   
   .status-arrow-vertical {
     transform: rotate(-90deg);
   }
   
+  /* Restructure info column on mobile */
+  .info-column {
+    order: 1; /* Info column first */
+    padding: 0; /* Remove padding on mobile */
+    width: 100%;
+  }
+  
+  .info-section-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    width: 100%;
+  }
+  
+  /* Time remaining full width on mobile */
+  .info-section-vertical > .info-item:first-child {
+    width: 100%;
+  }
+  
+  /* Dispenser container full width on mobile */
+  .dispenser-container {
+    width: 100%;
+    margin-top: var(--spacing-md);
+  }
+  
+  .ticket-graphic {
+    width: 100%;
+  }
+  
+  /* Make info-section-grid use 2:1 ratio for tickets:eth */
   .info-section-grid {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--spacing-sm);
   }
   
   .info-item {
     width: 100%;
+  }
+  
+  /* Move merkle badge below status items and before dispenser */
+  .status-row-with-badge {
+    flex-direction: column-reverse; /* Badge on top of status item */
+    gap: var(--spacing-sm);
+  }
+  
+  /* Hide merkle badge on mobile */
+  .merkle-badge {
+    display: none !important;
   }
   
   .status-item {
@@ -1773,6 +1973,21 @@ section h2 {
   /* Mobile-friendly buttons */
   button {
     min-height: 44px; /* Touch-friendly size */
+    font-size: var(--font-size-base);
+  }
+  
+  /* Mobile proof form adjustments */
+  #proof-form {
+    padding: var(--spacing-md);
+  }
+  
+  #proof-input {
+    min-height: 100px;
+    font-size: var(--font-size-xs);
+  }
+  
+  #submit-proof {
+    padding: var(--spacing-md) var(--spacing-lg);
     font-size: var(--font-size-base);
   }
   
@@ -2011,277 +2226,122 @@ section h2 {
   margin-left: var(--spacing-xs);
 }
 
-/* Small mobile devices */
-@media (max-width: 480px) {
-  header {
-    padding: var(--spacing-sm);
-  }
-  
-  header h1 {
-    font-size: var(--font-size-xl);
-  }
-  
-  nav {
-    gap: var(--spacing-sm);
-  }
-  
-  nav a {
-    padding: var(--spacing-xs);
-    font-size: var(--font-size-sm);
-  }
-  
-  main {
-    padding: var(--spacing-sm);
-  }
-  
-  /* Dispenser responsive styles */
-  .ticket-graphic {
-    grid-template-columns: repeat(5, 1fr);
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm);
-    padding-top: var(--spacing-xl);
-  }
-  
-  .ticket-icon {
-    font-size: 1.5em;
-  }
-  
-  .dispenser-label {
-    font-size: 0.7rem;
-  }
-  
-  .dispenser-badge {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: 0.85em;
-  }
-  
-  .title-logo {
-    font-size: 2.5rem;
-    letter-spacing: 0.05em;
-  }
-  
-  .title-subtitle {
-    font-size: var(--font-size-base);
-  }
-  
-  .title-description {
-    font-size: var(--font-size-sm);
-    line-height: 1.4;
-  }
-  
-  .title-container {
-    padding: var(--spacing-sm);
-    max-width: 98vw;
-  }
-  
-  .title-actions {
+/* Mobile ticket counter refactor - MOVED TO MEDIA QUERY */
+
+@media (max-width: 768px) {
+  /* Mobile ticket counter refactor */
+  .betting-layout {
+    display: flex;
     flex-direction: column;
-    width: 100%;
+    gap: 0;
   }
-  
-  .title-actions button {
-    width: 100%;
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  /* Single column layouts for mobile */
-  .ticket-options {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-sm);
-  }
-  
-  #user-stats {
-    grid-template-columns: 1fr;
-  }
-  
-  .round-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-  
-  .merkle-badge {
-    align-self: flex-end;
-  }
-  
-  .info-section {
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-sm);
-  }
-  
-  .info-item {
-    min-width: auto;
-    width: 100%;
-    max-width: 200px;
-  }
-  
-  .status-flow {
-    gap: var(--spacing-xs);
-  }
-  
-  .status-item {
-    width: 100px;
-    height: 100px;
-    padding: var(--spacing-sm);
-  }
-  
-  .status-icon {
-    font-size: 1.8em;
-  }
-  
-  .status-text {
-    font-size: 0.75em;
-    max-width: 85px;
-  }
-  
-  .status-arrow-vertical {
-    font-size: 1.3em;
-  }
-  
-  .info-item {
-    padding: var(--spacing-sm);
-  }
-  
-  .merkle-badge {
-    padding: var(--spacing-xs);
-  }
-  
-  .badge-text {
-    font-size: 0.55em;
-  }
-  
-  .info-icon {
-    font-size: 1em;
-  }
-  
-  .info-text {
-    font-size: var(--font-size-lg); /* Responsive but still readable (1.125rem) */
-  }
-  
-  .info-value {
-    font-size: var(--font-size-xl); /* Match desktop prize-tier on mobile (1.25rem) */
-  }
-  
-  /* Mobile winners section */
-  .winners-section {
-    padding: var(--spacing-md);
-  }
-  
-  .winners-title {
-    font-size: var(--font-size-xl);
+
+  /* Mobile ticket options - horizontal row at top */
+  .ticket-options-column {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    justify-content: space-between !important;
     margin-bottom: var(--spacing-md);
   }
-  
-  .winner-tier-title {
-    font-size: var(--font-size-lg);
-  }
-  
-  .winner-address {
-    font-size: var(--font-size-base);
-    padding: var(--spacing-xs);
-  }
-  
-  .pepe-winners-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  /* Mobile leaderboard header */
-  .leaderboard-header-section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-  }
-  
-  .round-selector {
-    align-self: stretch;
-  }
-  
-  .round-selector select {
-    flex: 1;
-    min-width: auto;
-  }
-  
-  /* Simplified leaderboard for small screens */
-  .leaderboard-header,
-  .leaderboard-entry {
-    grid-template-columns: 30px 1fr 50px 70px;
-    font-size: var(--font-size-sm);
-    gap: var(--spacing-xs);
-  }
-  
-  /* Hide less important columns on very small screens */
-  .leaderboard-header .tickets,
-  .leaderboard-entry .tickets {
-    display: none;
-  }
-  
-  /* Stack form elements vertically */
-  .form-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .form-group label {
-    margin-bottom: var(--spacing-xs);
-  }
-  
-  /* Betting layout stacks on mobile */
-  .betting-layout {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-  }
-  
-  /* Larger touch targets */
-  .ticket-option-card {
-    min-height: 60px;
-  }
-  
-  .ticket-visual {
-    min-width: 60px;
-  }
-  
-  .ticket-single {
-    font-size: 2.5em;
-  }
-  
-  .ticket-stack {
-    width: 50px;
-    height: 40px;
-  }
-  
-  .ticket-stacked {
-    font-size: 2em;
-  }
-  
-  .ticket-bundle {
-    font-size: 2.5em;
-  }
-  
-  .summary-icon {
-    font-size: 2em;
-    min-width: 40px;
-  }
-  
-  .summary-value {
-    font-size: var(--font-size-xl);
-  }
-  
-  /* Simplified sections */
-  section {
-    padding: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  section h2 {
-    font-size: var(--font-size-xl);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  section h3 {
-    font-size: var(--font-size-lg);
-    margin-bottom: var(--spacing-xs);
-  }
+
+.ticket-option-card {
+  flex: 1 !important;
+  min-height: 80px !important;
+  height: auto !important;
+  max-width: calc(33.333% - 4px) !important;
+  width: auto !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  padding: var(--spacing-sm) var(--spacing-xs) !important;
+  gap: var(--spacing-xs) !important;
+}
+
+.ticket-option-card.mobile-selected {
+  background-color: rgba(76, 175, 80, 0.2) !important;
+  border-color: var(--primary-color) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Mobile ticket visual adjustments */
+.ticket-visual {
+  width: 45px !important;
+  height: 45px !important;
+  min-width: 45px !important;
+}
+
+.ticket-single {
+  font-size: 1.8em !important;
+}
+
+.ticket-stack {
+  width: 35px !important;
+  height: 30px !important;
+}
+
+.ticket-stacked {
+  font-size: 1.4em !important;
+}
+
+.ticket-bundle {
+  font-size: 1.8em !important;
+}
+
+/* Mobile ticket text adjustments */
+.ticket-label {
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
+.ticket-price {
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+}
+
+.ticket-discount {
+  font-size: 0.7rem !important;
+  padding: 2px 4px !important;
+  min-width: auto !important;
+}
+
+/* Hide desktop ticket office on mobile */
+.ticket-office {
+  display: none !important;
+}
+
+/* Hide raven completely on mobile */
+.raven-background {
+  display: none !important;
+}
+
+/* Mobile purchase slide-out */
+.mobile-purchase-slideout {
+  display: block !important;
+  width: 100%;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(33, 150, 243, 0.08));
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin-top: var(--spacing-md);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-purchase-slideout.open {
+  max-height: 400px;
+  opacity: 1;
+  padding: var(--spacing-lg);
+}
+
+.mobile-purchase-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 }
 
 /* Winners Section - Podium Style */

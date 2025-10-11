@@ -12,7 +12,12 @@
     <div id="app">
       <header>
         <h1>PEPEDAWN</h1>
-        <nav>
+        <button class="hamburger-menu" id="hamburger-menu" aria-label="Toggle navigation menu">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+        <nav class="main-nav" id="main-nav">
           <a href="/">Home</a>
           <a href="/main.html" class="active">Ticket Office</a>
           <a href="/claim.html">Claim Office</a>
@@ -61,7 +66,6 @@
                 <span class="status-icon">🐸</span>
                 <span class="status-text">Winners Claiming</span>
               </div>
-              <div id="unclaimed-prizes-notification" style="display: none;"></div>
             </div>
             
             <!-- Right Column: Info + Dispenser -->
@@ -114,6 +118,9 @@
                   </div>
                 </div>
               </div>
+              
+              <!-- Unclaimed Prizes Notification -->
+              <div id="unclaimed-prizes-notification" style="display: none;"></div>
             </div>
           </div>
         </section>
@@ -183,6 +190,7 @@
               </div>
             </div>
             
+            
             <div id="ticket-office" class="ticket-office">
               <div class="raven-background"></div>
               <div class="office-content">
@@ -212,6 +220,36 @@
                 <button id="buy-tickets" class="btn-buy-tickets">🐸 Buy Tickets</button>
               </div>
             </div>
+            
+            <!-- Mobile Purchase Slide-out (hidden on desktop) -->
+            <div id="mobile-purchase-slideout" class="mobile-purchase-slideout">
+              <div class="mobile-purchase-content">
+                <div class="summary-card">
+                  <div class="summary-item">
+                    <span class="summary-icon">🎫</span>
+                    <div class="summary-details">
+                      <div class="summary-label">Tickets</div>
+                      <div class="summary-value" id="mobile-selected-tickets">0</div>
+                    </div>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-icon">💰</span>
+                    <div class="summary-details">
+                      <div class="summary-label">Total Price</div>
+                      <div class="summary-value"><span id="mobile-selected-amount">0</span> ETH</div>
+                    </div>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-icon">📊</span>
+                    <div class="summary-details">
+                      <div class="summary-label">Cap Remaining</div>
+                      <div class="summary-value"><span id="mobile-cap-remaining">1.0</span> ETH</div>
+                    </div>
+                  </div>
+                </div>
+                <button id="mobile-place-bet" class="btn-buy-tickets">🐸 Buy Tickets</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -221,7 +259,7 @@
             Puzzle Proof Submission
           </h2>
           <div id="proof-form" class="collapsible-content" style="display: none;">
-            <p>Submit one puzzle proof per round to get +40% weight multiplier</p>
+            <p>Submit one puzzle proof per round to get <strong>+40% weight multiplier</strong> on your tickets</p>
             <textarea id="proof-input" placeholder="Paste your puzzle proof here..."></textarea>
             <button id="submit-proof">Submit Proof</button>
             <div id="proof-status"></div>

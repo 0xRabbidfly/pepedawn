@@ -584,10 +584,12 @@ async function connectWallet() {
     // Request account access using the detected provider
     await detectedProvider.request({ method: 'eth_requestAccounts' });
     
-    // Create provider from detected wallet
+    // Create provider and signer using the detected provider
     provider = new ethers.BrowserProvider(detectedProvider);
     signer = await provider.getSigner();
     userAddress = await signer.getAddress();
+    
+    console.log('Wallet connected:', userAddress);
     
     await setupWalletConnection(true); // true = show success toast
     
@@ -598,7 +600,8 @@ async function connectWallet() {
     if (error.code === 4001) {
       showTransactionStatus('Connection cancelled by user', 'warning');
     } else {
-      showTransactionStatus('Failed to connect wallet: ' + error.message, 'error');
+      const errorMsg = error.message || 'Unknown error';
+      showTransactionStatus('Failed to connect wallet: ' + errorMsg, 'error');
     }
   }
 }
@@ -831,12 +834,22 @@ async function reconnectWallet(newAddress) {
 }
 
 // Create fallback public provider for read-only access
-function createFallbackProvider() {
+async function createFallbackProvider() {
   try {
     // Use Sepolia public RPC endpoint
     const rpcUrl = 'https://rpc.sepolia.org';
     console.log('📡 Creating fallback provider for read-only access:', rpcUrl);
-    return new ethers.JsonRpcProvider(rpcUrl);
+    const fallbackProvider = new ethers.JsonRpcProvider(rpcUrl);
+    
+    // Test the connection
+    try {
+      await fallbackProvider.getBlockNumber();
+      console.log('✅ Fallback provider connected successfully');
+      return fallbackProvider;
+    } catch (testError) {
+      console.error('❌ Fallback provider test failed:', testError.message);
+      return null;
+    }
   } catch (error) {
     console.error('Failed to create fallback provider:', error);
     return null;
@@ -879,13 +892,13 @@ async function loadContract() {
         
         // Fall back to public provider
         console.log('📡 Falling back to public RPC provider');
-        providerToUse = createFallbackProvider();
+        providerToUse = await createFallbackProvider();
         isReadOnly = true;
       }
     } else {
       // No wallet provider - use fallback public provider for read-only access
       console.log('📱 No wallet detected - using fallback public provider for read-only access');
-      providerToUse = createFallbackProvider();
+      providerToUse = await createFallbackProvider();
       isReadOnly = true;
     }
     
@@ -898,10 +911,10 @@ async function loadContract() {
     // Create contract instance
     contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, providerToUse);
     
-    console.log('✅ Contract loaded:', CONTRACT_CONFIG.address, isReadOnly ? '(read-only)' : '(read/write)');
+    console.log('✅ Contract instance created:', CONTRACT_CONFIG.address, isReadOnly ? '(read-only)' : '(read/write)');
     
-    // Verify contract is accessible with retry logic for mobile
-    const maxRetries = 3;
+    // Verify contract is accessible (single attempt for wallet connections, multiple for fallback)
+    const maxRetries = isReadOnly ? 2 : 1;
     let retryCount = 0;
     let contractAccessible = false;
     
@@ -916,31 +929,24 @@ async function loadContract() {
         console.warn(`⚠️ Contract check failed (attempt ${retryCount}/${maxRetries}):`, contractError.message);
         
         if (retryCount < maxRetries) {
-          // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1500));
         } else {
-          console.error('❌ Contract not accessible after retries:', contractError.message);
+          console.error('❌ Contract not accessible:', contractError.message);
           
-          // On mobile, try one more time with a fresh fallback provider
-          if (isMobileDevice() && !signer) {
-            console.log('📱 Mobile detected - trying with fresh fallback provider');
-            const freshProvider = createFallbackProvider();
-            if (freshProvider) {
-              contract = new ethers.Contract(CONTRACT_CONFIG.address, CONTRACT_CONFIG.abi, freshProvider);
-              try {
-                await contract.currentRoundId();
-                console.log('✅ Contract accessible with fresh fallback provider');
-                contractAccessible = true;
-              } catch (finalError) {
-                console.error('❌ Final attempt failed:', finalError.message);
-                showTransactionStatus('Unable to load contract data. Please refresh the page.', 'error');
-                return;
-              }
-            }
-          } else {
-            showTransactionStatus('Contract not accessible. Please check your connection.', 'error');
+          // If this was a wallet connection, don't use fallback - show error
+          if (!isReadOnly) {
+            showTransactionStatus('Unable to verify contract. Please check your wallet connection.', 'error');
+            // Reset wallet state
+            provider = null;
+            signer = null;
+            userAddress = null;
+            contract = null;
             return;
           }
+          
+          showTransactionStatus('Unable to load contract data. Please check your connection.', 'error');
+          return;
         }
       }
     }

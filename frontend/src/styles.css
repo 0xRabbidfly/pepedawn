@@ -1707,24 +1707,59 @@ section h2 {
   .round-content {
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
+    display: flex;
+    flex-direction: column-reverse; /* Info column on top, status column below */
   }
   
   .status-column {
     flex-direction: row;
     justify-content: center;
     flex-wrap: wrap;
+    order: 2; /* Status column goes after info */
   }
   
   .status-arrow-vertical {
     transform: rotate(-90deg);
   }
   
+  /* Restructure info column on mobile */
+  .info-column {
+    order: 1; /* Info column first */
+    padding: 0; /* Remove padding on mobile */
+  }
+  
+  .info-section-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  /* Time remaining full width on mobile */
+  .info-section-vertical > .info-item:first-child {
+    width: 100%;
+  }
+  
+  /* Make info-section-grid use 2:1 ratio for tickets:eth */
   .info-section-grid {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--spacing-sm);
   }
   
   .info-item {
     width: 100%;
+  }
+  
+  /* Move merkle badge below status items and before dispenser */
+  .status-row-with-badge {
+    flex-direction: column-reverse; /* Badge on top of status item */
+    gap: var(--spacing-sm);
+  }
+  
+  .merkle-badge {
+    position: static !important;
+    margin: var(--spacing-sm) auto;
+    align-self: center;
   }
   
   .status-item {

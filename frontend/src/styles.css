@@ -1801,6 +1801,13 @@ section h2 {
     margin-bottom: var(--spacing-md);
   }
   
+  .round-header {
+    width: 100vw;
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding: 0 var(--spacing-md);
+  }
+  
   .round-content {
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);

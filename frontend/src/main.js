@@ -25,6 +25,7 @@ import {
 } from './contract-config.js';
 import { displayClaimablePrizes, displayRefundButton } from './components/claims.js';
 import { formatAddress } from './utils/formatters.js';
+import { initTributeSlideout } from './components/tribute-slideout.js';
 
 // Suppress harmless MetaMask filter errors
 const originalError = console.error;
@@ -442,6 +443,9 @@ async function init() {
   
   // Initialize UI components
   initUI();
+  
+  // Initialize tribute slideout (global component)
+  initTributeSlideout();
   
   // Set up event listeners
   setupEventListeners();

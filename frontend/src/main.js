@@ -1556,8 +1556,11 @@ function selectTickets(event) {
   
   if (isMobile) {
     // Mobile: Update mobile slide-out and show it
-    document.getElementById('mobile-selected-tickets').textContent = String(tickets);
-    document.getElementById('mobile-selected-amount').textContent = String(amount);
+    const mobileTicketsEl = document.getElementById('mobile-selected-tickets');
+    const mobileAmountEl = document.getElementById('mobile-selected-amount');
+    
+    if (mobileTicketsEl) mobileTicketsEl.textContent = String(tickets);
+    if (mobileAmountEl) mobileAmountEl.textContent = String(amount);
     
     // Highlight selected card and remove selection from others
     document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('mobile-selected'));
@@ -1570,8 +1573,11 @@ function selectTickets(event) {
     }
   } else {
     // Desktop: Update desktop UI and show ticket office (simple show/hide like mobile)
-    document.getElementById('selected-tickets').textContent = String(tickets);
-    document.getElementById('selected-amount').textContent = String(amount);
+    const desktopTicketsEl = document.getElementById('selected-tickets');
+    const desktopAmountEl = document.getElementById('selected-amount');
+    
+    if (desktopTicketsEl) desktopTicketsEl.textContent = String(tickets);
+    if (desktopAmountEl) desktopAmountEl.textContent = String(amount);
     
     // Highlight selected card and remove selection from others
     document.querySelectorAll('.ticket-option-card').forEach(c => c.classList.remove('selected'));
@@ -1636,21 +1642,27 @@ function hideTicketConnector() {
 }
 
 // Buy tickets with enhanced security validations (unified for desktop & mobile)
-async function buyTickets(isMobile = false) {
+async function buyTickets() {
   try {
     if (!contract || !signer || !userAddress) {
       showTransactionStatus('Please connect your wallet first', 'error');
       return;
     }
     
+    // Detect mobile/desktop based on window width (same as selectTickets)
+    const isMobile = window.innerWidth <= 768;
+    
     // Get ticket/amount data from appropriate source (desktop or mobile)
     const ticketsElementId = isMobile ? 'mobile-selected-tickets' : 'selected-tickets';
     const amountElementId = isMobile ? 'mobile-selected-amount' : 'selected-amount';
     
-    const tickets = parseInt(document.getElementById(ticketsElementId).textContent);
-    const amount = parseFloat(document.getElementById(amountElementId).textContent);
+    const ticketsElement = document.getElementById(ticketsElementId);
+    const amountElement = document.getElementById(amountElementId);
     
-    if (!tickets || !amount) {
+    const tickets = parseInt(ticketsElement?.textContent || '0');
+    const amount = parseFloat(amountElement?.textContent || '0');
+    
+    if (!tickets || tickets <= 0 || !amount || amount <= 0) {
       showTransactionStatus('Please select a ticket bundle first', 'error');
       return;
     }
@@ -1716,23 +1728,20 @@ async function buyTickets(isMobile = false) {
       console.log('Bet placed successfully:', receipt);
       showTransactionStatus(`✅ Bet placed successfully! ${tickets} tickets for ${amount} ETH`, 'success');
       
-      // Reset UI based on desktop or mobile
-      if (isMobile) {
-        // Hide mobile slide-out after successful purchase
-        const mobileSlideout = document.getElementById('mobile-purchase-slideout');
-        if (mobileSlideout) {
-          mobileSlideout.classList.remove('open');
-        }
-        // Remove mobile selection from cards
-        document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('mobile-selected'));
-      } else {
-        // Reset desktop form
-        const ticketOffice = document.getElementById('ticket-office');
-        if (ticketOffice) {
-          ticketOffice.classList.remove('open');
-        }
-        document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
+      // Reset UI (clear both mobile and desktop selections to be safe)
+      const mobileSlideout = document.getElementById('mobile-purchase-slideout');
+      if (mobileSlideout) {
+        mobileSlideout.classList.remove('open');
       }
+      
+      const ticketOffice = document.getElementById('ticket-office');
+      if (ticketOffice) {
+        ticketOffice.classList.remove('open');
+      }
+      
+      document.querySelectorAll('.ticket-option-card').forEach(card => {
+        card.classList.remove('selected', 'mobile-selected');
+      });
       
       // Update user stats and security status
       await updateUserStats(contract, userAddress);
@@ -1750,9 +1759,9 @@ async function buyTickets(isMobile = false) {
   }
 }
 
-// Buy tickets from mobile slide-out (wrapper for unified function)
+// Buy tickets from mobile slide-out (same function works for both)
 async function buyTicketsMobile() {
-  return buyTickets(true); // Call unified function with mobile flag
+  return buyTickets(); // Window width detection handles mobile/desktop
 }
 
 // Submit puzzle proof with enhanced security validations

@@ -253,6 +253,79 @@ function detectProvider() {
   return null;
 }
 
+// Initialize page-specific data (read-only, no wallet required)
+async function initializePageData() {
+  if (!contract) {
+    console.log('⚠️ Contract not available - showing fallback UI');
+    
+    // Show error message instead of "Loading..." on leaderboard page
+    if (window.location.pathname.includes('leaderboard.html')) {
+      const winnersSelect = document.getElementById('winners-round-select');
+      const roundSelect = document.getElementById('round-select');
+      const winnersList = document.getElementById('winners-list');
+      const leaderboardList = document.getElementById('leaderboard-list');
+      
+      if (winnersSelect) {
+        winnersSelect.innerHTML = '<option value="">Contract unavailable</option>';
+      }
+      if (roundSelect) {
+        roundSelect.innerHTML = '<option value="">Contract unavailable</option>';
+      }
+      if (winnersList) {
+        winnersList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Unable to load contract data. Please check your connection and refresh.</p>';
+      }
+      if (leaderboardList) {
+        leaderboardList.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">Unable to load contract data. Please check your connection and refresh.</p>';
+      }
+    }
+    
+    // Show error message on claim page
+    if (window.location.pathname.includes('claim.html')) {
+      const claimsSelect = document.getElementById('claims-round-select');
+      if (claimsSelect) {
+        claimsSelect.innerHTML = '<option value="">Contract unavailable</option>';
+      }
+    }
+    
+    return;
+  }
+  
+  try {
+    const currentRoundId = await contract.currentRoundId();
+    
+    // Initialize leaderboard page
+    if (window.location.pathname.includes('leaderboard.html')) {
+      console.log('📊 Initializing leaderboard page...');
+      
+      // Populate round selectors
+      await populateRoundSelector(contract);
+      
+      // Display winners and leaderboard for current round
+      if (currentRoundId.toString() !== '0') {
+        const { displayWinners } = await import('./components/claims.js');
+        await displayWinners(contract, Number(currentRoundId));
+        await updateLeaderboard(contract);
+      }
+    }
+    
+    // Initialize claim page (populate selector, but claims require wallet)
+    if (window.location.pathname.includes('claim.html')) {
+      console.log('🎁 Initializing claim page...');
+      await populateRoundSelector(contract);
+      // Note: displayClaimablePrizes will be called in setupWalletConnection() when user connects
+    }
+    
+    // Initialize rules page
+    if (window.location.pathname.includes('rules.html')) {
+      console.log('📜 Initializing rules page...');
+      await updateContractInfo(contract);
+    }
+    
+  } catch (error) {
+    console.error('Error initializing page data:', error);
+  }
+}
+
 // Initialize the application
 async function init() {
   console.log('Initializing PEPEDAWN application...');
@@ -291,6 +364,9 @@ async function init() {
   
   // Load contract (will use fallback provider if needed)
   await loadContract();
+  
+  // Initialize page-specific data (even without wallet connection)
+  await initializePageData();
   
   // Start periodic updates
   startPeriodicUpdates();
@@ -705,28 +781,16 @@ async function setupWalletConnection(showSuccessToast = true) {
       }
     }
     
-    // Populate round selector and show claims if on claim page
+    // Show user's claimable prizes if on claim page
+    // (Round selector already populated in initializePageData)
     if (window.location.pathname.includes('claim.html')) {
-      await populateRoundSelector(contract);
       if (currentRoundId.toString() !== '0') {
         await displayClaimablePrizes(contract, userAddress, Number(currentRoundId));
       }
     }
     
-    // Populate round selector and show winners if on leaderboard page
-    if (window.location.pathname.includes('leaderboard.html')) {
-      await populateRoundSelector(contract);
-      // Display all winners
-      if (currentRoundId.toString() !== '0') {
-        const { displayWinners } = await import('./components/claims.js');
-        await displayWinners(contract, Number(currentRoundId));
-      }
-    }
-    
-    // Update contract information if on rules page
-    if (window.location.pathname.includes('rules.html')) {
-      await updateContractInfo(contract);
-    }
+    // Note: Leaderboard and rules pages are initialized in initializePageData()
+    // (they work without wallet, so no need to reinitialize on wallet connect)
   }
   
   if (showSuccessToast) {
@@ -865,25 +929,37 @@ async function reconnectWallet(newAddress) {
 
 // Create fallback public provider for read-only access
 async function createFallbackProvider() {
-  try {
-    // Use Sepolia public RPC endpoint
-    const rpcUrl = 'https://rpc.sepolia.org';
-    console.log('📡 Creating fallback provider for read-only access:', rpcUrl);
-    const fallbackProvider = new ethers.JsonRpcProvider(rpcUrl);
-    
-    // Test the connection
+  // Try multiple public RPC endpoints in order (in case of rate limiting)
+  const rpcEndpoints = [
+    'https://rpc.sepolia.org',
+    'https://ethereum-sepolia.publicnode.com',
+    'https://1rpc.io/sepolia'
+  ];
+  
+  for (const rpcUrl of rpcEndpoints) {
     try {
-      await fallbackProvider.getBlockNumber();
-      console.log('✅ Fallback provider connected successfully');
+      console.log('📡 Trying fallback provider:', rpcUrl);
+      const fallbackProvider = new ethers.JsonRpcProvider(rpcUrl);
+      
+      // Test the connection with a timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 5000)
+      );
+      
+      const blockPromise = fallbackProvider.getBlockNumber();
+      
+      await Promise.race([blockPromise, timeoutPromise]);
+      console.log('✅ Fallback provider connected successfully:', rpcUrl);
       return fallbackProvider;
-    } catch (testError) {
-      console.error('❌ Fallback provider test failed:', testError.message);
-      return null;
+      
+    } catch (error) {
+      console.warn(`⚠️ Failed to connect to ${rpcUrl}:`, error.message);
+      // Continue to next RPC endpoint
     }
-  } catch (error) {
-    console.error('Failed to create fallback provider:', error);
-    return null;
   }
+  
+  console.error('❌ All fallback providers failed');
+  return null;
 }
 
 // Load contract from configuration with enhanced security

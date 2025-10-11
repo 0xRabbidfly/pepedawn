@@ -41,18 +41,25 @@ packageJson.version = newVersion;
 fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
 console.log(`✅ Updated package.json to v${newVersion}`);
 
-// Update rules.html with version
-const rulesHtmlPath = path.join(__dirname, '..', 'frontend', 'rules.html');
-let rulesHtml = fs.readFileSync(rulesHtmlPath, 'utf8');
-
-// Simple version update - just find and replace the version number
-rulesHtml = rulesHtml.replace(
-  /<div class="version">v[\d.]+<\/div>/,
-  `<div class="version">v${newVersion}</div>`
+// Update frontend/src/contract-config.js VERSION constant
+const contractConfigPath = path.join(__dirname, '..', 'frontend', 'src', 'contract-config.js');
+let contractConfig = fs.readFileSync(contractConfigPath, 'utf8');
+contractConfig = contractConfig.replace(
+  /export const VERSION = ['"]v[\d.]+['"];/,
+  `export const VERSION = 'v${newVersion}';`
 );
+fs.writeFileSync(contractConfigPath, contractConfig);
+console.log(`✅ Updated frontend/src/contract-config.js to v${newVersion}`);
 
-fs.writeFileSync(rulesHtmlPath, rulesHtml);
-console.log(`✅ Updated rules.html with v${newVersion}`);
+// Update contracts/src/PepedawnRaffle.sol VERSION constant
+const contractSolPath = path.join(__dirname, '..', 'contracts', 'src', 'PepedawnRaffle.sol');
+let contractSol = fs.readFileSync(contractSolPath, 'utf8');
+contractSol = contractSol.replace(
+  /string public constant VERSION = "[\d.]+";/,
+  `string public constant VERSION = "${newVersion}";`
+);
+fs.writeFileSync(contractSolPath, contractSol);
+console.log(`✅ Updated contracts/src/PepedawnRaffle.sol to ${newVersion}`);
 
 // Note: User will build frontend manually
 console.log('⚠️  Remember to run: npm run build');
@@ -60,7 +67,7 @@ console.log('⚠️  Remember to run: npm run build');
 // Git operations
 console.log('📝 Creating git commit...');
 try {
-  execSync(`git add package.json frontend/rules.html frontend/dist`, { stdio: 'inherit' });
+  execSync(`git add package.json frontend/src/contract-config.js contracts/src/PepedawnRaffle.sol`, { stdio: 'inherit' });
   execSync(`git commit -m "chore: bump version to v${newVersion} (${bumpType})"`, { stdio: 'inherit' });
   console.log(`✅ Committed version bump to v${newVersion}`);
   

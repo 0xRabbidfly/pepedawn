@@ -1166,10 +1166,15 @@ async function reconnectWallet(newAddress) {
 // Create fallback public provider for read-only access
 async function createFallbackProvider() {
   // Try multiple public RPC endpoints in order (in case of rate limiting)
-  const rpcEndpoints = [
+  // Dynamic based on DEV_MODE
+  const rpcEndpoints = CONTRACT_CONFIG.DEV_MODE ? [
     'https://rpc.sepolia.org',
     'https://ethereum-sepolia.publicnode.com',
     'https://1rpc.io/sepolia'
+  ] : [
+    'https://eth.llamarpc.com',
+    'https://eth.merkle.io',
+    'https://rpc.ankr.com/eth'
   ];
   
   for (const rpcUrl of rpcEndpoints) {

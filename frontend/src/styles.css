@@ -1344,31 +1344,92 @@ section h2 {
   overflow: hidden;
 }
 
-/* Proof Section */
+/* Proof Section - Enhanced Styling */
 #proof-form {
   margin-top: var(--spacing-md);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.05), rgba(33, 150, 243, 0.05));
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
 }
 
-#proof-form textarea {
+#proof-form p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.5;
+  text-align: center;
+}
+
+#proof-form p strong {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+#proof-input {
   width: 100%;
   min-height: 120px;
   padding: var(--spacing-md);
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
   color: var(--text-color);
-  font-family: var(--font-family);
+  font-family: 'Courier New', monospace;
+  font-size: var(--font-size-sm);
   resize: vertical;
   margin-bottom: var(--spacing-md);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-#proof-form textarea:focus {
+#proof-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+#proof-input:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 #submit-proof {
   width: 100%;
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, var(--primary-color), #45a049);
+  border: none;
+  border-radius: var(--border-radius);
+  color: white;
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+#submit-proof::before {
+  content: '🧩 ';
+  font-size: 1.2em;
+  margin-right: var(--spacing-xs);
+}
+
+#submit-proof:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+}
+
+#submit-proof:active {
+  transform: translateY(0);
+}
+
+#submit-proof:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  background: linear-gradient(135deg, #666, #555);
 }
 
 #proof-status {
@@ -1376,18 +1437,39 @@ section h2 {
   padding: var(--spacing-md);
   border-radius: var(--border-radius);
   display: none;
+  text-align: center;
+  font-weight: 600;
+  border: 2px solid;
+  animation: slideIn 0.3s ease-out;
 }
 
 #proof-status.success {
   background-color: rgba(76, 175, 80, 0.1);
-  border: 1px solid var(--success-color);
+  border-color: var(--success-color);
   color: var(--success-color);
 }
 
 #proof-status.error {
   background-color: rgba(244, 67, 54, 0.1);
-  border: 1px solid var(--error-color);
+  border-color: var(--error-color);
   color: var(--error-color);
+}
+
+#proof-status.info {
+  background-color: rgba(33, 150, 243, 0.1);
+  border-color: var(--secondary-color);
+  color: var(--secondary-color);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Progress Indicator */
@@ -1891,6 +1973,21 @@ section h2 {
   /* Mobile-friendly buttons */
   button {
     min-height: 44px; /* Touch-friendly size */
+    font-size: var(--font-size-base);
+  }
+  
+  /* Mobile proof form adjustments */
+  #proof-form {
+    padding: var(--spacing-md);
+  }
+  
+  #proof-input {
+    min-height: 100px;
+    font-size: var(--font-size-xs);
+  }
+  
+  #submit-proof {
+    padding: var(--spacing-md) var(--spacing-lg);
     font-size: var(--font-size-base);
   }
   

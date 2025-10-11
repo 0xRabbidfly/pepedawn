@@ -1806,6 +1806,10 @@ section h2 {
     gap: var(--spacing-lg);
     display: flex;
     flex-direction: column-reverse; /* Info column on top, status column below */
+    width: 100vw;
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding: 0 var(--spacing-md);
   }
   
   .status-column {

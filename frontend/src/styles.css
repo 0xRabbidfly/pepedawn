@@ -74,6 +74,7 @@ header {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-md);
+  position: relative;
 }
 
 header h1 {
@@ -82,12 +83,47 @@ header h1 {
   font-size: var(--font-size-2xl);
 }
 
-nav {
+/* Hamburger Menu Button */
+.hamburger-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background-color: var(--text-color);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* Main Navigation */
+.main-nav {
   display: flex;
   gap: var(--spacing-lg);
 }
 
-nav a {
+.main-nav a {
   color: var(--text-secondary);
   text-decoration: none;
   padding: var(--spacing-sm) var(--spacing-md);
@@ -95,12 +131,36 @@ nav a {
   transition: all 0.2s ease;
 }
 
-nav a:hover {
+.main-nav a:hover {
   color: var(--text-color);
   background-color: var(--border-color);
 }
 
-nav a.active {
+.main-nav a.active {
+  color: var(--primary-color);
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+/* Regular nav (for pages without hamburger) */
+nav:not(.main-nav) {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+nav:not(.main-nav) a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+nav:not(.main-nav) a:hover {
+  color: var(--text-color);
+  background-color: var(--border-color);
+}
+
+nav:not(.main-nav) a.active {
   color: var(--primary-color);
   background-color: rgba(76, 175, 80, 0.1);
 }
@@ -1680,19 +1740,56 @@ section h2 {
 /* Mobile landscape and portrait */
 @media (max-width: 768px) {
   header {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row;
+    justify-content: space-between;
     padding: var(--spacing-md);
+    position: relative;
   }
   
-  nav {
-    justify-content: center;
-    flex-wrap: wrap;
+  header h1 {
+    font-size: var(--font-size-xl);
   }
   
-  nav a {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: var(--font-size-sm);
+  /* Show hamburger menu on mobile */
+  .hamburger-menu {
+    display: flex;
+  }
+  
+  /* Hide main nav by default on mobile */
+  .main-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    flex-direction: column;
+    gap: 0;
+    padding: var(--spacing-md);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+  }
+  
+  /* Show nav when hamburger is active */
+  .main-nav.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .main-nav a {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-xs);
+    text-align: center;
+    font-size: var(--font-size-base);
+  }
+  
+  .main-nav a:last-child {
+    margin-bottom: 0;
   }
   
   main {
@@ -1756,10 +1853,9 @@ section h2 {
     gap: var(--spacing-sm);
   }
   
+  /* Hide merkle badge on mobile */
   .merkle-badge {
-    position: static !important;
-    margin: var(--spacing-sm) auto;
-    align-self: center;
+    display: none !important;
   }
   
   .status-item {

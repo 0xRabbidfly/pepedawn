@@ -307,6 +307,34 @@ function setupEventListeners() {
     connectBtn.addEventListener('click', connectWallet);
   }
   
+  // Hamburger menu functionality
+  const hamburgerMenu = document.getElementById('hamburger-menu');
+  const mainNav = document.getElementById('main-nav');
+  
+  if (hamburgerMenu && mainNav) {
+    hamburgerMenu.addEventListener('click', function() {
+      hamburgerMenu.classList.toggle('active');
+      mainNav.classList.toggle('active');
+    });
+    
+    // Close menu when clicking on nav links
+    const navLinks = mainNav.querySelectorAll('a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        hamburgerMenu.classList.remove('active');
+        mainNav.classList.remove('active');
+      });
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!hamburgerMenu.contains(event.target) && !mainNav.contains(event.target)) {
+        hamburgerMenu.classList.remove('active');
+        mainNav.classList.remove('active');
+      }
+    });
+  }
+  
   // Use event delegation to handle ticket card clicks
   const bettingForm = document.getElementById('betting-form');
   if (bettingForm) {

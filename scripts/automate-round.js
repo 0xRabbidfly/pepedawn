@@ -205,41 +205,47 @@ async function placeBetsAndClose(contractAddress, roundId = 1) {
   console.log('\n✅ Round closed and snapshotted!');
 }
 
-async function commitParticipantsAndRequestVRF(contractAddress, roundId = 1) {
-  console.log('\n🌳 ========================================');
-  console.log('   COMMITTING PARTICIPANTS & REQUESTING VRF');
-  console.log('========================================\n');
+async function commitParticipantsAndRequestVRF(contractAddress, roundId = 1, quiet = false) {
+  if (!quiet) {
+    console.log('\n🌳 ========================================');
+    console.log('   COMMITTING PARTICIPANTS & REQUESTING VRF');
+    console.log('========================================\n');
+  }
   
   // Generate participants file
-  console.log('📄 Generating participants file...');
+  if (!quiet) console.log('📄 Generating participants file...');
   const cliDir = path.join(__dirname, '../contracts/scripts/cli');
   execSync(`node manage-round.js snapshot ${roundId}`, {
     cwd: cliDir,
-    stdio: 'inherit'
+    stdio: quiet ? 'pipe' : 'inherit'
   });
   
   const participantsFile = path.join(cliDir, `participants-round-${roundId}.json`);
   const participantsData = JSON.parse(fs.readFileSync(participantsFile, 'utf8'));
   const participantsRoot = participantsData.merkle.root;
   
-  console.log(`\n📋 Participants Root: ${participantsRoot}`);
-  console.log('💡 File auto-copied to frontend/public/participants/ for local testing');
+  if (!quiet) {
+    console.log(`\n📋 Participants Root: ${participantsRoot}`);
+    console.log('💡 File auto-copied to frontend/public/participants/ for local testing');
+  }
   
   // For testing, use a mock CID (in production, upload to IPFS first)
   const mockCID = `bafkrei-test-participants-${roundId}-${Date.now()}`;
   
   // Commit participants root
-  console.log('🌳 Committing participants root...');
-  exec(`cast send ${contractAddress} "commitParticipantsRoot(uint256,bytes32,string)" ${roundId} ${participantsRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+  if (!quiet) console.log('🌳 Committing participants root...');
+  exec(`cast send ${contractAddress} "commitParticipantsRoot(uint256,bytes32,string)" ${roundId} ${participantsRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { silent: quiet });
   
   await sleep(2000);
   
   // Request VRF
-  console.log('🎲 Requesting VRF randomness...');
-  exec(`cast send ${contractAddress} "requestVrf(uint256)" ${roundId} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+  if (!quiet) console.log('🎲 Requesting VRF randomness...');
+  exec(`cast send ${contractAddress} "requestVrf(uint256)" ${roundId} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { silent: quiet });
   
-  console.log('\n✅ VRF requested! Wait 1-5 minutes for fulfillment...');
-  console.log('💡 Monitor status: cd contracts/scripts/cli && node manage-round.js status 1');
+  if (!quiet) {
+    console.log('\n✅ VRF requested! Wait 1-5 minutes for fulfillment...');
+    console.log('💡 Monitor status: cd contracts/scripts/cli && node manage-round.js status 1');
+  }
 }
 
 async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
@@ -390,12 +396,7 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
 }
 
 async function watchAndAutomate(contractAddress) {
-  console.log('\n👁️  ========================================');
-  console.log('   WATCH MODE - AUTOMATED ROUND MANAGER');
-  console.log('========================================\n');
-  console.log(`📋 Contract: ${contractAddress}`);
-  console.log('⏱️  Polling every 30 seconds...');
-  console.log('🛑 Press Ctrl+C to stop\n');
+  console.log(`👁️  ${contractAddress} | Polling every 30s\n`);
   
   const state = {
     lastRoundId: 0,
@@ -415,8 +416,7 @@ async function watchAndAutomate(contractAddress) {
       const roundId = parseInt(currentRoundIdHex, 16);
       
       if (roundId === 0) {
-        console.log('⏳ No rounds created yet. Waiting...');
-        return;
+        return; // Silent wait
       }
       
       // Reset state on new round
@@ -426,7 +426,6 @@ async function watchAndAutomate(contractAddress) {
         state.snapshotDone = false;
         state.vrfRequested = false;
         state.winnersSubmitted = false;
-        console.log(`\n🆕 New round detected: ${roundId}`);
       }
       
       // Get round status
@@ -448,36 +447,28 @@ async function watchAndAutomate(contractAddress) {
       else if (statusOutput.includes('WinnersReady (5)')) status = 5;
       else if (statusOutput.includes('Distributed (6)')) status = 6;
       
-      // Log status changes
-      if (status !== state.lastStatus) {
-        const statusNames = ['Created', 'Open', 'Closed', 'Snapshot', 'VRFRequested', 'WinnersReady', 'Distributed'];
-        console.log(`\n📊 Round ${roundId} status: ${statusNames[status] || 'Unknown'}`);
-        state.lastStatus = status;
-      }
-      
-      // Act based on status
+      // Act based on status - only log the next action
       if (status === 2 && !state.snapshotDone) {
-        // Closed -> Snapshot
-        console.log('\n🤖 Auto-action: Snapshotting round...');
-        exec(`cast send ${contractAddress} "snapshotRound(uint256)" ${roundId} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+        console.log('→ snapshotRound()');
+        exec(`cast send ${contractAddress} "snapshotRound(uint256)" ${roundId} --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { silent: true });
         await sleep(2000);
         state.snapshotDone = true;
+        state.lastStatus = status;
         
       } else if (status === 3 && !state.vrfRequested) {
-        // Snapshot -> Generate participants + Request VRF
-        console.log('\n🤖 Auto-action: Generating participants and requesting VRF...');
-        await commitParticipantsAndRequestVRF(contractAddress, roundId);
+        console.log('→ commitParticipantsRoot() + requestVrf()');
+        await commitParticipantsAndRequestVRF(contractAddress, roundId, true);
         state.vrfRequested = true;
+        state.lastStatus = status;
         
       } else if (status === 5 && !state.winnersSubmitted) {
-        // WinnersReady -> Generate and submit winners
-        console.log('\n🤖 Auto-action: Generating and submitting winners...');
+        console.log('→ submitWinnersRoot()');
         
         // Generate winners file
         const cliDir = path.join(__dirname, '../contracts/scripts/cli');
         execSync(`node generate-winners-file.js ${roundId}`, {
           cwd: cliDir,
-          stdio: 'inherit'
+          stdio: 'pipe'
         });
         
         const winnersFile = path.join(cliDir, `winners-round-${roundId}.json`);
@@ -485,13 +476,10 @@ async function watchAndAutomate(contractAddress) {
         const winnersRoot = winnersData.merkle.root;
         const mockCID = `bafkrei-test-winners-${roundId}-${Date.now()}`;
         
-        exec(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${winnersRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`);
+        exec(`cast send ${contractAddress} "submitWinnersRoot(uint256,bytes32,string)" ${roundId} ${winnersRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { silent: true });
         
         state.winnersSubmitted = true;
-        console.log(`\n✅ Round ${roundId} complete! Winners can now claim prizes.`);
-        
-      } else if (status === 6) {
-        console.log(`✅ Round ${roundId} fully distributed`);
+        state.lastStatus = status;
       }
       
     } catch (error) {

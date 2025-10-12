@@ -1,0 +1,386 @@
+/**
+ * Luck Analysis Component Styles
+ */
+
+.luck-analysis-card {
+  background: var(--card-background, #1e1e1e);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
+  padding: var(--spacing-lg, 24px);
+  margin: var(--spacing-lg, 24px) 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.luck-title {
+  font-size: 1.5rem;
+  margin: 0 0 var(--spacing-md, 16px) 0;
+  text-align: center;
+  color: var(--text-primary, #f0f0f0);
+}
+
+.luck-stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-sm, 12px);
+  margin-bottom: var(--spacing-lg, 24px);
+  padding: var(--spacing-md, 16px);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.luck-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.luck-stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #a0a0a0);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.luck-stat-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary, #f0f0f0);
+}
+
+.luck-result-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid;
+  border-radius: 12px;
+  padding: var(--spacing-lg, 24px);
+  margin: var(--spacing-lg, 24px) 0;
+  text-align: center;
+}
+
+.luck-tier-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm, 12px);
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.luck-tier-emoji {
+  font-size: 2rem;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.luck-tier-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.luck-main-result {
+  font-size: 1.25rem;
+  margin: var(--spacing-md, 16px) 0;
+  color: var(--text-primary, #f0f0f0);
+}
+
+.luck-bar-container {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin: var(--spacing-lg, 24px) 0;
+  overflow: visible;
+}
+
+.luck-bar-fill {
+  height: 100%;
+  border-radius: 16px;
+  transition: width 1s ease-out;
+  background: linear-gradient(90deg, currentColor 0%, currentColor 70%, rgba(255,255,255,0.3) 100%);
+  box-shadow: 0 0 10px currentColor;
+}
+
+.luck-bar-marker {
+  position: absolute;
+  top: -8px;
+  height: 48px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.luck-bar-marker-line {
+  width: 2px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 1px;
+}
+
+.luck-bar-marker-label {
+  position: absolute;
+  top: -20px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.luck-message {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-top: var(--spacing-md, 16px);
+  font-style: italic;
+}
+
+.luck-beat-odds,
+.luck-below-odds {
+  margin-top: var(--spacing-sm, 12px);
+  font-size: 0.875rem;
+  padding: var(--spacing-xs, 8px) var(--spacing-sm, 12px);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.luck-beat-odds {
+  color: #22C55E;
+}
+
+.luck-below-odds {
+  color: #F97316;
+}
+
+.luck-probability-breakdown {
+  margin-top: var(--spacing-lg, 24px);
+  padding-top: var(--spacing-lg, 24px);
+  border-top: 1px solid var(--border-color, #333);
+}
+
+.luck-breakdown-title {
+  font-size: 1.125rem;
+  margin: 0 0 var(--spacing-md, 16px) 0;
+  color: var(--text-primary, #f0f0f0);
+}
+
+.luck-probability-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto 1fr;
+  align-items: center;
+  gap: var(--spacing-sm, 12px);
+  padding: var(--spacing-xs, 8px) var(--spacing-sm, 12px);
+  margin-bottom: var(--spacing-xs, 8px);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 0.9375rem;
+}
+
+.luck-prob-wins {
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.luck-prob-percent {
+  color: var(--text-primary, #f0f0f0);
+  font-weight: 500;
+  text-align: right;
+}
+
+.luck-prob-icon {
+  width: 24px;
+  text-align: center;
+  font-size: 1.125rem;
+}
+
+.luck-prob-label {
+  color: #F59E0B;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+/* Modal Styles */
+.luck-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--spacing-md, 16px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.luck-modal-content {
+  background: var(--card-background, #1e1e1e);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.luck-modal-header {
+  padding: var(--spacing-lg, 24px);
+  border-bottom: 1px solid var(--border-color, #333);
+}
+
+.luck-modal-header h2 {
+  margin: 0;
+  color: var(--text-primary, #f0f0f0);
+}
+
+.luck-modal-close {
+  position: absolute;
+  top: var(--spacing-md, 16px);
+  right: var(--spacing-md, 16px);
+  background: none;
+  border: none;
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.luck-modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #f0f0f0);
+}
+
+#luck-modal-body {
+  padding: 0;
+}
+
+#luck-modal-body .luck-analysis-card {
+  margin: 0;
+  border: none;
+  box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .luck-analysis-card {
+    padding: var(--spacing-md, 16px);
+    margin: var(--spacing-md, 16px) 0;
+  }
+
+  .luck-title {
+    font-size: 1.25rem;
+  }
+
+  .luck-stats-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .luck-tier-name {
+    font-size: 1.5rem;
+  }
+
+  .luck-main-result {
+    font-size: 1.125rem;
+  }
+
+  .luck-probability-row {
+    grid-template-columns: 1fr auto auto;
+    font-size: 0.875rem;
+  }
+
+  .luck-prob-label {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    text-align: left;
+  }
+
+  .luck-modal-content {
+    max-height: 95vh;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: light) {
+  .luck-analysis-card {
+    background: #ffffff;
+    border-color: #e0e0e0;
+  }
+
+  .luck-title,
+  .luck-stat-value,
+  .luck-main-result,
+  .luck-breakdown-title,
+  .luck-prob-percent,
+  .luck-modal-header h2 {
+    color: #1a1a1a;
+  }
+
+  .luck-stat-label,
+  .luck-prob-wins {
+    color: #666;
+  }
+
+  .luck-stats-summary,
+  .luck-result-box,
+  .luck-probability-row {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .luck-modal-overlay {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .luck-modal-content {
+    background: #ffffff;
+    border-color: #e0e0e0;
+  }
+
+  .luck-modal-close {
+    color: #666;
+  }
+
+  .luck-modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1a1a1a;
+  }
+}
+

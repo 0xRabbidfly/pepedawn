@@ -1927,6 +1927,10 @@ async function buyTickets() {
     
     console.log(`Placing bet: ${tickets} tickets for ${amount} ETH`);
     
+    // Get button reference before try block for error handling
+    const buyTicketsBtn = document.getElementById('buy-tickets');
+    const originalBtnText = buyTicketsBtn ? buyTicketsBtn.textContent : '';
+    
     try {
       // Show transaction status
       showTransactionStatus('Validating bet parameters...', 'info');
@@ -1948,8 +1952,6 @@ async function buyTickets() {
       showTransactionStatus('Submitting bet transaction...', 'info');
       
       // Disable buy tickets button to prevent double-submission
-      const buyTicketsBtn = document.getElementById('buy-tickets');
-      const originalBtnText = buyTicketsBtn ? buyTicketsBtn.textContent : '';
       if (buyTicketsBtn) {
         buyTicketsBtn.disabled = true;
         buyTicketsBtn.textContent = 'Submitting...';

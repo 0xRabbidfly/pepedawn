@@ -218,12 +218,6 @@ node scripts/verify-contract.js
 forge verify-contract <NEW_CONTRACT> src/PepedawnRaffle.sol:PepedawnRaffle --chain sepolia --watch --constructor-args $(cast abi-encode "constructor(address,uint256,bytes32,address,address)" $env:VRF_COORDINATOR $env:VRF_SUBSCRIPTION_ID $env:VRF_KEY_HASH $env:CREATORS_ADDRESS $env:EMBLEM_VAULT_ADDRESS)
 ```
 
-Or use forge directly:
-
-```powershell
-forge verify-contract $env:CONTRACT_ADDRESS src/PepedawnRaffle.sol:PepedawnRaffle --chain sepolia --watch --constructor-args $(cast abi-encode "constructor(address,uint256,bytes32,address,address)" $env:VRF_COORDINATOR $env:VRF_SUBSCRIPTION_ID $env:VRF_KEY_HASH $env:CREATORS_ADDRESS $env:EMBLEM_VAULT_ADDRESS)
-```
-
 **Verify Success**: Go to `https://sepolia.etherscan.io/address/YOUR_CONTRACT_ADDRESS`
 - Should show green ✓ "Contract Source Code Verified"
 - Can see "Read Contract" and "Write Contract" tabs
@@ -233,7 +227,7 @@ forge verify-contract $env:CONTRACT_ADDRESS src/PepedawnRaffle.sol:PepedawnRaffl
 **Update All Configs:**
 ```powershell
 cd Z:\Projects\pepedawn
-node scripts/update-contract-address.js 0xYourNewContractAddress
+node scripts/update-contract-address.js <new_deploy_address>
 ```
 
 **Expected Output**:
@@ -373,10 +367,10 @@ cast send $env:EMBLEM_VAULT_ADDRESS "setApprovalForAll(address,bool)" $env:CONTR
 Start-Sleep -Seconds 10
 
 # Transfer NFTs 1-10 (modify iterator 1..10 at start if NFT #s changed range)
-31..40 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
+41..50 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
 
 # Map prizes (modify IDs to match above)
-cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[31,32,33,34,35,36,37,38,39,40]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[1,2,3,4,5,6,7,8,9,0]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Using Emblem Vault Interface** (Alternative):

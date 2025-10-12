@@ -21,6 +21,7 @@
 @import './3-components/sections.css';
 @import './3-components/status-badges.css';
 @import './3-components/animations.css';
+@import './luck-analysis.css';
 
 /* 4. PAGES - Page-specific styles */
 @import './4-pages/home.css';

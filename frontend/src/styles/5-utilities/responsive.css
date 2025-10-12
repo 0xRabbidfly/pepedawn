@@ -221,12 +221,7 @@
   /* -------------------
      LEADERBOARD
      ------------------- */
-  .leaderboard-header,
-  .leaderboard-entry {
-    grid-template-columns: 40px 1fr 60px 60px 80px;
-    font-size: var(--font-size-sm);
-    padding: var(--spacing-sm);
-  }
+  /* Mobile leaderboard styles moved to leaderboard.css for better organization */
   
   /* -------------------
      BUTTONS & FORMS

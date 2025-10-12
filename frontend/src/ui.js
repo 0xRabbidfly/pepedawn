@@ -2,6 +2,8 @@ import { ethers } from 'ethers';
 import { validateNetwork, SECURITY_CONFIG, CONTRACT_CONFIG, VERSION } from './contract-config.js';
 import { formatAddress } from './utils/formatters.js';
 import { createCountdownTimer } from './utils/timers.js';
+import { calculateLuckStats } from './components/luck-analysis.js';
+import { fetchWinnersFile } from './services/ipfs.js';
 
 // Initialize UI components
 export function initUI() {
@@ -125,9 +127,8 @@ export async function updateWalletInfo(address, provider) {
         console.error('❌ Error fetching balance:', balanceError);
         walletBalance.textContent = 'Error';
       }
-    } else {
-      console.warn('⚠️ Cannot update balance - provider or element missing:', { provider: !!provider, walletBalance: !!walletBalance });
     }
+    // Silent skip if balance element doesn't exist (e.g., leaderboard page)
     
     // Validate network (show error if wrong network)
     if (provider) {
@@ -447,7 +448,7 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
     if (!window.location.pathname.includes('leaderboard.html')) return;
     
     if (!contract) {
-      // Show mock data when contract not available
+      // Show mock data when contract not available (no luck scores for mock)
       const mockLeaderboard = [
         { address: '0x1234...5678', tickets: 50, weight: 70, fakeOdds: '12.5%', hasVerifiedProof: true },
         { address: '0xabcd...efgh', tickets: 35, weight: 35, fakeOdds: '8.7%', hasVerifiedProof: false },
@@ -532,6 +533,21 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
       return;
     }
     
+    // Check if round is distributed (status 6) to show luck scores
+    const isDistributed = roundStatus === 6;
+    let winnersFile = null;
+    
+    if (isDistributed) {
+      try {
+        const winnersCID = await contract.winnersCIDs(displayRoundId);
+        if (winnersCID) {
+          winnersFile = await fetchWinnersFile(winnersCID, displayRoundId);
+        }
+      } catch (error) {
+        console.warn('Could not fetch winners file for luck calculation:', error);
+      }
+    }
+    
     // Winners section removed - winners are displayed in their own dedicated section
     
     // Get ALL participants (fixed: was only showing current user)
@@ -560,16 +576,28 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
             }
           }
           
+          // Calculate luck score if round is distributed and we have winners file
+          let luckScore = null;
+          if (isDistributed && winnersFile) {
+            try {
+              const luckStats = await calculateLuckStats(contract, displayRoundId, participant, winnersFile);
+              luckScore = luckStats.luckPercent;
+            } catch (error) {
+              // Silent fail - luck score will show as "-"
+              luckScore = null;
+            }
+          }
+          
           leaderboardData.push({
             address: participant,
             tickets: Number(stats.tickets),
             weight: Number(stats.weight),
             fakeOdds: fakeOdds + '%',
-            hasVerifiedProof: hasVerifiedProof
+            hasVerifiedProof: hasVerifiedProof,
+            luckScore: luckScore
           });
         } catch (error) {
-          // Skip participant if stats can't be retrieved
-          console.warn(`Could not get stats for participant ${participant}:`, error.message);
+          // Skip participant if stats can't be retrieved (silent)
         }
       }
     } catch (error) {
@@ -584,22 +612,60 @@ export async function updateLeaderboard(contract, selectedRoundId = null) {
     
     // Generate leaderboard HTML
     const leaderboardHTML = `
-      <div class="leaderboard-header">
+      <div class="leaderboard-header ${isDistributed ? 'with-luck' : ''}">
         <span>Rank</span>
         <span>Address</span>
         <span>Tickets</span>
         <span>Weight</span>
         <span>Winning Odds</span>
+        ${isDistributed ? '<span>Luck</span>' : ''}
       </div>
-      ${leaderboardData.map((entry, index) => `
-        <div class="leaderboard-entry">
-          <span class="rank">#${index + 1}</span>
-          <span class="address">${formatAddress(entry.address)}${entry.hasVerifiedProof ? ' 🧩' : ''}</span>
-          <span class="tickets">${entry.tickets}</span>
-          <span class="weight">${entry.weight}</span>
-          <span class="odds">${entry.fakeOdds}</span>
-        </div>
-      `).join('')}
+      ${leaderboardData.map((entry, index) => {
+        let luckEmoji = '😐';
+        if (isDistributed && entry.luckScore !== null) {
+          // Get luck emoji based on score
+          if (entry.luckScore === 0) luckEmoji = '😢';
+          else if (entry.luckScore < 50) luckEmoji = '😕';
+          else if (entry.luckScore >= 150 && entry.luckScore < 200) luckEmoji = '🍀';
+          else if (entry.luckScore >= 200 && entry.luckScore < 300) luckEmoji = '✨';
+          else if (entry.luckScore >= 300) luckEmoji = '🎰';
+        }
+        
+        const luckValue = isDistributed ? (entry.luckScore !== null ? `${entry.luckScore}% ${luckEmoji}` : '-') : '';
+        
+        return `
+          <div class="leaderboard-entry ${isDistributed ? 'with-luck' : ''}">
+            <span class="rank">#${index + 1}</span>
+            <span class="address">${formatAddress(entry.address)}${entry.hasVerifiedProof ? ' 🧩' : ''}</span>
+            <span class="tickets">${entry.tickets}</span>
+            <span class="weight">${entry.weight}</span>
+            <span class="odds">${entry.fakeOdds}</span>
+            ${isDistributed ? `<span class="luck-score">${luckValue}</span>` : ''}
+            
+            <!-- Mobile structure -->
+            <div class="mobile-data-grid">
+              <div class="data-item">
+                <span class="data-label">Tickets</span>
+                <span class="data-value">${entry.tickets}</span>
+              </div>
+              <div class="data-item">
+                <span class="data-label">Weight</span>
+                <span class="data-value">${entry.weight}${entry.hasVerifiedProof ? ' 🧩' : ''}</span>
+              </div>
+              <div class="data-item">
+                <span class="data-label">Odds</span>
+                <span class="data-value">${entry.fakeOdds}</span>
+              </div>
+              ${isDistributed ? `
+                <div class="data-item">
+                  <span class="data-label">Luck</span>
+                  <span class="data-value">${luckValue}</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
     `;
     
     leaderboardList.innerHTML = leaderboardHTML;

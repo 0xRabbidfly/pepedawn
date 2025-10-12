@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { fetchWinnersFile } from '../services/ipfs.js';
 import { generateWinnerProof, getPrizesForAddress, getPrizeTierName, verifyWinnersFile } from '../services/merkle.js';
 import { showTransactionStatus } from '../ui.js';
+import { calculateLuckStats, displayLuckAnalysis } from './luck-analysis.js';
 
 /**
  * Display claimable prizes for current user
@@ -64,10 +65,14 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     const userPrizes = getPrizesForAddress(winnersFile.winners, userAddress);
     console.log('🎁 User prizes found:', userPrizes.length, userPrizes);
     
+    // Check if user participated (we'll show luck analysis later)
+    const [, tickets] = await contract.getUserStats(roundId, userAddress);
+    const userParticipated = Number(tickets) > 0;
+    
     if (userPrizes.length === 0) {
       claimsContainer.innerHTML = '<p class="info">No prizes won in this round</p>';
-      return;
-    }
+      // Don't return yet - we still want to show luck analysis if they participated
+    } else {
     
     // Extract prize data from the already-fetched round state
     const prizeTokenIds = roundState.prizeTokenIds;
@@ -122,6 +127,22 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
         await claimPrize(contract, userAddress, roundId, prizeIndex, prizeTier, winnersFile);
       });
     });
+    }
+    
+    // Display luck analysis AFTER prize cards (for all participants)
+    const luckContainer = document.getElementById('luck-analysis-container');
+    if (luckContainer && userParticipated) {
+      try {
+        // Pass winnersFile so we can count actual wins correctly
+        const luckStats = await calculateLuckStats(contract, roundId, userAddress, winnersFile);
+        displayLuckAnalysis(luckStats, '#luck-analysis-container');
+      } catch (error) {
+        console.error('Error displaying luck analysis:', error);
+        luckContainer.innerHTML = '';
+      }
+    } else if (luckContainer) {
+      luckContainer.innerHTML = '';
+    }
     
   } catch (error) {
     console.error('Error displaying claimable prizes:', error);

@@ -58,32 +58,6 @@ Before starting, verify:
 - `contracts/.env.mainnet` - Mainnet config (Anvil testing & deployment)
 - Copy the right one to `.env` when needed: `cp .env.sepolia .env`
 
-**Template for `.env.sepolia`** (already created for you):
-
-```bash
-# Wallet Configuration
-PRIVATE_KEY=your_private_key_here_without_0x_prefix
-
-# Network Configuration (Use drpc.org for better rate limits)
-SEPOLIA_RPC_URL=https://sepolia.drpc.org
-
-# Chainlink VRF Configuration (Sepolia)
-VRF_COORDINATOR=0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B
-VRF_SUBSCRIPTION_ID=your_subscription_id
-VRF_KEY_HASH=0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae
-
-# Contract Addresses
-CREATORS_ADDRESS=your_creators_wallet_address
-# Using our custom NFT address on Sepolia for testing only
-EMBLEM_VAULT_ADDRESS=0xd8b3f0b3f35226ee624966b4d8f5e44ebc0fb1c9
-
-# Contract Address (filled after deployment)
-CONTRACT_ADDRESS=
-
-# IPFS Configuration (Optional - enables automatic uploads)
-# Get Pinata JWT from: https://app.pinata.cloud/ → API Keys → New Key
-PINATA_JWT=your_pinata_jwt_here
-```
 
 **Important Notes**:
 - Never commit `.env` to git (already in .gitignore)
@@ -144,7 +118,7 @@ Update `contracts/.env` with new NFT contract - YOU CAN REUSE EXISTING ONE !!
 **Reload environment** (repeat step 0.2)
 
 ```bash
-cast send $EMBLEM_VAULT_ADDRESS "mint(address,uint256)" $CREATORS_ADDRESS 10 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
+cast send $env:EMBLEM_VAULT_ADDRESS "mint(address,uint256)" $env:CREATORS_ADDRESS 10 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 ################################################################################
@@ -383,7 +357,7 @@ Start-Sleep -Seconds 10
 41..50 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256,uint256,bytes)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ 1 "0x" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
 
 # Map prizes (modify IDs to match above)
-cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[1,2,3,4,5,6,7,8,9,0]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[1,2,3,4,5,6,7,8,9,10]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
 **Using Emblem Vault Interface** (Alternative):

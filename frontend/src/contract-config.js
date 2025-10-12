@@ -10,7 +10,7 @@ export const VERSION = 'v0.3.0';
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
-  address: "0x18ACB77690a4372AAC4e558A105E9019edCf8720", // Deployed on 2025-02-06 - Binary search optimization
+  address: "0x5ab6CB57C0806B91e7dCC7043fcAc3196a5eD9B0", // Deployed on 2025-02-06 - Binary search optimization
   
   // Network configuration (automatically updated by update-contract-address.js)
   network: 'sepolia',
@@ -2771,7 +2771,7 @@ export const NETWORKS = {
   },
   mainnet: {
     name: 'Ethereum Mainnet',
-    chainId: 1,
+    chainId: 11155111,
     rpcUrl: 'https://mainnet.infura.io/v3/',
     blockExplorer: 'https://etherscan.io'
   }

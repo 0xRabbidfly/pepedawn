@@ -1220,6 +1220,14 @@ if (window.location.hostname !== 'pepedawn.art' &&
 
 #### Pre-Deployment
 - [ ] **Set `DEV_MODE: false`** in `frontend/src/contract-config.js` (removes debug UI)
+- [ ] **CRITICAL: Delete test data files** from `frontend/dist/`:
+  ```bash
+  # Remove Sepolia test data to prevent showing wrong data on mainnet
+  rm frontend/dist/winners/*.json
+  rm frontend/dist/participants/*.json
+  # These will be regenerated for real mainnet rounds
+  ```
+  **Why**: Frontend tries local files FIRST before IPFS. Sepolia test data for Round 1 would show to mainnet users until overwritten!
 - [ ] Test build locally: `npm run build && npm run preview`
 - [ ] Verify network indicator is HIDDEN (should not show chain ID)
 - [ ] Test on mobile devices (iOS Safari, Android Chrome)
@@ -1693,8 +1701,17 @@ export const CONTRACT_CONFIG = {
 ```bash
 cd frontend
 
+# CRITICAL: Remove Sepolia test data before building for mainnet
+rm -f dist/winners/*.json
+rm -f dist/participants/*.json
+echo "✅ Test data cleaned"
+
 # Build production version
 npm run build
+
+# Verify test data is NOT in build
+ls dist/winners/ dist/participants/
+# Should be empty or show "No such file or directory"
 
 # Test build locally
 npm run preview
@@ -2474,6 +2491,7 @@ With 10+ participants at 0.5 ETH average: profitable
 
 #### Website
 - [ ] Frontend built for production
+- [ ] **Sepolia test data removed** from `dist/winners/` and `dist/participants/`
 - [ ] All contract addresses correct
 - [ ] Network detection works
 - [ ] Mobile responsive

@@ -11,7 +11,7 @@ build/
 out/
 .vite/
 dist-ssr/
-# Note: frontend/dist/ is tracked for deployment
+dist/
 
 # Environment variables
 .env
@@ -147,14 +147,6 @@ install.ps1
 tmp/
 temp/
 
-
-
-# Exception: Allow built assets in dist/
-!frontend/dist/*.png
-!frontend/dist/*.jpg
-!frontend/dist/*.jpeg
-!frontend/dist/*.ico
-!frontend/dist/*.svg
 
 # Files larger than 50MB (use git-lfs instead)
 # Check file size before committing: git ls-files -s | awk '{if ($4 > 52428800) print $4/1024/1024 "MB " $NF}'

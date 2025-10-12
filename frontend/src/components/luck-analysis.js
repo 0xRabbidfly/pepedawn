@@ -154,7 +154,7 @@ export function displayLuckAnalysis(stats, containerSelector) {
         <span class="luck-prob-wins">Winning ${winsLabel}:</span>
         <span class="luck-prob-percent">${p.probability.toFixed(1)}%</span>
         <span class="luck-prob-icon">${icon}</span>
-        ${isActual ? '<span class="luck-prob-label">You did this!</span>' : ''}
+        ${isActual ? '<span class="luck-prob-label">Your Result</span>' : ''}
       </div>
     `;
   }).join('');

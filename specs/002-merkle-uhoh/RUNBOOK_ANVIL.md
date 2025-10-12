@@ -22,7 +22,7 @@ MAINNET_RPC_URL=https://ethereum.publicnode.com
 
 # CHAINLINK VRF (Mainnet v2.5)
 VRF_COORDINATOR=0x271682DEB8C4E0901D1a1550aD2e64D568E69909
-VRF_SUBSCRIPTION_ID=0
+VRF_SUBSCRIPTION_ID=12345  # Dummy for Anvil (contract rejects 0)
 VRF_KEY_HASH=0x9fe0eebf5e446e3c998ec9bb19951541aee00bb90ea201ae456421a2ded86805
 
 # EMBLEM VAULT (Mainnet ERC1155) ✅ VERIFIED
@@ -60,7 +60,7 @@ cast call 0x4C03BCAD293fb0562D26FAa7D90A0cb3Ea74c919 \
   --rpc-url http://localhost:8545
 
 # Restore Sepolia config when done
-git checkout contracts/.env
+cp contracts/.env.sepolia contracts/.env
 ```
 
 ### Step 3: Validation Checklist
@@ -95,8 +95,8 @@ Before deploying to real mainnet:
 
 ## Key Differences: Sepolia vs Mainnet
 
-| Config | Sepolia (.env) | Mainnet (.env.mainnet) |
-|--------|----------------|------------------------|
+| Config | Sepolia (.env.sepolia) | Mainnet (.env.mainnet) |
+|--------|------------------------|------------------------|
 | **VRF Coordinator** | 0x9Ddfa... (Sepolia) | 0x2716... (Mainnet) |
 | **Emblem Vault** | Test ERC1155 contract | 0x4C03...c919 (Real) |
 | **Key Hash** | Sepolia hash | Mainnet 100 gwei hash |

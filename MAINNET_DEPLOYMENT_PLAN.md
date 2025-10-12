@@ -448,14 +448,11 @@ address public creatorsAddress; // Receives 80% of wagers
 
 #### Environment Files Structure
 
-**NEW: Use separate environment files:**
-- `contracts/.env` - Sepolia testnet (daily development)
-- `contracts/.env.mainnet` - Mainnet config (Anvil testing & deployment)
-
-**Workflow:**
-- Keep `.env` for Sepolia
-- Copy `.env.mainnet` to `.env` when testing on Anvil or deploying to mainnet
-- See `ANVIL_SETUP.md` and `ENVIRONMENT_CONFIG_SUMMARY.md` for details
+**Use separate environment files (no manual network editing!):**
+- `contracts/.env.sepolia` - Sepolia config (daily testing)
+- `contracts/.env.mainnet` - Mainnet config (Anvil fork & deployment)  
+- Copy to `.env` when needed: `cp .env.sepolia .env` or `cp .env.mainnet .env`
+- **NEVER manually change network/chainId** - use `update-contract-address.js` script instead
 
 #### Mainnet Configuration (`.env.mainnet`)
 

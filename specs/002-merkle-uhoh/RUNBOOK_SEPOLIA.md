@@ -53,7 +53,12 @@ Before starting, verify:
 
 ### 0.1 Configure Environment Variables
 
-Create `contracts/.env` with your configuration:
+**NEW: Use separate environment files (no manual editing!):**
+- `contracts/.env.sepolia` - Sepolia testnet config (your daily work)
+- `contracts/.env.mainnet` - Mainnet config (Anvil testing & deployment)
+- Copy the right one to `.env` when needed: `cp .env.sepolia .env`
+
+**Template for `.env.sepolia`** (already created for you):
 
 ```bash
 # Wallet Configuration

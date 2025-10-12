@@ -134,6 +134,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint256 public currentRoundId;
     uint256 public nextRoundFunds;
     
+    // Pull-payment balances for creators
+    mapping(address => uint256) public creatorBalances;
+    
     VrfConfig public vrfConfig;
     
     // Security state variables
@@ -232,6 +235,11 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         address indexed creators,
         uint256 creatorsAmount,
         uint256 nextRoundAmount
+    );
+    
+    event CreatorFeesWithdrawn(
+        address indexed creator,
+        uint256 amount
     );
     
     // Refund events
@@ -736,6 +744,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         require(currentRoundId > 0, "No active round");
         Round storage round = rounds[currentRoundId];
         require(round.status == RoundStatus.Open, "Round not open for ticket purchases");
+        require(block.timestamp <= round.endTime, "Round ended");
         
         // Checks: Circuit breaker - max participants
         if (!isParticipant[currentRoundId][msg.sender]) {
@@ -817,6 +826,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         require(currentRoundId > 0, "No active round");
         Round storage round = rounds[currentRoundId];
         require(round.status == RoundStatus.Open, "Round not open for proofs");
+        require(block.timestamp <= round.endTime, "Round ended");
         
         // Checks: User must have placed a wager first
         require(
@@ -1114,18 +1124,89 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         require(creatorsAmount + nextRoundAmount <= totalFees, "Invalid fee calculation");
         require(creatorsAddress != address(0), "Invalid creators address");
         
-        // Effects: Mark fees as distributed and update state BEFORE external call
+        // Effects: Mark fees as distributed and update state
         round.feesDistributed = true;
         nextRoundFunds += nextRoundAmount;
         
-        // Interactions: Transfer to creators (checks-effects-interactions pattern)
-        (bool success, ) = creatorsAddress.call{value: creatorsAmount}("");
-        require(success, "Creator fee transfer failed");
+        // Use pull-payment pattern for creator fees (safer than push)
+        creatorBalances[creatorsAddress] += creatorsAmount;
         
         // Emit fee distribution event
         emit FeesDistributed(roundId, creatorsAddress, creatorsAmount, nextRoundAmount);
     }
     
+    // =============================================================================
+    // VRF RECOVERY FUNCTIONS
+    // =============================================================================
+    
+    /**
+     * @notice Reset VRF request if timeout exceeded
+     * @dev Allows recovery from stuck VRF requests by reverting to Snapshot status
+     * @param roundId Round to reset VRF for
+     */
+    function resetVrfTimeout(uint256 roundId) 
+        external 
+        onlyOwner 
+        roundExists(roundId) 
+    {
+        Round storage round = rounds[roundId];
+        require(round.status == RoundStatus.VRFRequested, "Round not awaiting VRF");
+        require(
+            block.timestamp > round.vrfRequestedAt + VRF_REQUEST_TIMEOUT,
+            "VRF timeout not exceeded"
+        );
+        
+        // Effects: Reset round status and clear VRF data
+        round.status = RoundStatus.Snapshot;
+        round.vrfRequestId = 0;
+        round.vrfRequestedAt = 0;
+        
+        // Clear the VRF request mapping
+        vrfRequestToRound[round.vrfRequestId] = 0;
+        
+        emit VRFTimeoutDetected(roundId, round.vrfRequestId);
+    }
+    
+    /**
+     * @notice Auto-close round if end time has passed
+     * @dev Anyone can call this to close an expired round
+     * @param roundId Round to auto-close
+     */
+    function autoCloseRound(uint256 roundId) 
+        external 
+        roundExists(roundId) 
+    {
+        Round storage round = rounds[roundId];
+        require(round.status == RoundStatus.Open, "Round not open");
+        require(block.timestamp > round.endTime, "Round not expired");
+        
+        // Effects: Close the round
+        round.status = RoundStatus.Closed;
+        
+        emit RoundClosed(roundId);
+    }
+    
+    /**
+     * @notice Withdraw creator fees (pull-payment pattern)
+     * @dev Allows creators to withdraw their accumulated fees safely
+     */
+    function withdrawCreatorFees() 
+        external 
+        nonReentrant 
+    {
+        uint256 amount = creatorBalances[msg.sender];
+        require(amount > 0, "No fees to withdraw");
+        
+        // Effects: Clear balance before transfer
+        creatorBalances[msg.sender] = 0;
+        
+        // Interactions: Transfer fees
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Fee withdrawal failed");
+        
+        emit CreatorFeesWithdrawn(msg.sender, amount);
+    }
+
     // =============================================================================
     // EMERGENCY & RECOVERY FUNCTIONS
     // =============================================================================

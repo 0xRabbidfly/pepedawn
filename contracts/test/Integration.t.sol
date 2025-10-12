@@ -239,20 +239,26 @@ contract IntegrationTest is Test {
         bytes32 winnersRoot = keccak256("test_winners_root");
         raffle.submitWinnersRoot(1, winnersRoot, "QmTestWinners123");
         
-        // Verify fee distribution
-        uint256 creatorsBalanceAfter = creatorsAddress.balance;
-        uint256 creatorsReceived = creatorsBalanceAfter - creatorsBalanceBefore;
+        // Verify fee distribution (now using pull-payment pattern)
+        uint256 creatorsBalance = raffle.creatorBalances(creatorsAddress);
         uint256 nextRoundFunds = raffle.nextRoundFunds();
         
-        // 80% to creators
+        // 80% to creators (now in pull-payment balance)
         uint256 expectedCreatorsFee = (totalWagered * 80) / 100;
-        assertEq(creatorsReceived, expectedCreatorsFee, "Creators should receive 80%");
+        assertEq(creatorsBalance, expectedCreatorsFee, "Creators should receive 80%");
+        
+        // Test withdrawal
+        uint256 creatorsEthBefore = creatorsAddress.balance;
+        vm.prank(creatorsAddress);
+        raffle.withdrawCreatorFees();
+        uint256 creatorsEthAfter = creatorsAddress.balance;
+        assertEq(creatorsEthAfter - creatorsEthBefore, expectedCreatorsFee, "Creator withdrawal should work");
         
         // 20% to next round
         uint256 expectedNextRoundFee = (totalWagered * 20) / 100;
         assertEq(nextRoundFunds, expectedNextRoundFee, "Next round should receive 20%");
         
-        console.log("Creators received:", creatorsReceived);
+        console.log("Creators balance:", creatorsBalance);
         console.log("Next round funds:", nextRoundFunds);
         console.log("Fee distribution correct: 80/20 split verified!");
     }

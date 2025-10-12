@@ -12,16 +12,15 @@ export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
   address: "0x18ACB77690a4372AAC4e558A105E9019edCf8720", // Deployed on 2025-02-06 - Binary search optimization
   
-  // Sepolia testnet configuration
+  // Network configuration (automatically updated by update-contract-address.js)
   network: 'sepolia',
   chainId: 11155111,
   
-  // Development mode - shows debug UI elements
-  // Automatically true on testnet (Sepolia), false on mainnet
-  DEV_MODE: true, // Set to false for production mainnet deployment
+  // Development mode - automatically determined from chainId (no manual update needed!)
+  get DEV_MODE() { return this.chainId !== 1; },  // false for mainnet (chainId: 1), true for testnets
   
   // Latest ABI for PepedawnRaffle contract with binary search and enhanced security features
-    abi:   [
+  abi: [
     {
       "type": "constructor",
       "inputs": [

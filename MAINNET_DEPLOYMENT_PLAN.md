@@ -446,13 +446,24 @@ address public creatorsAddress; // Receives 80% of wagers
 
 ### 5. ENVIRONMENT VARIABLES
 
-#### New `.env` Structure
+#### Environment Files Structure
+
+**NEW: Use separate environment files:**
+- `contracts/.env` - Sepolia testnet (daily development)
+- `contracts/.env.mainnet` - Mainnet config (Anvil testing & deployment)
+
+**Workflow:**
+- Keep `.env` for Sepolia
+- Copy `.env.mainnet` to `.env` when testing on Anvil or deploying to mainnet
+- See `ANVIL_SETUP.md` and `ENVIRONMENT_CONFIG_SUMMARY.md` for details
+
+#### Mainnet Configuration (`.env.mainnet`)
 
 ```bash
 # Mainnet Configuration
-MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
-MAINNET_PRIVATE_KEY=0x... # USE HARDWARE WALLET OR ENCRYPTED
-CONTRACT_ADDRESS_MAINNET=0x... # Filled after deployment
+PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80  # Anvil test key
+CREATORS_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266  # Anvil test address
+MAINNET_RPC_URL=https://ethereum.publicnode.com
 
 # Chainlink VRF Mainnet
 VRF_COORDINATOR_MAINNET=0x271682DEB8C4E0901D1a1550aD2e64D568E69909
@@ -1053,8 +1064,8 @@ export const CONTRACT_CONFIG = {
   network: 'mainnet',
   chainId: 1,
   
-  // ⚠️ CRITICAL: Set to false for production!
-  DEV_MODE: false, // Hides debug UI elements (network indicator, etc.)
+  // DEV_MODE automatically determined by chainId (chainId !== 1)
+  get DEV_MODE() { return this.chainId !== 1; },
   
   abi: [/* ABI array */]
 };
@@ -1222,7 +1233,6 @@ if (window.location.hostname !== 'pepedawn.art' &&
 ### 7. DEPLOYMENT CHECKLIST
 
 #### Pre-Deployment
-- [ ] **Set `DEV_MODE: false`** in `frontend/src/contract-config.js` (removes debug UI)
 - [ ] **CRITICAL: Delete test data files** from `frontend/dist/`:
   ```bash
   # Remove Sepolia test data to prevent showing wrong data on mainnet
@@ -1588,6 +1598,36 @@ forge script scripts/forge/Deploy.s.sol \
 ✅ Estimated amount required: ~0.003 ETH
 ✅ SIMULATION COMPLETE. To broadcast these transactions, add --broadcast...
 ```
+
+---
+
+#### Step 0.5: Anvil Fork Testing (RECOMMENDED)
+
+**Full dress rehearsal with mainnet contracts:**
+
+```bash
+# Terminal 1: Start Anvil fork
+anvil --fork-url https://ethereum.publicnode.com
+
+# Terminal 2: Deploy using mainnet config
+cp contracts/.env.mainnet contracts/.env
+cd contracts
+forge script scripts/forge/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+
+# Verify Emblem Vault address
+cast call $CONTRACT_ADDRESS "emblemVaultAddress()" --rpc-url http://localhost:8545
+# Should return: 0x4C03BCAD293fb0562D26FAa7D90A0cb3Ea74c919 (padded)
+
+# Restore when done
+git checkout contracts/.env
+```
+
+**Why:** Tests with REAL Emblem Vault ERC1155 contract before spending ETH on mainnet.
+
+See `ANVIL_SETUP.md` for complete guide.
+
+---
+
 #### Step 1: Deploy Contract (Owner)
 
 ```bash
@@ -1678,7 +1718,42 @@ cast call $VRF_COORDINATOR_MAINNET \
 
 #### Step 4: Update All Configurations
 
-**Files to Update**:
+**Automated Method (Recommended):**
+
+```bash
+cd Z:\Projects\pepedawn
+
+# Update all config files automatically (chain ID 1 = mainnet)
+node scripts/update-contract-address.js <DEPLOYED_ADDRESS> 1
+```
+
+**What this updates:**
+- ✅ `deploy/artifacts/addresses.json` (chain ID 1 entry)
+- ✅ `contracts/.env` (CONTRACT_ADDRESS)
+- ✅ `frontend/public/deploy/artifacts/addresses.json` (synced)
+- ✅ `frontend/src/contract-config.js` (address, network: 'mainnet', chainId: 1)
+- ✅ Attempts VRF consumer registration (may need manual if it fails)
+
+**Everything is automatic!** No manual config edits needed. DEV_MODE automatically becomes false when chainId is 1.
+
+**Expected Output:**
+```
+🚀 Updating contract address...
+Contract: 0x<DEPLOYED_ADDRESS>
+Chain ID: 1 (Mainnet)
+
+✅ Contract address updated - deploy/artifacts/addresses.json
+✅ .env file updated - contracts/.env
+✅ Frontend addresses updated - frontend/public/deploy/artifacts/addresses.json
+✅ Frontend contract-config updated - frontend/src/contract-config.js
+✅ VRF configuration updated - deploy/artifacts/vrf-config.json
+✅ Contract address update complete!
+```
+
+
+**Manual Method (Alternative):**
+
+If you prefer manual updates, edit these 4 files:
 
 1. **deploy/artifacts/addresses.json**
 ```json
@@ -1699,32 +1774,20 @@ export const CONTRACT_CONFIG = {
   address: "0x<DEPLOYED_ADDRESS>",
   network: 'mainnet',
   chainId: 1,
+  get DEV_MODE() { ... },    // Automatically false when chainId is 1
   // ... rest
 };
 ```
+Note: Script automatically updates address, network, and chainId fields!
 
 3. **frontend/public/deploy/artifacts/addresses.json**
 ```json
 // Same as deploy/artifacts/addresses.json
 ```
 
-4. **deploy/artifacts/vrf-config.json**
-```json
-{
-  "coordinator": "0x271682DEB8C4E0901D1a1550aD2e64D568E69909",
-  "subscriptionId": YOUR_ACTUAL_SUB_ID,
-  "keyHash": "0x8af398995b04c28e9951adb9721ef74c74f93e6a478f39e7e0777be13527e7ef",
-  "callbackGasLimit": 500000,
-  "requestConfirmations": 5,
-  "lastUpdated": "2025-XX-XXTXX:XX:XXZ",
-  "notes": "Mainnet production configuration"
-}
-```
-
-5. **README.md**
-```markdown
-**Contract Address**: `0x<DEPLOYED_ADDRESS>`
-**Network**: Ethereum Mainnet (Chain ID: 1)
+4. **contracts/.env**
+```bash
+CONTRACT_ADDRESS=0x<DEPLOYED_ADDRESS>
 ```
 
 ---
@@ -2518,7 +2581,6 @@ With 10+ participants at 0.5 ETH average: profitable
 
 #### Configuration
 - [ ] All mainnet addresses updated
-- [ ] **`DEV_MODE: false`** set in contract-config.js
 - [ ] VRF subscription created and funded (20+ LINK)
 - [ ] Emblem Vault mainnet contract verified
 - [ ] Environment variables set correctly

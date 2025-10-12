@@ -15,6 +15,7 @@ dist/
 
 # Environment variables
 .env
+.env.mainnet
 .env.local
 .env.development.local
 .env.test.local

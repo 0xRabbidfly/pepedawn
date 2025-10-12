@@ -1,9 +1,13 @@
 # PEPEDAWN Complete Testing Runbook
 
 **Purpose**: Step-by-step guide for testing the complete PepedawnRaffle lifecycle  
-**Last Updated**: October 9, 2025  
-**Target Network**: Sepolia Testnet  
+**Last Updated**: October 12, 2025  
+**Target Network**: Sepolia Testnet (for development) or Anvil Fork (for mainnet validation)  
 **Expected Duration**: 50-70 minutes first time (including VRF wait time & NFT setup)
+
+> **🔧 NEW: Anvil Fork Testing**  
+> For mainnet pre-deployment validation using real Emblem Vault contract (ERC1155),  
+> see **`ANVIL_SETUP.md`** for Anvil fork testing workflow.
 
 ---
 

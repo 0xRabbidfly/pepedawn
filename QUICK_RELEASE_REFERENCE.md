@@ -10,7 +10,8 @@ npm run release:major   # Breaking changes (1.0.0 → 2.0.0)
 
 Then:
 ```bash
-git push --follow-tags
+npm run build           # Rebuild frontend with new version
+git push --follow-tags  # Push code + tags together
 ```
 
 Done! Version appears at bottom of Rules page.
@@ -32,14 +33,36 @@ Done! Version appears at bottom of Rules page.
 git add .
 git commit -m "fix: mobile Brave wallet issue"
 
-# 2. Run release command
+# 2. Run release command (creates commit + tag automatically)
 npm run release:patch
 
-# 3. Push everything
+# 3. Build frontend with new version number
+npm run build
+
+# 4. Push code and tags together
 git push --follow-tags
 
-# 4. Deploy dist/ folder to pepedawn.art
+# 5. Deploy dist/ folder to pepedawn.art
 ```
+
+## What `git push --follow-tags` Does
+
+This single command does TWO things:
+1. **Pushes your commits** (like `git push origin main`)
+2. **Pushes version tags** (like `git push origin v0.3.1`)
+
+### Without `--follow-tags`:
+```bash
+git push origin main        # Pushes commits
+git push origin v0.3.1      # Pushes tag separately (annoying!)
+```
+
+### With `--follow-tags`:
+```bash
+git push --follow-tags      # Pushes both at once! 🎉
+```
+
+**Note:** It only pushes **annotated tags** (created with `git tag -a`), which is exactly what the bump-version script creates. Lightweight tags are ignored.
 
 ## Check Current Version
 

@@ -111,14 +111,36 @@ class ConfigurationUpdater {
 
   /**
    * Update frontend configuration
+   * @param {number} chainId - Chain ID to update to (1 for mainnet, 11155111 for sepolia)
    */
-  async updateFrontendConfig() {
+  async updateFrontendConfig(chainId = 11155111) {
     if (!fs.existsSync(this.frontendConfigPath)) {
       console.log('⚠️  Frontend config not found, skipping');
       return;
     }
 
     let content = fs.readFileSync(this.frontendConfigPath, 'utf8');
+    
+    // Update network and chainId based on chainId parameter
+    const networkName = chainId === 1 ? 'mainnet' : 'sepolia';
+    
+    // Update network field
+    content = content.replace(
+      /network:\s*['"]sepolia['"]/,
+      `network: '${networkName}'`
+    ).replace(
+      /network:\s*['"]mainnet['"]/,
+      `network: '${networkName}'`
+    );
+    
+    // Update chainId field
+    content = content.replace(
+      /chainId:\s*11155111/,
+      `chainId: ${chainId}`
+    ).replace(
+      /chainId:\s*1,/,
+      `chainId: ${chainId},`
+    );
     
     // Define VRF config as a JavaScript object
     const vrfConfigObj = {
@@ -248,10 +270,11 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
       const vrfCoordinator = env.VRF_COORDINATOR || '0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625';
       const subscriptionId = env.VRF_SUBSCRIPTION_ID;
       const privateKey = env.PRIVATE_KEY;
-      const rpcUrl = env.SEPOLIA_RPC_URL;
+      // Use MAINNET_RPC_URL for mainnet, SEPOLIA_RPC_URL for testnet
+      const rpcUrl = env.MAINNET_RPC_URL || env.SEPOLIA_RPC_URL;
       
       if (!subscriptionId || !privateKey || !rpcUrl) {
-        throw new Error('Missing required env vars: VRF_SUBSCRIPTION_ID, PRIVATE_KEY, SEPOLIA_RPC_URL');
+        throw new Error('Missing required env vars: VRF_SUBSCRIPTION_ID, PRIVATE_KEY, and (MAINNET_RPC_URL or SEPOLIA_RPC_URL)');
       }
       
       // Execute cast command
@@ -270,7 +293,10 @@ const VRF_CONFIG = ${JSON.stringify(vrfConfigObj, null, 2)};
       console.log(`⚠️  Auto-registration failed: ${error.message}`);
       console.log('\n📋 Manual registration command:');
       console.log(`cd Z:\\Projects\\pepedawn\\contracts`);
+      console.log(`# For Sepolia:`);
       console.log(`cast send $env:VRF_COORDINATOR "addConsumer(uint256,address)" $env:VRF_SUBSCRIPTION_ID ${contractAddress} --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL`);
+      console.log(`# For Mainnet:`);
+      console.log(`cast send $env:VRF_COORDINATOR "addConsumer(uint256,address)" $env:VRF_SUBSCRIPTION_ID ${contractAddress} --private-key $env:PRIVATE_KEY --rpc-url $env:MAINNET_RPC_URL`);
       
       return false;
     }
@@ -328,7 +354,7 @@ Chain IDs:
     
     // 3. Update all frontend configs
     await updater.updateAddresses();
-    await updater.updateFrontendConfig();
+    await updater.updateFrontendConfig(chainId);  // Pass chainId to update network/chainId fields
     await updater.updateVRFConfig();
     
     // 4. Add as VRF consumer

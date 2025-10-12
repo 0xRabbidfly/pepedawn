@@ -48,21 +48,51 @@ function generateLeaf(address, prizeTier, prizeIndex) {
 }
 
 /**
- * Select winners off-chain using VRF seed (MUST match on-chain algorithm exactly)
- * @param participants Array of participant objects with {address, weight}
+ * Select winners off-chain using VRF seed - RAFFLE MODEL
+ * @param participants Array of participant objects with {address, weight, tickets}
  * @param vrfSeed The VRF seed (bytes32)
  * @param totalWeight Total weight of all participants
  * @return Array of 10 winners with {address, prizeTier, prizeIndex}
+ * 
+ * RAFFLE LOGIC:
+ * - Each ticket can win ONE pack (tickets are consumed on win)
+ * - Each participant can win multiple packs (up to their ticket count)
+ * - After each win, the winning ticket is removed from the pool
+ * - Total weight decreases by the ticket weight (1 or 1.4 if proof bonus)
+ * - Odds change dynamically like a physical raffle
  */
 function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
   const winners = [];
-  const numWinners = 10;
+  const numPrizes = 10;
   
   // Convert vrfSeed to uint256 for hashing
   const seedUint = BigInt(vrfSeed);
   
-  for (let i = 0; i < numWinners; i++) {
-    // Generate random hash for this winner (matches on-chain: keccak256(abi.encode(seed, index)))
+  // Create mutable participant pool with remaining tickets and weight
+  // Each participant tracks: address, ticketsRemaining, weightPerTicket, totalRemainingWeight
+  const participantPool = participants.map(p => ({
+    address: p.address,
+    ticketsRemaining: Number(p.tickets),
+    totalRemainingWeight: BigInt(p.weight), // This will decrease as tickets are consumed
+    weightPerTicket: BigInt(p.weight) / BigInt(p.tickets), // Weight per ticket (1 or 1.4)
+    hasProof: p.hasProof || false
+  }));
+  
+  let currentTotalWeight = BigInt(totalWeight);
+  
+  console.log('\n=== Raffle Selection Process ===');
+  console.log(`Starting total weight: ${currentTotalWeight}`);
+  console.log(`Prizes to distribute: ${numPrizes}\n`);
+  
+  for (let i = 0; i < numPrizes; i++) {
+    // Check if we have any tickets left
+    const totalTicketsRemaining = participantPool.reduce((sum, p) => sum + p.ticketsRemaining, 0);
+    if (totalTicketsRemaining === 0 || currentTotalWeight === 0n) {
+      console.warn(`⚠️  Only ${i} prizes awarded - no tickets remaining`);
+      break;
+    }
+    
+    // Generate random hash for this prize (deterministic based on VRF seed + prize index)
     const randomHash = ethers.keccak256(
       ethers.AbiCoder.defaultAbiCoder().encode(
         ['uint256', 'uint256'],
@@ -70,18 +100,36 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
       )
     );
     
-    // Convert to random weight in range [0, totalWeight)
-    const randomWeight = BigInt(randomHash) % BigInt(totalWeight);
+    // Convert to random weight in range [0, currentTotalWeight)
+    const randomWeight = BigInt(randomHash) % currentTotalWeight;
     
-    // Find winner by cumulative weight (linear scan - matches on-chain)
+    // Find winner by cumulative weight (weighted lottery)
     let cumulative = 0n;
-    let winnerAddress = participants[participants.length - 1].address; // fallback
+    let winnerAddress = null;
+    let winnerIndex = -1;
     
-    for (const participant of participants) {
-      cumulative += BigInt(participant.weight);
+    for (let j = 0; j < participantPool.length; j++) {
+      const participant = participantPool[j];
+      
+      // Skip participants with no tickets remaining
+      if (participant.ticketsRemaining === 0) continue;
+      
+      cumulative += participant.totalRemainingWeight;
       if (cumulative > randomWeight) {
         winnerAddress = participant.address;
+        winnerIndex = j;
         break;
+      }
+    }
+    
+    // Fallback: shouldn't happen, but pick last participant with tickets
+    if (winnerAddress === null) {
+      for (let j = participantPool.length - 1; j >= 0; j--) {
+        if (participantPool[j].ticketsRemaining > 0) {
+          winnerIndex = j;
+          winnerAddress = participantPool[j].address;
+          break;
+        }
       }
     }
     
@@ -93,7 +141,19 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
       prizeTier: prizeTier,
       prizeIndex: i
     });
+    
+    // CRITICAL: Consume one ticket from the winner (raffle mechanic)
+    const winner = participantPool[winnerIndex];
+    winner.ticketsRemaining -= 1;
+    winner.totalRemainingWeight -= winner.weightPerTicket;
+    currentTotalWeight -= winner.weightPerTicket;
+    
+    console.log(`Prize ${i + 1} (Tier ${prizeTier}): ${winnerAddress}`);
+    console.log(`  - Tickets remaining for winner: ${winner.ticketsRemaining}`);
+    console.log(`  - Total weight remaining: ${currentTotalWeight}\n`);
   }
+  
+  console.log('=== Raffle Complete ===\n');
   
   return winners;
 }

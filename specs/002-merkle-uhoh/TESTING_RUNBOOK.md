@@ -37,6 +37,7 @@ Before starting, verify:
 - [ ] **Sepolia RPC URL** - From drpc.org, Alchemy, or Infura
 - [ ] **Chainlink VRF Subscription** - Created and funded at vrf.chain.link
 - [ ] **Test NFTs** - Will deploy in Phase 0.5 (Sepolia) OR use real Emblem Vault NFTs (mainnet)
+- [ ] **NOTE**: Emblem Vault uses **ERC1155** (not ERC721) - all NFT commands updated accordingly
 
 ---
 
@@ -118,7 +119,9 @@ echo $env:PRIVATE_KEY
 ################################################################################
 ################################################################################
 
-**Skip if you already have**: Test NFT at `0xD8B3f0B3f35226eE624966b4d8F5E44EBc0FB1c9` - just update your `.env`
+**IMPORTANT**: Test NFT contract now uses **ERC1155** (matching Emblem Vault mainnet standard)
+
+**Skip if you already have**: Test NFT contract deployed - just update your `.env` with the address
 
 ```powershell
 cd Z:\Projects\pepedawn\contracts
@@ -366,8 +369,9 @@ cd Z:\Projects\pepedawn\contracts
 cast send $env:EMBLEM_VAULT_ADDRESS "setApprovalForAll(address,bool)" $env:CONTRACT_ADDRESS true --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 Start-Sleep -Seconds 10
 
-# Transfer NFTs 1-10 (modify iterator 1..10 at start if NFT #s changed range)
-41..50 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
+# Transfer NFTs 1-10 (ERC1155: modify iterator 1..10 at start if NFT #s changed range)
+# ERC1155 safeTransferFrom(from, to, id, amount, data)
+41..50 | ForEach-Object { cast send $env:EMBLEM_VAULT_ADDRESS "safeTransferFrom(address,address,uint256,uint256,bytes)" $env:CREATORS_ADDRESS $env:CONTRACT_ADDRESS $_ 1 "0x" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL; Start-Sleep -Seconds 5 }
 
 # Map prizes (modify IDs to match above)
 cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[1,2,3,4,5,6,7,8,9,0]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -381,14 +385,14 @@ cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[1,2,3
 
 **Verify**: Check contract owns the NFTs:
 ```powershell
-# Check NFT balance (should be 10)
-cast call $env:EMBLEM_VAULT_ADDRESS "balanceOf(address)" $env:CONTRACT_ADDRESS --rpc-url $env:SEPOLIA_RPC_URL
+# ERC1155: Check balance of specific token ID (should return 1 or more for each)
+cast call $env:EMBLEM_VAULT_ADDRESS "balanceOf(address,uint256)" $env:CONTRACT_ADDRESS 41 --rpc-url $env:SEPOLIA_RPC_URL
 
-# Verify ownership of specific token (e.g., token 31)
-cast call $env:EMBLEM_VAULT_ADDRESS "ownerOf(uint256)" 31 --rpc-url $env:SEPOLIA_RPC_URL
+# Verify ownership of token 42, 43, etc.
+cast call $env:EMBLEM_VAULT_ADDRESS "balanceOf(address,uint256)" $env:CONTRACT_ADDRESS 42 --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
-Should return your contract address!
+Should return `0x0000000000000000000000000000000000000000000000000000000000000001` (1 in hex) for each token!
 
 ### 2.4 Set Valid Proof (Optional)
 

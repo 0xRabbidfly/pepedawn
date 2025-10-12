@@ -6,8 +6,8 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/vrf/dev/VRFConsumerBas
 import {VRFV2PlusClient} from "@chainlink/contracts/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import {ERC1155Holder} from "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
@@ -16,8 +16,9 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
  * @dev Implements 2-week rounds with ETH wagers, puzzle proofs for +40% weight, and pull-payment claims
  * @dev VRFConsumerBaseV2Plus provides ownership functionality via ConfirmedOwner
  * @dev Merkle trees provide efficient verification and indefinite historical data retention
+ * @dev ERC1155Holder enables receiving ERC1155 NFTs (Emblem Vault uses ERC1155)
  */
-contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC721Holder {
+contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC1155Holder {
     // =============================================================================
     // CONSTANTS
     // =============================================================================
@@ -129,7 +130,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     
     address public creatorsAddress;
     address public emblemVaultAddress;
-    IERC721 public immutable emblemVault; // Emblem Vault NFT contract for prize custody
+    IERC1155 public immutable emblemVault; // Emblem Vault ERC1155 NFT contract for prize custody
     
     uint256 public currentRoundId;
     uint256 public nextRoundFunds;
@@ -346,7 +347,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         creatorsAddress = _creatorsAddress;
         emblemVaultAddress = _emblemVaultAddress;
-        emblemVault = IERC721(_emblemVaultAddress); // Initialize ERC721 interface
+        emblemVault = IERC1155(_emblemVaultAddress); // Initialize ERC1155 interface (Emblem Vault)
         
         vrfConfig = VrfConfig({
             coordinator: IVRFCoordinatorV2Plus(_vrfCoordinator),
@@ -647,7 +648,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         for (uint8 i = 0; i < 10; i++) {
             require(
-                emblemVault.ownerOf(tokenIds[i]) == address(this),
+                emblemVault.balanceOf(address(this), tokenIds[i]) > 0,
                 "Contract must own NFT"
             );
             prizeNFTs[roundId][i] = tokenIds[i];
@@ -699,10 +700,10 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         claims[roundId][prizeIndex] = msg.sender;
         claimCounts[roundId][msg.sender]++;
         
-        // Transfer NFT
+        // Transfer NFT (ERC1155: from, to, id, amount, data)
         uint256 tokenId = prizeNFTs[roundId][prizeIndex];
         require(tokenId != 0, "Prize not set");
-        emblemVault.safeTransferFrom(address(this), msg.sender, tokenId);
+        emblemVault.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
         
         emit PrizeClaimed(roundId, msg.sender, prizeIndex, prizeTier, tokenId);
     }
@@ -1245,13 +1246,16 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     /**
      * @notice Emergency withdrawal of NFTs (only when contract is paused)
      * @dev For recovering prize NFTs if Emblem Vault integration fails
+     * @dev Supports ERC1155 NFTs (Emblem Vault uses ERC1155)
      * @param nftContract The NFT contract address
      * @param tokenId The token ID to withdraw
+     * @param amount The amount to withdraw (use 1 for unique NFTs)
      * @param to Address to send NFT to
      */
     function emergencyWithdrawNFT(
         address nftContract, 
-        uint256 tokenId, 
+        uint256 tokenId,
+        uint256 amount,
         address to
     ) 
         external 
@@ -1263,6 +1267,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     {
         require(to != address(this), "Cannot withdraw to self");
         require(nftContract != address(0), "Invalid NFT contract");
+        require(amount > 0, "Amount must be greater than 0");
         
         // Additional safety check
         require(
@@ -1270,7 +1275,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
             "Must wait 7 days after last activity"
         );
         
-        IERC721(nftContract).safeTransferFrom(address(this), to, tokenId);
+        // ERC1155 transfer (from, to, id, amount, data)
+        IERC1155(nftContract).safeTransferFrom(address(this), to, tokenId, amount, "");
         
         emit EmergencyWithdrawal(to, tokenId, "NFT");
     }

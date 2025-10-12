@@ -118,13 +118,14 @@ uint32 public constant VRF_MAX_CALLBACK_GAS = 2500000; // Line 49
 
 ### 4. EMBLEM VAULT INTEGRATION
 
-**Current Implementation** (Lines 131-132, 341-342, 642, 697):
+**Current Implementation** (Lines 131-133, 350):
 ```solidity
 address public emblemVaultAddress;
-IERC721 public emblemVault; // Standard ERC721 interface
+IERC1155 public immutable emblemVault; // Emblem Vault ERC1155 NFT contract
 ```
 
-**Our contract uses**: Standard ERC721 interface (simple, clean ✓)  
+**✅ UPDATED**: Contract now uses **ERC1155 interface** (matches Emblem Vault mainnet standard)  
+**Verified**: Emblem Vault contract `0x4C03BCAD293fb0562D26FAa7D90A0cb3Ea74c919` supports ERC1155 ✅  
 **Emblem Vault SDK provides**: Advanced vault creation/management tools (not needed for basic custody)
 
 ---
@@ -142,10 +143,12 @@ Based on Emblem SDK docs, Emblem Vault uses different addresses per network:
 - [ ] **Identify which Emblem Vault collection** you're using for prizes
   - Are these curated vaults? Custom collection? Existing NFTs?
   - Get the mainnet contract address for that specific collection
-- [ ] **Verify contract is ERC721 compliant** on mainnet:
+- [ ] **Verify contract is ERC1155 compliant** on mainnet:
   ```bash
-  cast call $EMBLEM_VAULT_MAINNET "supportsInterface(bytes4)" "0x80ac58cd" --rpc-url $MAINNET_RPC_URL
+  # ERC1155 interface ID
+  cast call $EMBLEM_VAULT_MAINNET "supportsInterface(bytes4)" "0xd9b67a26" --rpc-url $MAINNET_RPC_URL
   # Should return: 0x0000000000000000000000000000000000000000000000000000000000000001 (true)
+  # ✅ VERIFIED for 0x4C03BCAD293fb0562D26FAa7D90A0cb3Ea74c919
   ```
 - [ ] **Confirm NFT inventory**:
   - How many NFTs available? (contract assumes 133 total)
@@ -153,20 +156,20 @@ Based on Emblem SDK docs, Emblem Vault uses different addresses per network:
   - Who currently owns them?
 
 #### Phase 2: Testing (Week 2)
-- [ ] **Fork test NFT operations**:
+- [ ] **Fork test NFT operations** (ERC1155):
   ```bash
   # Fork mainnet
-  anvil --fork-url https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+  anvil --fork-url https://ethereum.publicnode.com
   
-  # Test ownership check
-  cast call $EMBLEM_VAULT_MAINNET "ownerOf(uint256)" $TOKEN_ID --rpc-url http://localhost:8545
+  # Test ownership check (ERC1155 uses balanceOf)
+  cast call $EMBLEM_VAULT_MAINNET "balanceOf(address,uint256)" $CURRENT_OWNER $TOKEN_ID --rpc-url http://localhost:8545
   
-  # Test transfer to contract (simulate)
-  cast send $EMBLEM_VAULT_MAINNET "safeTransferFrom(address,address,uint256)" \
-    $CURRENT_OWNER $CONTRACT_ADDRESS $TOKEN_ID --rpc-url http://localhost:8545
+  # Test transfer to contract (ERC1155: from, to, id, amount, data)
+  cast send $EMBLEM_VAULT_MAINNET "safeTransferFrom(address,address,uint256,uint256,bytes)" \
+    $CURRENT_OWNER $CONTRACT_ADDRESS $TOKEN_ID 1 "0x" --rpc-url http://localhost:8545
   ```
 - [ ] **Test contract's prize claiming flow** on fork with real Emblem Vault contract
-- [ ] **Verify gas costs** for `safeTransferFrom` with Emblem Vault NFTs
+- [ ] **Verify gas costs** for ERC1155 `safeTransferFrom` with Emblem Vault NFTs
 
 #### Phase 3: Pre-Deployment Prep (Week 3)
 - [ ] **Gather prize NFTs**:
@@ -236,7 +239,7 @@ Based on Emblem SDK docs, Emblem Vault uses different addresses per network:
 #### ⚠️ CRITICAL RISKS
 
 1. **Wrong Contract Address**: If you deploy with wrong Emblem Vault address, prizes won't transfer
-   - **Mitigation**: Test on fork first, verify `ownerOf()` and `safeTransferFrom()` work
+   - **Mitigation**: Test on fork first, verify `balanceOf()` and `safeTransferFrom()` work with ERC1155
    
 2. **NFT Not Owned**: If contract doesn't own the NFT, claim will fail
    - **Mitigation**: Pre-transfer all NFTs before opening round, validate in `setPrizesForRound()`
@@ -1770,25 +1773,29 @@ git push origin main
 **Before first round opens**:
 
 ```bash
-# Transfer 10 Emblem Vault NFTs to contract
+# Transfer 10 Emblem Vault NFTs to contract (ERC1155)
 # For each NFT (token IDs 1-10 or whichever you're using):
 
+# ERC1155: safeTransferFrom(from, to, id, amount, data)
 cast send $EMBLEM_VAULT_ADDRESS_MAINNET \
-  "safeTransferFrom(address,address,uint256)" \
+  "safeTransferFrom(address,address,uint256,uint256,bytes)" \
   $YOUR_ADDRESS \
   $CONTRACT_ADDRESS \
   <TOKEN_ID> \
+  1 \
+  "0x" \
   --private-key $PRIVATE_KEY \
   --rpc-url $MAINNET_RPC_URL
 
-# Verify contract owns them
+# Verify contract owns them (ERC1155 uses balanceOf)
 cast call $EMBLEM_VAULT_ADDRESS_MAINNET \
-  "ownerOf(uint256)" \
+  "balanceOf(address,uint256)" \
+  $CONTRACT_ADDRESS \
   <TOKEN_ID> \
   --rpc-url $MAINNET_RPC_URL
 ```
 
-**Expected**: Contract address is returned
+**Expected**: Returns `0x0000...0001` (1 in hex)
 
 ---
 

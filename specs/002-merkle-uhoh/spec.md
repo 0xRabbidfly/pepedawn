@@ -271,7 +271,7 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
 - **FR-034**: System MUST display VRF seed from on-chain events when randomness is received, with reproducibility documentation
 - **FR-035**: System MUST render winners table from Winners File showing address, prizeTier, and prizeIndex for each winner
 - **FR-036**: System MUST implement individual "Claim" buttons for each prize slot where the connected wallet appears as a winner
-- **FR-037**: System MUST generate Merkle proofs client-side using the format `keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))` for claims
+- **FR-037**: System MUST generate Merkle proofs client-side using the format `keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))` for claims
 - **FR-038**: System MUST prevent double-claims by showing "Already claimed" status and disabling claimed prize slots; when claim transaction fails, system MUST display error message and keep Claim button enabled for manual retry
 - **FR-039**: System MUST implement "Withdraw Refund" functionality that calls the contract and shows success/failure status
 - **FR-040**: System MUST display ticket counts and explain that users can win multiple times up to their ticket count
@@ -333,7 +333,7 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
     ],
     "merkle": {
       "root": "0xPARTICIPANTS_ROOT",
-      "leafFormat": "keccak256(abi.encode(address, uint128 weight))"
+      "leafFormat": "keccak256(abi.encodePacked(address, uint128 weight))"
     }
   }
   ```
@@ -349,7 +349,7 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
     ],
     "merkle": {
       "root": "0xWINNERS_ROOT",
-      "leafFormat": "keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))"
+      "leafFormat": "keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))"
     }
   }
   ```

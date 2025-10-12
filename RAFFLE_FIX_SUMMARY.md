@@ -61,17 +61,34 @@ for (let i = 0; i < 10; i++) {
 ## Files Changed
 
 ### Core Algorithm
-- `contracts/scripts/cli/generate-winners-file.js` - Fixed raffle selection logic
+- `contracts/scripts/cli/generate-winners-file.js` - Fixed raffle selection logic with integer scaling
+
+### Critical Fixes (Second Pass)
+1. **Weight Calculation Bug**: Fixed integer division that lost proof bonus precision
+   - Added `SCALE = 1000n` for integer arithmetic
+   - `BASE_WEIGHT_PER_TICKET = 1000` (1.0x)
+   - `PROOF_WEIGHT_PER_TICKET = 1400` (1.4x)
+   - Now correctly preserves proof bonus across multiple wins
+
+2. **Reproducibility Metadata**: Added to winners file
+   - Contract address
+   - Chain ID
+   - Algorithm parameters (scale, weights)
+   - Algorithm description
+
+3. **Documentation Fix**: Corrected Merkle leaf format
+   - Changed `abi.encode` → `abi.encodePacked` to match contract
 
 ### Documentation
-- `specs/002-merkle-uhoh/spec.md` - Updated FR-026 and user scenarios
+- `specs/002-merkle-uhoh/spec.md` - Updated FR-026, FR-037, and Merkle formats
 - `frontend/rules.html` - Added raffle mechanics explanation
 - `frontend/dist/rules.html` - Synced with source
+- `RAFFLE_FIX_SUMMARY.md` - Comprehensive fix documentation
 
-### Testing
-- ✅ Tested with Round 1 data (4 participants, 12 tickets)
-- ✅ Verified fair distribution (no wallet won more packs than tickets)
-- ✅ New Merkle root: `0x5d7136a49bbacc776916587685f9afc753c2cb0129d6f271786a5c882f08ec6e`
+### Testing Required
+- ⚠️ **MUST RE-TEST** - Weight calculation bug fix changes winner distribution
+- ⚠️ **Generate new winners file** for Round 2 with fixed algorithm
+- ⚠️ **Verify proof bonus** is preserved across multiple wins
 
 ---
 

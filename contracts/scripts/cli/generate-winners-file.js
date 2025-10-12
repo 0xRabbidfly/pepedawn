@@ -49,7 +49,7 @@ function generateLeaf(address, prizeTier, prizeIndex) {
 
 /**
  * Select winners off-chain using VRF seed - RAFFLE MODEL
- * @param participants Array of participant objects with {address, weight, tickets}
+ * @param participants Array of participant objects with {address, weight, tickets, hasProof}
  * @param vrfSeed The VRF seed (bytes32)
  * @param totalWeight Total weight of all participants
  * @return Array of 10 winners with {address, prizeTier, prizeIndex}
@@ -58,8 +58,13 @@ function generateLeaf(address, prizeTier, prizeIndex) {
  * - Each ticket can win ONE pack (tickets are consumed on win)
  * - Each participant can win multiple packs (up to their ticket count)
  * - After each win, the winning ticket is removed from the pool
- * - Total weight decreases by the ticket weight (1 or 1.4 if proof bonus)
+ * - Total weight decreases by the ticket weight (1000 or 1400 scaled units)
  * - Odds change dynamically like a physical raffle
+ * 
+ * WEIGHT CALCULATION (CRITICAL):
+ * - Contract stores TOTAL weight per user (e.g., 5 tickets with proof = weight 7)
+ * - We need PER-TICKET weight for consumption: 1000 (no proof) or 1400 (with proof)
+ * - Use integer scaling to preserve decimals: SCALE = 1000
  */
 function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
   const winners = [];
@@ -68,17 +73,24 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
   // Convert vrfSeed to uint256 for hashing
   const seedUint = BigInt(vrfSeed);
   
+  // Integer scaling to preserve proof bonus (1.4x) precision
+  const SCALE = 1000n;
+  const BASE_WEIGHT_PER_TICKET = 1000n;   // 1.0x = 1000 scaled
+  const PROOF_WEIGHT_PER_TICKET = 1400n;  // 1.4x = 1400 scaled (contract PROOF_MULTIPLIER)
+  
   // Create mutable participant pool with remaining tickets and weight
-  // Each participant tracks: address, ticketsRemaining, weightPerTicket, totalRemainingWeight
+  // CRITICAL: Scale all weights by SCALE to preserve decimals
   const participantPool = participants.map(p => ({
     address: p.address,
     ticketsRemaining: Number(p.tickets),
-    totalRemainingWeight: BigInt(p.weight), // This will decrease as tickets are consumed
-    weightPerTicket: BigInt(p.weight) / BigInt(p.tickets), // Weight per ticket (1 or 1.4)
+    totalRemainingWeight: BigInt(p.weight) * SCALE, // Scale up to preserve precision
+    // Per-ticket weight based on whether they have proof
+    weightPerTicket: p.hasProof ? PROOF_WEIGHT_PER_TICKET : BASE_WEIGHT_PER_TICKET,
     hasProof: p.hasProof || false
   }));
   
-  let currentTotalWeight = BigInt(totalWeight);
+  // Scale total weight to match participant pool scaling
+  let currentTotalWeight = BigInt(totalWeight) * SCALE;
   
   console.log('\n=== Raffle Selection Process ===');
   console.log(`Starting total weight: ${currentTotalWeight}`);
@@ -255,21 +267,30 @@ async function generateWinnersFile(roundId, outputPath) {
   
   console.log(`Merkle root: ${root}`);
   
-  // Create output file structure
+  // Create output file structure with full reproducibility metadata
   const outputData = {
     version: "1.0",
     roundId: roundId.toString(),
+    contractAddress: contractAddress,
+    chainId: (await provider.getNetwork()).chainId.toString(),
     vrfSeed: round.vrfSeed,
     vrfRequestId: round.vrfRequestId.toString(),
     totalWeight: round.totalWeight.toString(),
     winnerCount: winners.length,
     generatedAt: new Date().toISOString(),
+    algorithm: {
+      type: "weighted-raffle-without-replacement",
+      scale: "1000",
+      baseWeightPerTicket: "1000",
+      proofWeightPerTicket: "1400",
+      description: "Each ticket is consumed on win. Proof bonus = 1.4x weight per ticket."
+    },
     derivation: "Winners selected OFF-CHAIN using VRF seed (deterministic, verifiable)",
-    selectionMethod: "Weighted lottery with cumulative weights (matches on-chain algorithm)",
+    selectionMethod: "Weighted raffle with ticket consumption (integer scaling for proof precision)",
     winners: winners,
     merkle: {
       root: root,
-      leafFormat: "keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))"
+      leafFormat: "keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))"
     }
   };
   

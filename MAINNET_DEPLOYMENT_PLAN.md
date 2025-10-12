@@ -1555,7 +1555,9 @@ manticore src/PepedawnRaffle.sol
 
 ### DEPLOYMENT SEQUENCE
 
-#### Step 1: Deploy Contract (Owner)
+#### Step 0: Simulate Deployment (Dry Run)
+
+**ALWAYS run this first to verify everything works and get gas estimates!**
 
 ```bash
 cd contracts
@@ -1569,7 +1571,35 @@ echo $VRF_COORDINATOR_MAINNET
 echo $CREATORS_ADDRESS
 echo $EMBLEM_VAULT_ADDRESS_MAINNET
 
-# Deploy
+# Run simulation (NO broadcast - safe to run)
+forge script scripts/forge/Deploy.s.sol \
+  --rpc-url https://ethereum.publicnode.com \
+  -vvvv
+
+**Expected Output**:
+```
+✅ Script ran successfully.
+✅ PepedawnRaffle deployed to: 0x...
+✅ Estimated total gas used: ~6,900,000
+✅ Estimated gas price: <current_gwei>
+✅ Estimated amount required: ~0.003 ETH
+✅ SIMULATION COMPLETE. To broadcast these transactions, add --broadcast...
+```
+#### Step 1: Deploy Contract (Owner)
+
+```bash
+cd contracts
+
+# Ensure environment is set
+source .env # or set variables manually
+
+# Verify all variables are set (again, to be safe)
+echo $MAINNET_RPC_URL
+echo $VRF_COORDINATOR_MAINNET
+echo $CREATORS_ADDRESS
+echo $EMBLEM_VAULT_ADDRESS_MAINNET
+
+# Deploy (THIS COSTS REAL ETH!)
 forge script scripts/forge/Deploy.s.sol \
   --rpc-url $MAINNET_RPC_URL \
   --broadcast \

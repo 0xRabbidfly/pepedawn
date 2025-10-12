@@ -80,26 +80,36 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
   
   // Create mutable participant pool with remaining tickets and weight
   // CRITICAL: Scale all weights by SCALE to preserve decimals
-  const participantPool = participants.map(p => ({
-    address: p.address,
-    ticketsRemaining: Number(p.tickets),
-    totalRemainingWeight: BigInt(p.weight) * SCALE, // Scale up to preserve precision
-    // Per-ticket weight based on whether they have proof
-    weightPerTicket: p.hasProof ? PROOF_WEIGHT_PER_TICKET : BASE_WEIGHT_PER_TICKET,
-    hasProof: p.hasProof || false
-  }));
+  const participantPool = participants.map(p => {
+    const tickets = Number(p.tickets);
+    const totalWeight = Number(p.weight);
+    
+    // Calculate ACTUAL per-ticket weight from participant data
+    // Contract weight = tickets * (hasProof ? 1.4 : 1.0)
+    const actualWeightPerTicket = totalWeight / tickets;
+    const scaledWeightPerTicket = BigInt(Math.round(actualWeightPerTicket * Number(SCALE)));
+    
+    return {
+      address: p.address,
+      ticketsRemaining: tickets,
+      totalRemainingWeight: BigInt(totalWeight) * SCALE, // Scale up to preserve precision
+      // Use ACTUAL per-ticket weight, not fixed constants
+      weightPerTicket: scaledWeightPerTicket,
+      hasProof: p.hasProof || false
+    };
+  });
   
-  // Scale total weight to match participant pool scaling
-  let currentTotalWeight = BigInt(totalWeight) * SCALE;
+  // Scale total weight to match participant pool scaling (for initial display only)
+  let initialTotalWeight = BigInt(totalWeight) * SCALE;
   
   console.log('\n=== Raffle Selection Process ===');
-  console.log(`Starting total weight: ${currentTotalWeight}`);
+  console.log(`Starting total weight: ${initialTotalWeight}`);
   console.log(`Prizes to distribute: ${numPrizes}\n`);
   
   for (let i = 0; i < numPrizes; i++) {
     // Check if we have any tickets left
     const totalTicketsRemaining = participantPool.reduce((sum, p) => sum + p.ticketsRemaining, 0);
-    if (totalTicketsRemaining === 0 || currentTotalWeight === 0n) {
+    if (totalTicketsRemaining === 0) {
       console.warn(`⚠️  Only ${i} prizes awarded - no tickets remaining`);
       break;
     }
@@ -112,8 +122,17 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
       )
     );
     
-    // Convert to random weight in range [0, currentTotalWeight)
-    const randomWeight = BigInt(randomHash) % currentTotalWeight;
+    // CRITICAL FIX: Calculate current total weight dynamically based on remaining tickets
+    let dynamicTotalWeight = 0n;
+    for (const p of participantPool) {
+      if (p.ticketsRemaining > 0) {
+        dynamicTotalWeight += BigInt(p.ticketsRemaining) * p.weightPerTicket;
+      }
+    }
+    
+    // Convert to random weight in range [0, dynamicTotalWeight)
+    const randomWeight = BigInt(randomHash) % dynamicTotalWeight;
+    
     
     // Find winner by cumulative weight (weighted lottery)
     let cumulative = 0n;
@@ -126,7 +145,11 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
       // Skip participants with no tickets remaining
       if (participant.ticketsRemaining === 0) continue;
       
-      cumulative += participant.totalRemainingWeight;
+      // Add weight for each individual ticket this participant has
+      const participantWeight = BigInt(participant.ticketsRemaining) * participant.weightPerTicket;
+      cumulative += participantWeight;
+      
+      
       if (cumulative > randomWeight) {
         winnerAddress = participant.address;
         winnerIndex = j;
@@ -158,11 +181,18 @@ function selectWinnersOffChain(participants, vrfSeed, totalWeight) {
     const winner = participantPool[winnerIndex];
     winner.ticketsRemaining -= 1;
     winner.totalRemainingWeight -= winner.weightPerTicket;
-    currentTotalWeight -= winner.weightPerTicket;
+    
+    // Calculate new total weight for display
+    let newTotalWeight = 0n;
+    for (const p of participantPool) {
+      if (p.ticketsRemaining > 0) {
+        newTotalWeight += BigInt(p.ticketsRemaining) * p.weightPerTicket;
+      }
+    }
     
     console.log(`Prize ${i + 1} (Tier ${prizeTier}): ${winnerAddress}`);
     console.log(`  - Tickets remaining for winner: ${winner.ticketsRemaining}`);
-    console.log(`  - Total weight remaining: ${currentTotalWeight}\n`);
+    console.log(`  - Total weight remaining: ${newTotalWeight}\n`);
   }
   
   console.log('=== Raffle Complete ===\n');

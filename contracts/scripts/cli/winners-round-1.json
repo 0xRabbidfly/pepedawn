@@ -7,7 +7,7 @@
   "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
   "totalWeight": "37",
   "winnerCount": 10,
-  "generatedAt": "2025-10-12T02:47:33.001Z",
+  "generatedAt": "2025-10-12T03:25:23.918Z",
   "algorithm": {
     "type": "weighted-raffle-without-replacement",
     "scale": "1000",

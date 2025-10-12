@@ -165,12 +165,31 @@ async function updateButtonStates(roundState = null) {
           if (userStats.tickets.toString() === '0') {
             proofDisabled = true;
             proofTooltip = 'Purchase tickets before submitting proof';
+            proofInput.value = '';
+            proofInput.classList.remove('proof-success', 'proof-failure');
           } else if (userStats.hasProof) {
             proofDisabled = true;
-            proofTooltip = 'Proof already submitted for this round';
+            // Check the proof status element that ui.js already updated
+            const userProofStatus = document.getElementById('user-proof-status');
+            if (userProofStatus && userProofStatus.className === 'proof-success') {
+              proofTooltip = 'Proof verified successfully';
+              proofInput.value = '🎉 You Submitted your PROOF successfully! 🎉';
+              proofInput.classList.add('proof-success');
+              proofInput.classList.remove('proof-failure');
+            } else if (userProofStatus && userProofStatus.className === 'proof-failed') {
+              proofTooltip = 'Proof was incorrect';
+              proofInput.value = '😞 Proof submission failed - try again next round! 😞';
+              proofInput.classList.add('proof-failure');
+              proofInput.classList.remove('proof-success');
+            } else {
+              proofTooltip = 'Proof already submitted for this round';
+              proofInput.value = '';
+            }
           } else {
             proofDisabled = false;
             proofTooltip = '';
+            proofInput.value = '';
+            proofInput.classList.remove('proof-success', 'proof-failure');
           }
         } catch {
           // If we can't get user stats, default to basic round check
@@ -182,11 +201,6 @@ async function updateButtonStates(roundState = null) {
       submitProofBtn.disabled = proofDisabled;
       submitProofBtn.title = proofTooltip;
       proofInput.disabled = proofDisabled;
-      if (proofDisabled && proofTooltip) {
-        proofInput.placeholder = proofTooltip;
-      } else {
-        proofInput.placeholder = 'Paste your puzzle proof here...';
-      }
     }
     
   } catch (error) {
@@ -1933,8 +1947,16 @@ async function buyTickets() {
       
       showTransactionStatus('Submitting bet transaction...', 'info');
       
+      // Disable buy tickets button to prevent double-submission
+      const buyTicketsBtn = document.getElementById('buy-tickets');
+      const originalBtnText = buyTicketsBtn ? buyTicketsBtn.textContent : '';
+      if (buyTicketsBtn) {
+        buyTicketsBtn.disabled = true;
+        buyTicketsBtn.textContent = 'Submitting...';
+      }
+      
       // Call contract method (enhanced version uses tickets parameter)
-      const tx = await contract.placeBet(tickets, { value: amountWei });
+      const tx = await contract.buyTickets(tickets, { value: amountWei });
       
       showTransactionStatus('Transaction submitted, waiting for confirmation...', 'info');
       console.log('Transaction hash:', tx.hash);
@@ -1967,6 +1989,14 @@ async function buyTickets() {
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
+      
+      // Re-enable buy tickets button on failure for retry
+      const buyTicketsBtn = document.getElementById('buy-tickets');
+      if (buyTicketsBtn) {
+        buyTicketsBtn.disabled = false;
+        buyTicketsBtn.textContent = originalBtnText || 'Place Bet';
+      }
+      
       handleTransactionError(contractError, 'Buy Tickets');
     }
     
@@ -2056,6 +2086,14 @@ async function submitProof() {
       
       showTransactionStatus('Submitting puzzle proof...', 'info');
       
+      // Disable submit button to prevent double-submission
+      const submitProofBtn = document.getElementById('submit-proof');
+      const originalText = submitProofBtn ? submitProofBtn.textContent : '';
+      if (submitProofBtn) {
+        submitProofBtn.disabled = true;
+        submitProofBtn.textContent = 'Submitting...';
+      }
+      
       // Hash the proof for on-chain storage
       const proofHash = ethers.keccak256(ethers.toUtf8Bytes(sanitizedProof));
       
@@ -2083,11 +2121,12 @@ async function submitProof() {
       // Update user stats and security status
       await updateUserStats(contract, userAddress);
       showSecurityStatus(contract, userAddress);
-      await updateButtonStates(); // Update button states after submitting proof
+      await updateButtonStates();
       
     } catch (contractError) {
       console.error('Contract error:', contractError);
       const errorInfo = handleTransactionError(contractError, 'Submit Proof');
+      
       
       // Show error in proof status
       const proofStatus = document.getElementById('proof-status');
@@ -2215,3 +2254,4 @@ window.pepedawn = {
   buyTickets,
   submitProof
 };
+

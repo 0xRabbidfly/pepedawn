@@ -62,6 +62,19 @@ input:disabled {
   background-color: rgba(0, 0, 0, 0.4);
 }
 
+/* Proof submission result states */
+.proof-success {
+  background: linear-gradient(135deg, #e8f5e8, #d4edda) !important;
+  color: #155724 !important;
+  border-color: #c3e6cb !important;
+}
+
+.proof-failure {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb) !important;
+  color: #721c24 !important;
+  border-color: #f1aeb5 !important;
+}
+
 #proof-status {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);

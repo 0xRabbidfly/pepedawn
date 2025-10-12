@@ -23,27 +23,6 @@ This runbook walks you through a complete round test:
 8. **Claims (UI)** - View winners and test claim flow
 9. **Verification** - Confirm everything worked correctly
 
-### Automation Option
-
-**Phases 4.2, 5, 6.1, and 7 can be fully automated** by running:
-```bash
-node scripts/automate-round.js WATCH
-```
-
-This watcher polls the contract every 30 seconds and automatically:
-- Snapshots the round when closed
-- Generates participants file, uploads to IPFS, commits root
-- Requests VRF randomness
-- Generates winners file when VRF fulfills, uploads to IPFS, submits root
-
-See `scripts/WATCH_MODE_SETUP.md` for setup instructions.
-
-**Manual phases** (must be done by you):
-- Phase 0-2: Setup and deployment
-- Phase 3: User interactions (betting, proofs)
-- Phase 4.1: Close round (owner decision)
-- Phase 8-9: Frontend testing and verification
-
 ---
 
 ## Prerequisites Checklist
@@ -131,16 +110,6 @@ echo $env:PRIVATE_KEY
 ```
 
 **Expected**: All three variables should print their values
-
-### 0.4 Install CLI Dependencies
-
-```powershell
-cd Z:\Projects\pepedawn\contracts\scripts\cli
-npm install
-```
-
-**Expected**: Dependencies installed in `contracts/scripts/cli/node_modules/`
-
 ---
 
 ################################################################################
@@ -158,16 +127,13 @@ forge script scripts/forge/MintTestNFTs.s.sol:MintTestNFTs --rpc-url $env:SEPOLI
 ```bash
 EMBLEM_VAULT_ADDRESS=0xYourTestNFTAddress
 ```
-Update `contracts/.env` with new NFT contract
 
+Update `contracts/.env` with new NFT contract - YOU CAN REUSE EXISTING ONE !!
 **Reload environment** (repeat step 0.2)
 
-**Note**: Deploy contract once, reuse forever. Mint more NFTs as needed with:
 ```bash
 cast send $EMBLEM_VAULT_ADDRESS "mint(address,uint256)" $CREATORS_ADDRESS 10 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
-
----
 
 ################################################################################
 ################################################################################
@@ -283,7 +249,6 @@ Chain ID: 11155111 (Sepolia)
 ✅ Frontend addresses updated - frontend/public/deploy/artifacts/addresses.json
 ✅ Frontend contract-config updated - frontend/src/contract-config.js
 ✅ VRF configuration updated - deploy/artifacts/vrf-config.json
-
 ✅ Contract address update complete!
 ```
 
@@ -305,7 +270,46 @@ If automated methods fail, manually:
 2. Reload environment (repeat step 0.2)
 3. Add VRF consumer through Chainlink dashboard UI
 
----
+### 1.6 Update ABI (Automatic)
+
+**Note**: The `update-contract-address.js` script in step 1.5 **automatically updates the ABI** for you. You only need to run this manually if you modified the contract code after deployment.
+
+**Manual ABI Update (If Needed)**:
+```powershell
+cd Z:\Projects\pepedawn
+node scripts/update-abi.js
+```
+
+**Expected Output**:
+```
+🔧 PEPEDAWN ABI Updater Starting...
+📋 Loaded ABI with 122 functions/events
+✅ Frontend config ABI updated
+✅ Standalone ABI file updated
+✅ ABI update complete!
+```
+
+### 1.7 Reload Environment Variables
+
+**IMPORTANT**: After deployment, reload your environment to pick up the new `CONTRACT_ADDRESS`:
+
+```powershell
+cd Z:\Projects\pepedawn\contracts
+Get-Content .env | ForEach-Object { 
+    if ($_ -match '^([^=]+)=(.*)$') {
+        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+    }
+}
+```
+
+**Verify new address loaded**:
+```powershell
+echo $env:CONTRACT_ADDRESS
+```
+
+Should show your newly deployed contract address!
+
+**Note on VRF Consumer**: The `update-contract-address.js` script **automatically adds your contract as a VRF consumer** if you have `VRF_COORDINATOR` and `VRF_SUBSCRIPTION_ID` set in `.env`. Check the output - if you see "✅ Contract added as VRF consumer!" then you're all set. If it failed, use the manual method in step 1.5.
 
 ################################################################################
 ################################################################################
@@ -322,19 +326,19 @@ node manage-round.js status 0
 
 **Expected Output**:
 ```
-===========================================
-📊 Round Status Report
-===========================================
-Network: sepolia (Chain ID: 11155111)
-Contract: 0xYourContractAddress
+=== Round Status ===
 
-❌ Round 0 does not exist or is not initialized
+Round ID: 0
+Status: Created (0)
+Start Time: 1970-01-01T00:00:00.000Z
+End Time: 1970-01-01T00:00:00.000Z
 
-✨ Next Steps:
-   1. Create a new round: cast send ...
+=== Next Steps ===
+1. Open the round for betting:
+   cast send $CONTRACT_ADDRESS "openRound(uint256)" 0 --private-key $PRIVATE_KEY --rpc-url $SEPOLIA_RPC_URL
 ```
 
-This is normal - no rounds exist yet!
+This shows Round 0 (uninitialized placeholder with epoch timestamps) - no actual rounds exist yet. This is normal for a freshly deployed contract!
 
 ### 2.2 Create Round 1
 
@@ -375,17 +379,22 @@ Start-Sleep -Seconds 10
 cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[31,32,33,34,35,36,37,38,39,40]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
 ```
 
-**Using Emblem Vault Interface**:
+**Using Emblem Vault Interface** (Alternative):
 1. Go to your Emblem Vault holdings
 2. Transfer 10 NFTs to `CONTRACT_ADDRESS`
-3. Note the token IDs (you'll need them next)
+3. Note the token IDs
+4. Map them with: `cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[id1,id2,...,id10]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL`
 
-**Verify**: Check contract balance on Etherscan:
+**Verify**: Check contract owns the NFTs:
 ```powershell
-cast call $env:CONTRACT_ADDRESS "balanceOf(address)" $env:CONTRACT_ADDRESS --rpc-url $env:SEPOLIA_RPC_URL
-# Map prizes (BEFORE opening round!)
-cast send $env:CONTRACT_ADDRESS "setPrizesForRound(uint256,uint256[])" 1 "[11,12,13,14,15,16,17,18,19,20]" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
+# Check NFT balance (should be 10)
+cast call $env:EMBLEM_VAULT_ADDRESS "balanceOf(address)" $env:CONTRACT_ADDRESS --rpc-url $env:SEPOLIA_RPC_URL
+
+# Verify ownership of specific token (e.g., token 31)
+cast call $env:EMBLEM_VAULT_ADDRESS "ownerOf(uint256)" 31 --rpc-url $env:SEPOLIA_RPC_URL
 ```
+
+Should return your contract address!
 
 ### 2.4 Set Valid Proof (Optional)
 
@@ -433,13 +442,33 @@ node manage-round.js status 1
    Total Tickets: 0
    Total Wagered: 0 ETH
    Participants: 0
-
-✨ Next Steps:
-   1. Users can now place bets via frontend
-   2. Owner can close round after minimum 10 tickets
 ```
 
 Perfect! Round 1 is ready for betting.
+
+### 2.8 Optional - Enable Watch Mode Automation
+
+**From this point forward, Phases 4.2, 5, 6.1, and 7 can be fully automated.**
+
+Start the automation watcher in a separate terminal:
+```bash
+node scripts/automate-round.js WATCH
+```
+
+This polls the contract every 30 seconds and automatically:
+- Snapshots the round when you close it (Phase 4.2)
+- Generates participants file, uploads to IPFS, commits root (Phase 5)
+- Requests VRF randomness (Phase 6.1)
+- Generates winners file when VRF fulfills, uploads to IPFS, submits root (Phase 7)
+
+See `scripts/WATCH_MODE_SETUP.md` for production setup instructions (pm2, cron, etc.)
+
+**If enabled, you can skip the manual steps in Phases 4.2, 5, 6.1, and 7!**
+
+**Manual phases** (must still be done by you):
+- Phase 3: User interactions (betting, proofs)
+- Phase 4.1: Close round (owner decision - triggers automation)
+- Phase 8-9: Frontend testing and verification
 
 ---
 
@@ -451,34 +480,13 @@ Perfect! Round 1 is ready for betting.
 
 ### 3.1 Update Frontend Configuration
 
-**Update ABI (If Contract Code Changed)**
+**Verify DEV_MODE Setting**:
 ```powershell
 cd Z:\Projects\pepedawn
-node scripts/update-abi.js
+cat frontend/src/contract-config.js | Select-String "DEV_MODE"
 ```
 
-**Expected Output**:
-```
-🔧 PEPEDAWN ABI Updater Starting...
-
-📋 Loaded ABI with 122 functions/events
-💾 Created backup: frontend/src/contract-config.js.backup
-✅ Frontend config ABI updated
-✅ Standalone ABI file updated
-
-✅ ABI update complete!
-```
-
-**Note**: Only run this if you've modified the contract code. For new deployments of the same contract, the address update in step 1.5 is sufficient.
-
-**Verify DEV_MODE Setting**:
-- For Sepolia testing: `DEV_MODE: true` (shows network indicator)
-- For mainnet: `DEV_MODE: false` (hides debug UI)
-
-Check `frontend/src/contract-config.js`:
-```javascript
-DEV_MODE: true, // Should be true for Sepolia testing
-```
+Should show: `DEV_MODE: true` for Sepolia testing (set to `false` for mainnet)
 
 ### 3.2 Install Frontend Dependencies (First Time Only)
 

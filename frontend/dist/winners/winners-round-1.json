@@ -1,87 +1,96 @@
 {
   "version": "1.0",
   "roundId": "1",
-  "vrfSeed": "0x43a5d34010fc8a24bf4b6a02e01ec1ffcdec3c87c8680bd3b1701a5ed97404d0",
-  "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
-  "totalWeight": "26",
+  "contractAddress": "0x18ACB77690a4372AAC4e558A105E9019edCf8720",
+  "chainId": "11155111",
+  "vrfSeed": "0x097f0d7979d3e0fc24be551e6500cc51ef64f5f2ca6a86c1a4ac488ccdfe890e",
+  "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
+  "totalWeight": "37",
   "winnerCount": 10,
-  "generatedAt": "2025-10-10T16:50:00.056Z",
+  "generatedAt": "2025-10-12T03:25:23.918Z",
+  "algorithm": {
+    "type": "weighted-raffle-without-replacement",
+    "scale": "1000",
+    "baseWeightPerTicket": "1000",
+    "proofWeightPerTicket": "1400",
+    "description": "Each ticket is consumed on win. Proof bonus = 1.4x weight per ticket."
+  },
   "derivation": "Winners selected OFF-CHAIN using VRF seed (deterministic, verifiable)",
-  "selectionMethod": "Weighted lottery with cumulative weights (matches on-chain algorithm)",
+  "selectionMethod": "Weighted raffle with ticket consumption (integer scaling for proof precision)",
   "winners": [
     {
-      "address": "0x712Af66391953bd03a5bE31bFFF5615915527b52",
+      "address": "0xD7eD659B238FC36CCccfA299121594fF5D0fC80E",
       "prizeTier": 1,
       "prizeIndex": 0,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
-      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "address": "0xD7eD659B238FC36CCccfA299121594fF5D0fC80E",
       "prizeTier": 2,
       "prizeIndex": 1,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0xD7eD659B238FC36CCccfA299121594fF5D0fC80E",
       "prizeTier": 3,
       "prizeIndex": 2,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
-      "blockNumber": "N/A (selected off-chain)"
-    },
-    {
-      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
-      "prizeTier": 3,
-      "prizeIndex": 3,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
-      "blockNumber": "N/A (selected off-chain)"
-    },
-    {
-      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
-      "prizeTier": 3,
-      "prizeIndex": 4,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0x712Af66391953bd03a5bE31bFFF5615915527b52",
       "prizeTier": 3,
-      "prizeIndex": 5,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "prizeIndex": 3,
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
-      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "address": "0xc0eB87D01302d1cd9278f9d0FaF470530F892311",
       "prizeTier": 3,
-      "prizeIndex": 6,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
-      "blockNumber": "N/A (selected off-chain)"
-    },
-    {
-      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
-      "prizeTier": 3,
-      "prizeIndex": 7,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "prizeIndex": 4,
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0xaA18892B069b04aE23F37B60a06aFa3C015Ad6e2",
       "prizeTier": 3,
+      "prizeIndex": 5,
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
+      "prizeIndex": 6,
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
+      "prizeIndex": 7,
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
       "prizeIndex": 8,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
       "prizeTier": 3,
       "prizeIndex": 9,
-      "vrfRequestId": "48037809827483607164449008698729139781748751814931282002058392751656897408962",
+      "vrfRequestId": "38555630799675739164263183051320788968395381842434802825280146041483469796014",
       "blockNumber": "N/A (selected off-chain)"
     }
   ],
   "merkle": {
-    "root": "0x5db4ef591f8a4642f0124745f32adb7dbec458a0379cf5336fe01033f15c6a6a",
-    "leafFormat": "keccak256(abi.encode(address, uint8 prizeTier, uint8 prizeIndex))"
+    "root": "0xe8811291deb9e09f02608cb297a3605a8c85854989fa253a18c93f359d59d469",
+    "leafFormat": "keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))"
   }
 }

@@ -50,7 +50,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint256 public constant MAX_GAS_PRICE = 50 gwei; // Maximum gas price for VRF requests
     
     // Version tracking
-    string public constant VERSION = "0.2.1";
+    string public constant VERSION = "0.3.0";
     uint256 public immutable DEPLOYMENT_TIMESTAMP;
     
     // =============================================================================

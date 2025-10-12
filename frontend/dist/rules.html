@@ -89,7 +89,7 @@
             <li><strong>No Manipulation:</strong> No off-chain salts after round begins</li>
           </ul>
 
-          <h3>Prize Distribution</h3>
+          <h3>Prize Distribution (Raffle Model)</h3>
           <ul>
             <li><strong>Prize Tiers:</strong>
               <ul>
@@ -98,11 +98,20 @@
                 <li>3rd-10th Place: 1x Pepe Pack each (1 PEPEDAWN card per Emblem Vault)</li>
               </ul>
             </li>
-            <li><strong>Total Winners:</strong> 10 ticket winners per round, 10 prize packs distributed</li>
+            <li><strong>Total Prizes:</strong> 10 packs distributed per round</li>
+            <li><strong>Raffle Mechanics:</strong>
+              <ul>
+                <li>Each ticket you buy is a raffle entry (like a physical raffle ticket)</li>
+                <li>When one of your tickets wins, it's "drawn" and removed from the pool</li>
+                <li>If you buy 5 tickets, you can win up to 5 packs in one round</li>
+                <li>After each prize is awarded, the odds change for remaining prizes</li>
+                <li>More tickets = more chances to win (proportional to weight)</li>
+              </ul>
+            </li>
+            <li><strong>Example:</strong> You buy 5 tickets and submit proof (+40% weight per ticket). Your first ticket wins 1st place. Now you have 4 tickets remaining for the next 9 prizes.</li>
             <li><strong>Source:</strong> Emblem Vault preloaded assets</li>
-            <li><strong>Distribution:</strong> Automatic post-VRF fulfillment</li>
-            <li><strong>Transparency:</strong> All winner assignments recorded on-chain</li>
-            <li><strong>Multiple Wins:</strong> Same wallet can win multiple prizes in one round</li>
+            <li><strong>Distribution:</strong> Off-chain selection using verifiable VRF seed</li>
+            <li><strong>Transparency:</strong> All winner assignments committed via Merkle root on-chain</li>
           </ul>
 
           <h3>Fee Structure</h3>
@@ -113,11 +122,14 @@
             <li><strong>Events:</strong> All fee distributions logged on-chain</li>
           </ul>
 
-          <h3>Winning Odds</h3>
-          <p>Your winning odds depend on:</p>
+          <h3>Winning Odds (Dynamic Raffle)</h3>
+          <p>Your odds of winning change dynamically with each prize draw:</p>
           <ul>
-            <li>Total number of participants</li>
-            <li>Your ticket count and successful proof submission</li>        
+            <li><strong>Initial Odds:</strong> Your weight ÷ Total weight of all participants</li>
+            <li><strong>Weight Formula:</strong> Tickets × (1.0 base or 1.4 with proof bonus)</li>
+            <li><strong>After Each Win:</strong> Your ticket count decreases by 1, reducing your remaining weight</li>
+            <li><strong>Pool Changes:</strong> Total weight decreases as tickets are drawn, affecting all participants' odds</li>
+            <li><strong>Example:</strong> With 5 tickets (weight 7 with proof), you start at 7/12 = 58% for first prize. After winning, you have 4 tickets (weight 5.6) remaining for the next prize.</li>
           </ul>
           
           <h3>Atomic Dispenser (Progress Tracking)</h3>

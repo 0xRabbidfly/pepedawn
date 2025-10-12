@@ -80,17 +80,18 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
 6. **Given** a round is in "VRF Requested" state, **When** I check the status, **Then** I see "Waiting for randomness" with a spinner and information about confirmation progress.
 7. **Given** VRF is fulfilled, **When** I view the round, **Then** I see "Randomness received" with the VRF seed displayed and a note about reproducibility.
 
-#### Winner Selection & Claims
+#### Winner Selection & Claims (RAFFLE MODEL)
 8. **Given** a round has closed with 10+ tickets, **When** VRF is requested and
-   fulfilled, **Then** 10 winners are selected (1st place gets Fake pack, 2nd
-   place gets Kek pack, 3rd-10th place each get Pepe pack), and winners are
+   fulfilled, **Then** 10 winners are selected using raffle mechanics (1st place 
+   gets Fake pack, 2nd place gets Kek pack, 3rd-10th place each get Pepe pack), 
+   where each ticket is an entry that gets "consumed" when drawn, and winners are
    reproducible from on-chain data.
 9. **Given** winners are committed, **When** I am a winner, **Then** I see "Winners finalized" with access to the Winners File, and "Claim" buttons for each prize slot I won.
 10. **Given** I have won a prize, **When** I click "Claim" for a specific prize slot, **Then** the system generates a Merkle proof and submits my claim, showing "Claimed ✓" upon success.
-11. **Given** a round with 10+ tickets and weighted distribution, **When**
-    winners are selected, **Then** wallets with higher weight have
-    proportionally higher odds, and the same wallet CAN appear as multiple
-    winners.
+11. **Given** a round with 10+ tickets and weighted raffle distribution, **When**
+    winners are selected, **Then** wallets with more tickets have proportionally 
+    higher odds, each ticket acts as a raffle entry that is consumed on win, and 
+    the same wallet CAN win multiple prizes (up to their ticket count).
 
 #### Refunds
 12. **Given** a round has closed with fewer than 10 tickets, **When** the round
@@ -229,12 +230,15 @@ As a wallet holder, I want to connect my Ethereum wallet, place a wager in an ac
   - Refunds MUST be processed from the contract's ETH balance.
   - No fees are collected on refunded rounds.
   - Refund events MUST be emitted for each participant.
-- **FR-026**: Winner selection (weighted lottery):
-  - Winners are selected using weighted randomization based on total effective weight.
-  - A wallet with more tickets/weight has proportionally higher odds of winning each prize.
-  - The same wallet address CAN win multiple prizes in a single round.
-  - Each prize is drawn independently; duplicate winners across different prizes are allowed.
+- **FR-026**: Winner selection (weighted raffle):
+  - Winners are selected using RAFFLE MECHANICS: each ticket is an entry that gets consumed when drawn.
+  - Each ticket has a weight (1 base, or 1.4 with proof bonus) that determines selection probability.
+  - When a ticket wins, it is REMOVED from the pool, reducing both ticket count and total weight.
+  - A wallet with more tickets/weight has proportionally higher odds AND can win multiple prizes (up to ticket count).
+  - The same wallet address CAN win multiple prizes in a single round (maximum = number of tickets purchased).
+  - Each prize draw uses the remaining pool of tickets, with dynamically updated odds.
   - Winner selection algorithm MUST be deterministic and reproducible from VRF seed.
+  - Example: If wallet buys 5 tickets and wins 1st prize, they have 4 tickets remaining for subsequent draws.
 - **FR-027**: Leaderboard and progress tracking:
   - The leaderboard MUST display all participating wallets with their current odds.
   - A progress indicator MUST show tickets purchased toward the 10-ticket minimum.

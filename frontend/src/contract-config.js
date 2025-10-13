@@ -6,7 +6,7 @@
 // If you need to update the ABI, run: cd contracts && forge build
 // Then copy from: contracts/out/PepedawnRaffle.sol/PepedawnRaffle.json
 
-export const VERSION = 'v0.5.4';
+export const VERSION = 'v0.5.5';
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization

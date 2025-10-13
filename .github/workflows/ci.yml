@@ -61,6 +61,8 @@ jobs:
           **/tsconfig.json
           **/vite.config.js
           **/src/**
+          **/winners/**
+          **/participants/**
         log-level: verbose
         timeout: 600000
         dry-run: false

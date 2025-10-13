@@ -10,7 +10,7 @@ export const VERSION = 'v0.5.2';
 
 export const CONTRACT_CONFIG = {
   // Contract address from latest deployment with binary search optimization
-  address: "0x5ab6CB57C0806B91e7dCC7043fcAc3196a5eD9B0", // Deployed on 2025-02-06 - Binary search optimization
+  address: "0x4c2e02bd2Ad73ca3cBc9754c820222afA33fE8A0", // Deployed on 2025-02-06 - Binary search optimization
   
   // Network configuration (automatically updated by update-contract-address.js)
   network: 'sepolia',

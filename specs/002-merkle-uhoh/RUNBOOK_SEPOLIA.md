@@ -1153,6 +1153,7 @@ Should show `WinnersCommitted (6) ✅`
 ```powershell
 cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL --gas-limit 500000
+cast send $env:CONTRACT_ADDRESS "createRound()" --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL --gas-limit 500000
 ```
 
 ---

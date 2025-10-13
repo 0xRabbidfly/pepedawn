@@ -43,12 +43,12 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint256 public constant MAX_TOTAL_WAGER_PER_ROUND = 100 ether; // Circuit breaker - start conservative
     uint256 public constant VRF_REQUEST_TIMEOUT = 1 hours; // VRF timeout protection
     
-    // VRF Gas Configuration Constants
-    uint32 public constant VRF_MIN_CALLBACK_GAS = 400_000; // Minimum gas for lottery operations
-    uint32 public constant VRF_SAFETY_BUFFER_PCT = 50; // 50% safety buffer
-    uint32 public constant VRF_VOLATILITY_BUFFER_PCT = 25; // 25% volatility buffer
+    // VRF Gas Configuration Constants (Optimized for 0.4-1 gwei mainnet gas)
+    uint32 public constant VRF_MIN_CALLBACK_GAS = 250_000; // Conservative floor for lottery operations
+    uint32 public constant VRF_SAFETY_BUFFER_PCT = 25; // 25% safety buffer (reduced from 50%)
+    uint32 public constant VRF_VOLATILITY_BUFFER_PCT = 15; // 15% volatility buffer (reduced from 25%)
     uint32 public constant VRF_MAX_CALLBACK_GAS = 2_500_000; // Maximum gas limit
-    uint256 public constant MAX_GAS_PRICE = 50 gwei; // Maximum gas price for VRF requests
+    uint256 public maxGasPrice = 100 gwei; // Maximum gas price for VRF requests (owner-updatable)
     
     // Version tracking
     string public constant VERSION = "0.4.0";
@@ -274,6 +274,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     event VRFTimeoutDetected(uint256 indexed roundId, uint256 requestId);
     event CircuitBreakerTriggered(uint256 indexed roundId, string reason);
     event SecurityValidationFailed(address indexed user, string reason);
+    event MaxGasPriceUpdated(uint256 oldPrice, uint256 newPrice);
     
     // Emergency & Recovery events
     event EmergencyWithdrawal(address indexed to, uint256 amount, string assetType);
@@ -454,6 +455,35 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         emblemVaultAddress = _emblemVaultAddress;
     }
     
+    /**
+     * @notice Update maximum gas price for VRF requests (owner-updatable)
+     * @dev Allows adjustment for gas price volatility without contract redeployment
+     * @param _maxGasPrice New maximum gas price in wei
+     */
+    function updateMaxGasPrice(uint256 _maxGasPrice) 
+        external 
+        onlyOwner 
+        validAmount(_maxGasPrice)
+    {
+        require(_maxGasPrice >= 50 gwei, "Max gas price too low (minimum 50 gwei)");
+        require(_maxGasPrice <= 500 gwei, "Max gas price too high (maximum 500 gwei)");
+        
+        uint256 oldPrice = maxGasPrice;
+        maxGasPrice = _maxGasPrice;
+        
+        emit MaxGasPriceUpdated(oldPrice, _maxGasPrice);
+    }
+    
+    /**
+     * @notice Internal helper to check if 7-day guard has passed
+     * @dev Uses max(deployment timestamp, last VRF request time) as anchor
+     * @return true if 7 days have passed since the anchor timestamp
+     */
+    function _sevenDayGuardPassed() internal view returns (bool) {
+        uint256 anchor = lastVrfRequestTime == 0 ? DEPLOYMENT_TIMESTAMP : lastVrfRequestTime;
+        return block.timestamp >= anchor + 7 days;
+    }
+    
     // =============================================================================
     // ROUND LIFECYCLE FUNCTIONS
     // =============================================================================
@@ -509,6 +539,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         external 
         onlyOwner 
         roundExists(roundId) 
+        roundInStatus(roundId, RoundStatus.Created)
     {
         require(proofHash != bytes32(0), "Invalid proof hash");
         rounds[roundId].validProofHash = proofHash;
@@ -747,6 +778,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         require(round.status == RoundStatus.Open, "Round not open for ticket purchases");
         require(block.timestamp <= round.endTime, "Round ended");
         
+        // Additional security: Enforce endTime in buyTickets (clean window closure)
+        require(block.timestamp < round.endTime, "Round window closed");
+        
         // Checks: Circuit breaker - max participants
         if (!isParticipant[currentRoundId][msg.sender]) {
             require(
@@ -828,6 +862,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         Round storage round = rounds[currentRoundId];
         require(round.status == RoundStatus.Open, "Round not open for proofs");
         require(block.timestamp <= round.endTime, "Round ended");
+        
+        // Additional security: Enforce endTime in submitProof (clean window closure)
+        require(block.timestamp < round.endTime, "Round window closed");
         
         // Checks: User must have placed a wager first
         require(
@@ -914,6 +951,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Checks: Ensure round has participants
         require(rounds[roundId].totalTickets > 0, "No participants in round");
         
+        // Checks: Require participantsRoot to be set before VRF request (fairness + determinism)
+        require(rounds[roundId].participantsRoot != bytes32(0), "Participants root must be set before VRF request");
+        
         // Security check: Prevent too frequent VRF requests
         // Allow immediate requests if lastVrfRequestTime is 0 (for testing)
         require(
@@ -928,7 +968,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         );
         
         // Security check: Prevent VRF requests during extreme gas spikes
-        require(tx.gasprice <= MAX_GAS_PRICE, "Gas price too high for VRF request");
+        require(tx.gasprice <= maxGasPrice, "Gas price too high for VRF request");
         
         // Dynamic gas estimation following Chainlink best practices
         uint32 estimatedGas = _estimateCallbackGas(roundId);
@@ -1089,6 +1129,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Checks: Merkle root must not be zero
         require(winnersRoot != bytes32(0), "Invalid Merkle root");
         
+        // Checks: Participants root must be set (defensive check)
+        require(round.participantsRoot != bytes32(0), "Participants root missing");
+        
         // Checks: IPFS hash must not be empty
         require(bytes(ipfsHash).length > 0, "Empty IPFS hash");
         
@@ -1141,7 +1184,40 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     // =============================================================================
     
     /**
-     * @notice Reset VRF request if timeout exceeded
+     * @notice Reset VRF request if timeout exceeded or for manual recovery
+     * @dev Allows recovery from stuck VRF requests by reverting to Snapshot status
+     * @param roundId Round to reset VRF for
+     */
+    function resetVrf(uint256 roundId) 
+        external 
+        onlyOwner 
+        roundExists(roundId) 
+    {
+        Round storage round = rounds[roundId];
+        require(round.status == RoundStatus.VRFRequested, "Round not awaiting VRF");
+        
+        // Allow reset if timeout exceeded OR manual reset (for emergency recovery)
+        require(
+            block.timestamp > round.vrfRequestedAt + VRF_REQUEST_TIMEOUT,
+            "VRF timeout not exceeded"
+        );
+        
+        // Capture old request ID before clearing
+        uint256 oldRequestId = round.vrfRequestId;
+        
+        // Clear the VRF request mapping first
+        vrfRequestToRound[oldRequestId] = 0;
+        
+        // Effects: Reset round status and clear VRF data
+        round.status = RoundStatus.Snapshot;
+        round.vrfRequestId = 0;
+        round.vrfRequestedAt = 0;
+        
+        emit VRFTimeoutDetected(roundId, oldRequestId);
+    }
+    
+    /**
+     * @notice Reset VRF request if timeout exceeded (legacy function name for compatibility)
      * @dev Allows recovery from stuck VRF requests by reverting to Snapshot status
      * @param roundId Round to reset VRF for
      */
@@ -1152,20 +1228,25 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     {
         Round storage round = rounds[roundId];
         require(round.status == RoundStatus.VRFRequested, "Round not awaiting VRF");
+        
+        // Allow reset if timeout exceeded OR manual reset (for emergency recovery)
         require(
             block.timestamp > round.vrfRequestedAt + VRF_REQUEST_TIMEOUT,
             "VRF timeout not exceeded"
         );
+        
+        // Capture old request ID before clearing
+        uint256 oldRequestId = round.vrfRequestId;
+        
+        // Clear the VRF request mapping first
+        vrfRequestToRound[oldRequestId] = 0;
         
         // Effects: Reset round status and clear VRF data
         round.status = RoundStatus.Snapshot;
         round.vrfRequestId = 0;
         round.vrfRequestedAt = 0;
         
-        // Clear the VRF request mapping
-        vrfRequestToRound[round.vrfRequestId] = 0;
-        
-        emit VRFTimeoutDetected(roundId, round.vrfRequestId);
+        emit VRFTimeoutDetected(roundId, oldRequestId);
     }
     
     /**
@@ -1233,7 +1314,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Additional safety: Require contract to be paused for at least 7 days
         // This gives users time to withdraw refunds before emergency action
         require(
-            block.timestamp >= lastVrfRequestTime + 7 days, 
+            _sevenDayGuardPassed(), 
             "Must wait 7 days after last activity"
         );
         
@@ -1271,7 +1352,7 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         
         // Additional safety check
         require(
-            block.timestamp >= lastVrfRequestTime + 7 days, 
+            _sevenDayGuardPassed(), 
             "Must wait 7 days after last activity"
         );
         

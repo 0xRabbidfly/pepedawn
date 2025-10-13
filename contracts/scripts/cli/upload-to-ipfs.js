@@ -91,6 +91,12 @@ async function uploadToPinata(filePath, jwt) {
     parts.push(fileName);
     parts.push('\r\n');
     
+    // Add network parameter to make file public
+    parts.push(`--${boundary}\r\n`);
+    parts.push('Content-Disposition: form-data; name="network"\r\n\r\n');
+    parts.push('public');
+    parts.push('\r\n');
+    
     // End boundary
     parts.push(`--${boundary}--\r\n`);
     
@@ -118,11 +124,15 @@ async function uploadToPinata(filePath, jwt) {
         if (res.statusCode === 200) {
           try {
             const result = JSON.parse(responseData);
-            resolve(result.data.cid); // Pinata v3 returns data.cid
+            console.log('✅ Upload successful!');
+            console.log(`📋 IPFS CID: ${result.data?.cid || result.cid || result.IpfsHash}`);
+            resolve(result.data?.cid || result.cid || result.IpfsHash);
           } catch (error) {
+            console.error('❌ Failed to parse Pinata response:', error);
             reject(new Error('Failed to parse Pinata response: ' + responseData));
           }
         } else {
+          console.error(`❌ Upload failed with status ${res.statusCode}:`, responseData);
           reject(new Error(`Upload failed with status ${res.statusCode}: ${responseData}`));
         }
       });

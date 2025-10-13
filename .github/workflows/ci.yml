@@ -61,7 +61,8 @@ jobs:
           **/tsconfig.json
           **/vite.config.js
           **/src/**
-          **/public/deploy/**
+          **/public/deploy/artifacts/**
+          **/public/deploy/events/**
         log-level: verbose
         timeout: 600000
         dry-run: false

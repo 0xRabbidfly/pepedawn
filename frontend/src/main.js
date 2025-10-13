@@ -30,11 +30,10 @@ import { initTributeSlideout } from './components/tribute-slideout.js';
 // Suppress harmless MetaMask filter errors
 const originalError = console.error;
 console.error = (...args) => {
-  // Filter out MetaMask "No filter for index" errors
   const errorString = args.join(' ');
   if (errorString.includes('No filter for index') || 
       errorString.includes('eth_getFilterChanges')) {
-    return; // Suppress these specific errors
+    return; // Suppress these harmless MetaMask errors
   }
   originalError.apply(console, args);
 };

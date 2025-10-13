@@ -427,11 +427,23 @@ node manage-round.js status 1
 
 Perfect! Round 1 is ready for betting.
 
-### 2.8 Optional - Enable Watch Mode Automation
+### 2.8 Optional - Enable Watch Mode Automation (LOCAL TESTING ONLY)
 
-**From this point forward, Phases 4.2, 5, 6.1, and 7 can be fully automated.**
+**⚠️ CRITICAL: WATCHER MODE IS FOR LOCAL TESTING ONLY!**
 
-Start the automation watcher in a separate terminal:
+**DO NOT use watcher mode on:**
+- ❌ Sepolia testnet (use manual deployment runbook)
+- ❌ Production servers (use manual deployment runbook)
+- ❌ Any remote server
+
+**Watcher mode is ONLY for:**
+- ✅ Local development and testing
+- ✅ Automated testing on your local machine
+- ✅ Development workflow automation
+
+**From this point forward, Phases 4.2, 5, 6.1, and 7 can be fully automated LOCALLY.**
+
+Start the automation watcher in a separate terminal (LOCAL ONLY):
 ```bash
 node scripts/automate-round.js WATCH
 ```
@@ -442,14 +454,16 @@ This polls the contract every 30 seconds and automatically:
 - Requests VRF randomness (Phase 6.1)
 - Generates winners file when VRF fulfills, uploads to IPFS, submits root (Phase 7)
 
-See `scripts/WATCH_MODE_SETUP.md` for production setup instructions (pm2, cron, etc.)
+**⚠️ WARNING: Watcher uses MOCK CIDs for testing - not real IPFS uploads!**
 
-**If enabled, you can skip the manual steps in Phases 4.2, 5, 6.1, and 7!**
+**If enabled LOCALLY, you can skip the manual steps in Phases 4.2, 5, 6.1, and 7!**
 
 **Manual phases** (must still be done by you):
 - Phase 3: User interactions (betting, proofs)
 - Phase 4.1: Close round (owner decision - triggers automation)
 - Phase 8-9: Frontend testing and verification
+
+**For Sepolia/Production: Use the manual deployment runbook instead of watcher mode.**
 
 ---
 
@@ -621,11 +635,11 @@ node manage-round.js status 1
 
 Should show: `Status: Closed (2)`
 
-### 4.2 Take Snapshot (AUTOMATED by automate-round.js WATCH)
+### 4.2 Take Snapshot (AUTOMATED LOCALLY by automate-round.js WATCH)
 
-**If running `node scripts/automate-round.js WATCH`**: This step happens automatically. Skip to verification.
+**If running `node scripts/automate-round.js WATCH` LOCALLY**: This step happens automatically. Skip to verification.
 
-**Manual method**:
+**Manual method** (for Sepolia/Production):
 ```powershell
 cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "snapshotRound(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -645,13 +659,13 @@ Should show: `Status: Snapshot (3)`
 
 ################################################################################
 ################################################################################
-## Phase 5: Generate & Commit Participants (AUTOMATED by automate-round.js WATCH)
+## Phase 5: Generate & Commit Participants (AUTOMATED LOCALLY by automate-round.js WATCH)
 ################################################################################
 ################################################################################
 
-**If running `node scripts/automate-round.js WATCH`**: This entire phase happens automatically. Skip to Phase 6 verification.
+**If running `node scripts/automate-round.js WATCH` LOCALLY**: This entire phase happens automatically. Skip to Phase 6 verification.
 
-### 5.1 Generate Participants File (Manual Method)
+### 5.1 Generate Participants File (Manual Method for Sepolia/Production)
 
 ```powershell
 cd Z:\Projects\pepedawn\contracts\scripts\cli
@@ -756,11 +770,11 @@ Participants CID: QmX1234... ✅
 ################################################################################
 ################################################################################
 
-### 6.1 Request VRF Randomness (AUTOMATED by automate-round.js WATCH)
+### 6.1 Request VRF Randomness (AUTOMATED LOCALLY by automate-round.js WATCH)
 
-**If running `node scripts/automate-round.js WATCH`**: This step happens automatically after participants are committed. Skip to 6.2.
+**If running `node scripts/automate-round.js WATCH` LOCALLY**: This step happens automatically after participants are committed. Skip to 6.2.
 
-**Manual method**:
+**Manual method** (for Sepolia/Production):
 ```powershell
 cd Z:\Projects\pepedawn\contracts
 cast send $env:CONTRACT_ADDRESS "requestVrf(uint256)" 1 --private-key $env:PRIVATE_KEY --rpc-url $env:SEPOLIA_RPC_URL
@@ -828,13 +842,13 @@ Next Steps:
 
 ################################################################################
 ################################################################################
-## Phase 7: Generate & Submit Winners (AUTOMATED by automate-round.js WATCH)
+## Phase 7: Generate & Submit Winners (AUTOMATED LOCALLY by automate-round.js WATCH)
 ################################################################################
 ################################################################################
 
-**If running `node scripts/automate-round.js WATCH`**: This entire phase happens automatically once VRF is fulfilled. Skip to Phase 8.
+**If running `node scripts/automate-round.js WATCH` LOCALLY**: This entire phase happens automatically once VRF is fulfilled. Skip to Phase 8.
 
-### 7.1 Generate Winners File (Manual Method)
+### 7.1 Generate Winners File (Manual Method for Sepolia/Production)
 
 ```powershell
 node manage-round.js commit-winners 1

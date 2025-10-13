@@ -3,7 +3,7 @@ name: Deploy to Namecheap
 on:
   push:
     branches: [ master ]
-    paths: [ 'frontend/src/**', 'frontend/dist/**' ]  # Deploy when src or dist changes
+    paths: [ 'frontend/src/**', 'package.json', 'frontend/src/contract-config.js' ]  # Deploy when src changes or version bumps
 
 jobs:
   deploy:

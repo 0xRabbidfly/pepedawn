@@ -245,6 +245,29 @@ window.closeTicketOffice = function() {
   document.querySelectorAll('.ticket-option-card').forEach(card => card.classList.remove('selected'));
 }
 
+// Scroll to ticket counter - make it globally accessible
+window.scrollToTicketCounter = function() {
+  const ticketCounter = document.getElementById('betting-section');
+  if (ticketCounter) {
+    // Smooth scroll to the ticket counter section
+    ticketCounter.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
+    
+    // Add a subtle highlight effect to draw attention
+    ticketCounter.style.transition = 'box-shadow 0.3s ease';
+    ticketCounter.style.boxShadow = '0 0 20px rgba(33, 150, 243, 0.5)';
+    
+    // Remove the highlight after 2 seconds
+    setTimeout(() => {
+      ticketCounter.style.boxShadow = '';
+    }, 2000);
+    
+    console.log('🎫 Scrolled to ticket counter');
+  }
+}
+
 // Detect if user is on mobile Brave browser
 function isMobileBrave() {
   return isMobileDevice() && (

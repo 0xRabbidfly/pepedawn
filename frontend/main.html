@@ -66,7 +66,12 @@
           <div class="round-content">
             <!-- Left Column: Status Flow (vertical) -->
             <div class="status-column">
-              <div class="status-item open-phase" data-status="1">
+              <div class="status-item setup-phase" data-status="0">
+                <span class="status-icon">⚙️</span>
+                <span class="status-text">Setting up Round</span>
+              </div>
+              <div class="status-arrow-vertical">↓</div>
+              <div class="status-item open-phase clickable-status" data-status="1" onclick="scrollToTicketCounter()" title="Click to go to ticket counter">
                 <span class="status-icon">🎫</span>
                 <span class="status-text">Buy Your Tickets</span>
               </div>

@@ -466,6 +466,158 @@
   }
 }
 
+/* ====================
+   SMALL MOBILE (max-width: 555px)
+   Ultra-compact layout for small screens
+   ==================== */
+@media (max-width: 555px) {
+  
+  /* -------------------
+     ULTRA-COMPACT STATUS ITEMS
+     ------------------- */
+  .status-column {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    padding: var(--spacing-sm) !important;
+  }
+  
+  .status-item {
+    width: 70px !important;
+    height: 70px !important;
+    padding: var(--spacing-xs) !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .status-icon {
+    font-size: 1.8em !important;
+    line-height: 1 !important;
+  }
+  
+  .status-text {
+    font-size: 0.65rem !important;
+    line-height: 1.1 !important;
+    max-width: 60px !important;
+    word-wrap: break-word !important;
+    text-align: center !important;
+  }
+  
+  /* Rotate arrows for horizontal layout on small screens */
+  .status-arrow-vertical {
+    transform: rotate(-90deg) !important;
+    font-size: 1.5em !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+  }
+  
+  /* Adjust merkle badge for ultra-small screens */
+  .status-row-with-badge {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+  
+  .merkle-badge {
+    display: none !important;
+  }
+  
+  /* Ultra-compact info section */
+  .info-section-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--spacing-xs) !important;
+  }
+  
+  .info-item {
+    padding: var(--spacing-xs) !important;
+  }
+  
+  .info-header {
+    gap: 2px !important;
+  }
+  
+  .info-icon {
+    font-size: 1.2em !important;
+  }
+  
+  .info-text {
+    font-size: 0.7rem !important;
+  }
+  
+  .info-value {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Ultra-compact dispenser */
+  .dispenser-container {
+    margin-top: var(--spacing-sm) !important;
+  }
+  
+  .ticket-graphic {
+    padding: var(--spacing-sm) !important;
+    gap: 2px !important;
+  }
+  
+  .ticket-icon {
+    font-size: 1.8em !important;
+  }
+  
+  .dispenser-label {
+    font-size: 0.6rem !important;
+    top: 4px !important;
+    left: 6px !important;
+  }
+  
+  .dispenser-badge {
+    font-size: 0.6rem !important;
+    margin-top: var(--spacing-xs) !important;
+  }
+  
+  /* Ultra-compact ticket options */
+  .ticket-option-card {
+    min-height: 80px !important;
+    height: 80px !important;
+    padding: var(--spacing-xs) 4px !important;
+    gap: 2px !important;
+  }
+  
+  .ticket-label {
+    font-size: 0.8rem !important;
+  }
+  
+  .ticket-price {
+    font-size: 0.75rem !important;
+  }
+  
+  .ticket-discount {
+    font-size: 0.6rem !important;
+    padding: 2px 4px !important;
+  }
+  
+  /* Ultra-compact main layout */
+  main {
+    padding: var(--spacing-sm) !important;
+  }
+  
+  section {
+    padding: var(--spacing-sm) !important;
+    margin-bottom: var(--spacing-sm) !important;
+  }
+  
+  /* Ultra-compact header */
+  header {
+    padding: var(--spacing-sm) !important;
+  }
+  
+  header h1 {
+    font-size: var(--font-size-lg) !important;
+  }
+}
+
 /* Mobile Purchase Slide-out (hidden on desktop by default) */
 .mobile-purchase-slideout {
   display: none;

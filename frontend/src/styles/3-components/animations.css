@@ -24,6 +24,20 @@
   }
 }
 
+@keyframes pulse-glow-purple {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(156, 39, 176, 0.5), 0 0 40px rgba(156, 39, 176, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(156, 39, 176, 0.8), 0 0 60px rgba(156, 39, 176, 0.5);
+  }
+}
+
+@keyframes spin-gear {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @keyframes pulse-glow-blue {
   0%, 100% { 
     box-shadow: 0 0 20px rgba(33, 150, 243, 0.5), 0 0 40px rgba(33, 150, 243, 0.3);

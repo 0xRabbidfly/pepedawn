@@ -207,10 +207,10 @@ export async function updateRoundStatus(contract, provider = null, roundState = 
     const currentRoundId = await contract.currentRoundId();
     
     if (currentRoundId.toString() === '0') {
-      // No rounds opened yet
+      // No rounds created yet
       const currentRoundTitle = document.getElementById('current-round-title');
       if (currentRoundTitle) {
-        currentRoundTitle.textContent = 'Current Round: Being Created...';
+        currentRoundTitle.textContent = 'No Active Round';
       }
       
       const timeRemaining = document.getElementById('time-remaining');
@@ -242,9 +242,30 @@ export async function updateRoundStatus(contract, provider = null, roundState = 
       currentRoundTitle.textContent = `Current Round: ${currentRoundId}`;
     }
     
+    // Handle special case: Round exists but is in Created status (0)
+    const currentStatus = Number(roundData.status);
+    if (currentStatus === 0) {
+      // Round is created but not yet opened - show "Setting up Round" status
+      const statusItems = document.querySelectorAll('.status-item');
+      statusItems.forEach(item => {
+        item.classList.remove('active');
+        const dataStatus = item.dataset.status;
+        if (dataStatus === '0') {
+          item.classList.add('active');
+        }
+      });
+      
+      const timeRemaining = document.getElementById('time-remaining');
+      if (timeRemaining) timeRemaining.textContent = 'Setting up...';
+      
+      const totalTickets = document.getElementById('total-tickets');
+      if (totalTickets) totalTickets.textContent = '0';
+      
+      return;
+    }
+    
     // Update status highlighting (collapsed statuses 2-5 into "Drawing Winners")
     const statusItems = document.querySelectorAll('.status-item');
-    const currentStatus = Number(roundData.status);
     
     statusItems.forEach(item => {
       item.classList.remove('active');

@@ -1,13 +1,13 @@
 {
   "version": "1.0",
   "roundId": "1",
-  "contractAddress": "0x5ab6CB57C0806B91e7dCC7043fcAc3196a5eD9B0",
+  "contractAddress": "0x4c2e02bd2Ad73ca3cBc9754c820222afA33fE8A0",
   "chainId": "11155111",
-  "vrfSeed": "0x55efb1710dd7a797b7564fbf0361527d069f5a054f938dfb88f2276e18378bf2",
-  "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
-  "totalWeight": "27",
+  "vrfSeed": "0x622d7ac693ea7678af2c3bbf23b38b9b8afb2da1ae4c68be83726395b4d42f92",
+  "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
+  "totalWeight": "12",
   "winnerCount": 10,
-  "generatedAt": "2025-10-12T18:58:03.941Z",
+  "generatedAt": "2025-10-13T14:34:36.217Z",
   "algorithm": {
     "type": "weighted-raffle-without-replacement",
     "scale": "1000",
@@ -19,78 +19,78 @@
   "selectionMethod": "Weighted raffle with ticket consumption (integer scaling for proof precision)",
   "winners": [
     {
-      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "address": "0xc0eB87D01302d1cd9278f9d0FaF470530F892311",
       "prizeTier": 1,
       "prizeIndex": 0,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
-      "address": "0x712Af66391953bd03a5bE31bFFF5615915527b52",
+      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
       "prizeTier": 2,
       "prizeIndex": 1,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
+      "blockNumber": "N/A (selected off-chain)"
+    },
+    {
+      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "prizeTier": 3,
+      "prizeIndex": 2,
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0xc0eB87D01302d1cd9278f9d0FaF470530F892311",
       "prizeTier": 3,
-      "prizeIndex": 2,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
-      "blockNumber": "N/A (selected off-chain)"
-    },
-    {
-      "address": "0x712Af66391953bd03a5bE31bFFF5615915527b52",
-      "prizeTier": 3,
       "prizeIndex": 3,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0xaA18892B069b04aE23F37B60a06aFa3C015Ad6e2",
       "prizeTier": 3,
       "prizeIndex": 4,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0xc0eB87D01302d1cd9278f9d0FaF470530F892311",
       "prizeTier": 3,
       "prizeIndex": 5,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
-      "address": "0x712Af66391953bd03a5bE31bFFF5615915527b52",
+      "address": "0xD7eD659B238FC36CCccfA299121594fF5D0fC80E",
       "prizeTier": 3,
       "prizeIndex": 6,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
-      "address": "0xA5E042c8acaC77dd2903Bf373eBbE1A42C3C5e84",
+      "address": "0xc0eB87D01302d1cd9278f9d0FaF470530F892311",
       "prizeTier": 3,
       "prizeIndex": 7,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
-      "address": "0xaE8cA7a6E52AF06d523c797Ce210661E99A59a04",
+      "address": "0xc0eB87D01302d1cd9278f9d0FaF470530F892311",
       "prizeTier": 3,
       "prizeIndex": 8,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     },
     {
       "address": "0x712Af66391953bd03a5bE31bFFF5615915527b52",
       "prizeTier": 3,
       "prizeIndex": 9,
-      "vrfRequestId": "46617126064216218920043485201680639311988906425277522855703931217914281647400",
+      "vrfRequestId": "36524722700535575725113128597880004479904561665491726596361309245609935287263",
       "blockNumber": "N/A (selected off-chain)"
     }
   ],
   "merkle": {
-    "root": "0x3bccdb4541c589d5a80ed176726a91b4246b67f53a2542166b41abfcee4d070f",
+    "root": "0x26a1b5c9d0422c0c32361b6494b3ec4316f3a7e9bedcd0d87a59773d9b1ee8fe",
     "leafFormat": "keccak256(abi.encodePacked(address, uint8 prizeTier, uint8 prizeIndex))"
   }
 }

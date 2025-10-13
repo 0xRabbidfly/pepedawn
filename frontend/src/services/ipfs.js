@@ -17,22 +17,32 @@ const DEFAULT_TIMEOUT = 60000; // 60 seconds as per spec
  * Fetch a file from IPFS with local fallback and gateway fallback
  * @param {string} cid - IPFS CID
  * @param {number} timeout - Timeout in milliseconds
+ * @param {string} fileType - Type of file ('winners' or 'participants')
  * @returns {Promise<Object>} - Parsed JSON object
  */
-export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT) {
+export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT, fileType = null) {
   if (!cid || cid.trim() === '') {
     throw new Error('Invalid CID provided');
   }
 
   const errors = [];
   
-  // Try local file first (for development)
+  // Try local file first (for development) - only try relevant file type
   try {
     console.log('🏠 Attempting to fetch from local files...');
-    const localUrls = [
-      `/winners/winners-round-1.json`,
-      `/participants/participants-round-1.json`
-    ];
+    
+    let localUrls = [];
+    if (fileType === 'winners') {
+      localUrls = [`/winners/winners-round-1.json`];
+    } else if (fileType === 'participants') {
+      localUrls = [`/participants/participants-round-1.json`];
+    } else {
+      // Fallback: try both (for backward compatibility)
+      localUrls = [
+        `/winners/winners-round-1.json`,
+        `/participants/participants-round-1.json`
+      ];
+    }
     
     for (const localUrl of localUrls) {
       try {
@@ -106,7 +116,7 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT) {
  * @returns {Promise<Object>} - Participants file data
  */
 export async function fetchParticipantsFile(cid, roundId) {
-  const data = await fetchFromIPFS(cid);
+  const data = await fetchFromIPFS(cid, DEFAULT_TIMEOUT, 'participants');
   
   // Validate file structure
   if (data.version !== '1.0') {
@@ -136,7 +146,7 @@ export async function fetchParticipantsFile(cid, roundId) {
  * @returns {Promise<Object>} - Winners file data
  */
 export async function fetchWinnersFile(cid, roundId) {
-  const data = await fetchFromIPFS(cid);
+  const data = await fetchFromIPFS(cid, DEFAULT_TIMEOUT, 'winners');
   
   // Validate file structure
   if (data.version !== '1.0') {
@@ -172,7 +182,7 @@ export async function checkIPFSHealth() {
   const testCid = 'QmQPeNsJPyVWPFDVHb77w8G42Fvo15z4bG2X8D2GhfbSXc';
   
   try {
-    await fetchFromIPFS(testCid, 10000); // 10 second timeout for health check
+    await fetchFromIPFS(testCid, 10000, null); // 10 second timeout for health check, no file type
     return true;
   } catch (error) {
     console.error('IPFS health check failed:', error.message);

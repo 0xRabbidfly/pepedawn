@@ -721,6 +721,8 @@ cast send 0xYourContract "commitParticipantsRoot(uint256,bytes32,string)" 1 0x28
 
 **If API key not set**: You'll get manual upload instructions instead.
 
+**If IPFS fails**: Upload `participants-round-1.json` to your web server as backup.
+
 **Verify Upload**: Click any of the URLs shown to confirm the file is accessible.
 
 ### 5.4 Commit Participants Root On-Chain
@@ -871,6 +873,8 @@ cast send $CONTRACT_ADDRESS "submitWinnersRoot(uint256,bytes32,string)" 1 0x... 
 ```
 
 **Verify Upload**: Click the URLs in the output to confirm file is accessible.
+
+**If IPFS fails**: Upload `winners-round-1.json` to your web server as backup.
 
 ### 7.4 Submit Winners Root On-Chain
 

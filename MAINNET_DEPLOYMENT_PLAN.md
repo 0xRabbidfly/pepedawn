@@ -442,6 +442,8 @@ address public creatorsAddress; // Receives 80% of wagers
 - Prize metadata
 - Round documentation
 
+**If IPFS fails**: Upload files to Namecheap as backup (frontend falls back to local files).
+
 ---
 
 ### 5. ENVIRONMENT VARIABLES
@@ -1135,15 +1137,25 @@ if (window.location.hostname !== 'pepedawn.art' &&
 ```
 
 #### Add Content Security Policy
+
+**Method 1: .htaccess File (Recommended for Namecheap)**
+```apache
+# Create .htaccess file in public_html/ directory
+Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.ethers.io; style-src 'self' 'unsafe-inline'; connect-src 'self' https://mainnet.infura.io https://eth-mainnet.g.alchemy.com https://etherscan.io https://gateway.pinata.cloud https://dweb.link https://ipfs.io https://w3s.link https://nftstorage.link https://cloudflare-ipfs.com https://cf-ipfs.com; img-src 'self' data: https:;"
+```
+
+**Method 2: HTML Meta Tags (Alternative)**
 ```html
 <!-- index.html, main.html, rules.html -->
 <meta http-equiv="Content-Security-Policy" 
       content="default-src 'self'; 
                script-src 'self' 'unsafe-inline' https://cdn.ethers.io; 
                style-src 'self' 'unsafe-inline';
-               connect-src 'self' https://mainnet.infura.io https://eth-mainnet.g.alchemy.com https://etherscan.io https://gateway.pinata.cloud;
+               connect-src 'self' https://mainnet.infura.io https://eth-mainnet.g.alchemy.com https://etherscan.io https://gateway.pinata.cloud https://dweb.link https://ipfs.io https://w3s.link https://nftstorage.link https://cloudflare-ipfs.com https://cf-ipfs.com;
                img-src 'self' data: https:;">
 ```
+
+**⚠️ CRITICAL**: The `connect-src` directive MUST include all IPFS gateways to allow winners/participants file fetching from IPFS.
 
 ---
 
@@ -1238,6 +1250,12 @@ if (window.location.hostname !== 'pepedawn.art' &&
   # These will be regenerated for real mainnet rounds
   ```
   **Why**: Frontend tries local files FIRST before IPFS. Sepolia test data for Round 1 would show to mainnet users until overwritten!
+- [ ] **CRITICAL: Configure CSP for IPFS access**:
+  ```bash
+  # Create .htaccess file in public_html/ directory
+  echo 'Header always set Content-Security-Policy "default-src '\''self'\''; script-src '\''self'\'' '\''unsafe-inline'\'' https://cdn.ethers.io; style-src '\''self'\'' '\''unsafe-inline'\''; connect-src '\''self'\'' https://mainnet.infura.io https://eth-mainnet.g.alchemy.com https://etherscan.io https://gateway.pinata.cloud https://dweb.link https://ipfs.io https://w3s.link https://nftstorage.link https://cloudflare-ipfs.com https://cf-ipfs.com; img-src '\''self'\'' data: https:;"' > public_html/.htaccess
+  ```
+  **Why**: CSP blocks IPFS connections by default. Without this, winners/participants files won't load from IPFS!
 - [ ] Test build locally: `npm run build && npm run preview`
 - [ ] Verify network indicator is HIDDEN (should not show chain ID)
 - [ ] Test on mobile devices (iOS Safari, Android Chrome)
@@ -2588,6 +2606,7 @@ With 10+ participants at 0.5 ETH average: profitable
 #### Website
 - [ ] Frontend built for production
 - [ ] **Sepolia test data removed** from `dist/winners/` and `dist/participants/`
+- [ ] **CSP configured for IPFS access** (.htaccess file created)
 - [ ] All contract addresses correct
 - [ ] Network detection works
 - [ ] Mobile responsive

@@ -51,13 +51,46 @@ export async function displayClaimablePrizes(contract, userAddress, roundId) {
     claimsContainer.style.display = 'block';
     
     // Fetch winners file from IPFS
-    const winnersFile = await fetchWinnersFile(winnersCID, roundId);
+    let winnersFile;
+    try {
+      winnersFile = await fetchWinnersFile(winnersCID, roundId);
+    } catch (error) {
+      console.error('Failed to fetch winners file:', error);
+      
+      // Check if it's a mock CID (testing scenario) - check AFTER fetch fails
+      if (winnersCID.startsWith('bafkrei-test-')) {
+        claimsContainer.innerHTML = `
+          <div class="info-card">
+            <h3>🔄 Round in Progress</h3>
+            <p>Winners are being determined. Please check back in a few minutes.</p>
+            <p class="small-text">Testing mode detected - using mock data</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // IPFS failed - show user-friendly message
+      claimsContainer.innerHTML = `
+        <div class="info-card">
+          <h3>🔄 Fetching Data...</h3>
+          <p>We're retrieving the latest winners data. Please stay tuned!</p>
+          <p class="small-text">If this persists, try refreshing the page in a few minutes.</p>
+        </div>
+      `;
+      return;
+    }
     
     // Verify winners file
     const vrfSeed = roundData.vrfSeed || ethers.ZeroHash;
     const isValid = verifyWinnersFile(winnersFile, roundData.winnersRoot, vrfSeed);
     if (!isValid) {
-      claimsContainer.innerHTML = '<p class="error">⚠️ Winners file verification failed</p>';
+      claimsContainer.innerHTML = `
+        <div class="info-card">
+          <h3>🔄 Data Verification</h3>
+          <p>We're verifying the winners data. Please stay tuned!</p>
+          <p class="small-text">Data integrity check in progress...</p>
+        </div>
+      `;
       return;
     }
     
@@ -254,7 +287,34 @@ export async function displayWinners(contract, roundId) {
     }
     
     // Fetch winners file
-    const winnersFile = await fetchWinnersFile(winnersCID, roundId);
+    let winnersFile;
+    try {
+      winnersFile = await fetchWinnersFile(winnersCID, roundId);
+    } catch (error) {
+      console.error('Failed to fetch winners file:', error);
+      
+      // Check if it's a mock CID (testing scenario) - check AFTER fetch fails
+      if (winnersCID.startsWith('bafkrei-test-')) {
+        winnersList.innerHTML = `
+          <div class="info-card">
+            <h3>🔄 Round in Progress</h3>
+            <p>Winners are being determined. Please check back in a few minutes.</p>
+            <p class="small-text">Testing mode detected - using mock data</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // IPFS failed - show user-friendly message
+      winnersList.innerHTML = `
+        <div class="info-card">
+          <h3>🔄 Fetching Winners...</h3>
+          <p>We're retrieving the latest winners data. Please stay tuned!</p>
+          <p class="small-text">If this persists, try refreshing the page in a few minutes.</p>
+        </div>
+      `;
+      return;
+    }
     
     // Group winners by tier
     const tier1Winners = winnersFile.winners.filter(w => w.prizeTier === 1); // Fake Pack

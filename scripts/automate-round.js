@@ -229,11 +229,11 @@ async function commitParticipantsAndRequestVRF(contractAddress, roundId = 1, qui
     console.log('💡 File auto-copied to frontend/public/participants/ for local testing');
   }
   
-  // For testing, use a mock CID (in production, upload to IPFS first)
+  // ⚠️ TESTING ONLY: Using mock CID (in production, upload to IPFS first)
   const mockCID = `bafkrei-test-participants-${roundId}-${Date.now()}`;
   
   // Commit participants root
-  if (!quiet) console.log('🌳 Committing participants root...');
+  if (!quiet) console.log('🌳 Committing participants root (TESTING ONLY - MOCK CID)...');
   exec(`cast send ${contractAddress} "commitParticipantsRoot(uint256,bytes32,string)" ${roundId} ${participantsRoot} "${mockCID}" --private-key ${process.env.PRIVATE_KEY} --rpc-url ${process.env.SEPOLIA_RPC_URL}`, { silent: quiet });
   
   await sleep(2000);
@@ -314,11 +314,11 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
   console.log(`\n📋 Winners Root: ${winnersRoot}`);
   console.log('💡 File auto-copied to frontend/public/winners/ for local testing');
   
-  // For testing, use a mock CID
+  // ⚠️ TESTING ONLY: Using mock CID (in production, upload to IPFS first)
   const mockCID = `bafkrei-test-winners-${roundId}-${Date.now()}`;
   
   // Submit winners root with robust retry logic using CLI status checker
-  console.log('🌳 Submitting winners root...');
+  console.log('🌳 Submitting winners root (TESTING ONLY - MOCK CID)...');
   let retries = 10; // More retries for reliability
   let submissionSuccess = false;
   
@@ -396,7 +396,8 @@ async function waitForVRFAndCommitWinners(contractAddress, roundId = 1) {
 }
 
 async function watchAndAutomate(contractAddress) {
-  console.log(`👁️  ${contractAddress} | Polling every 30s\n`);
+  console.log(`👁️  ${contractAddress} | Polling every 30s`);
+  console.log(`⚠️  WATCH MODE: TESTING ONLY - Uses mock CIDs, not real IPFS uploads\n`);
   
   const state = {
     lastRoundId: 0,

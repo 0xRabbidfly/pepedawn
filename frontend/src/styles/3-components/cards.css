@@ -313,3 +313,49 @@
   line-height: 1.4;
 }
 
+/* Info Cards for Loading States */
+.info-card {
+  background: linear-gradient(145deg, var(--surface-color), #1a1a1a);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  text-align: center;
+  margin: var(--spacing-lg) 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(76, 175, 80, 0.1) 100%);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.info-card h3 {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0 0 var(--spacing-md) 0;
+  position: relative;
+  z-index: 1;
+}
+
+.info-card p {
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+  position: relative;
+  z-index: 1;
+}
+
+.info-card .small-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+

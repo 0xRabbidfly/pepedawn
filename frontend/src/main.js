@@ -268,6 +268,18 @@ window.scrollToTicketCounter = function() {
   }
 }
 
+// Navigate to leaderboard page - make it globally accessible
+window.navigateToLeaderboard = function() {
+  console.log('🏆 Navigating to leaderboard...');
+  window.location.href = '/leaderboard.html';
+}
+
+// Navigate to claim page - make it globally accessible
+window.navigateToClaim = function() {
+  console.log('🐸 Navigating to claim page...');
+  window.location.href = '/claim.html';
+}
+
 // Detect if user is on mobile Brave browser
 function isMobileBrave() {
   return isMobileDevice() && (

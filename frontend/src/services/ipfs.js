@@ -20,7 +20,7 @@ const DEFAULT_TIMEOUT = 60000; // 60 seconds as per spec
  * @param {string} fileType - Type of file ('winners' or 'participants')
  * @returns {Promise<Object>} - Parsed JSON object
  */
-export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT, fileType = null) {
+export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT, fileType = null, roundId = null) {
   if (!cid || cid.trim() === '') {
     throw new Error('Invalid CID provided');
   }
@@ -33,14 +33,19 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT, fileType = n
     
     let localUrls = [];
     if (fileType === 'winners') {
-      localUrls = [`/winners/winners-round-1.json`];
+      // Use provided roundId or fallback to round 1
+      const targetRound = roundId || 1;
+      localUrls = [`/winners/winners-round-${targetRound}.json`];
     } else if (fileType === 'participants') {
-      localUrls = [`/participants/participants-round-1.json`];
+      // Use provided roundId or fallback to round 1
+      const targetRound = roundId || 1;
+      localUrls = [`/participants/participants-round-${targetRound}.json`];
     } else {
       // Fallback: try both (for backward compatibility)
+      const targetRound = roundId || 1;
       localUrls = [
-        `/winners/winners-round-1.json`,
-        `/participants/participants-round-1.json`
+        `/winners/winners-round-${targetRound}.json`,
+        `/participants/participants-round-${targetRound}.json`
       ];
     }
     
@@ -116,7 +121,7 @@ export async function fetchFromIPFS(cid, timeout = DEFAULT_TIMEOUT, fileType = n
  * @returns {Promise<Object>} - Participants file data
  */
 export async function fetchParticipantsFile(cid, roundId) {
-  const data = await fetchFromIPFS(cid, DEFAULT_TIMEOUT, 'participants');
+  const data = await fetchFromIPFS(cid, DEFAULT_TIMEOUT, 'participants', roundId);
   
   // Validate file structure
   if (data.version !== '1.0') {
@@ -146,7 +151,7 @@ export async function fetchParticipantsFile(cid, roundId) {
  * @returns {Promise<Object>} - Winners file data
  */
 export async function fetchWinnersFile(cid, roundId) {
-  const data = await fetchFromIPFS(cid, DEFAULT_TIMEOUT, 'winners');
+  const data = await fetchFromIPFS(cid, DEFAULT_TIMEOUT, 'winners', roundId);
   
   // Validate file structure
   if (data.version !== '1.0') {

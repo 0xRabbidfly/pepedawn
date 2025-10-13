@@ -66,15 +66,41 @@ contract VrfGasOptimizationTest is Test {
         uint32 estimatedGas10 = raffle.estimateVrfCallbackGas(1);
         console.log("10 participants - Estimated gas: %d", estimatedGas10);
         
+        // Complete round 1 before creating round 2
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
+        raffle.requestVrf(1);
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 12345;
+        vrfCoordinator.fulfillRandomWords(1, randomWords);
+        raffle.submitWinnersRoot(1, keccak256("winners"), "test-cid");
+        
         // Test with 25 participants  
         _setupSimpleRound(25);
         uint32 estimatedGas25 = raffle.estimateVrfCallbackGas(1);
         console.log("25 participants - Estimated gas: %d", estimatedGas25);
         
+        // Complete round 2 before creating round 3
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
+        raffle.requestVrf(1);
+        vrfCoordinator.fulfillRandomWords(1, randomWords);
+        raffle.submitWinnersRoot(1, keccak256("winners"), "test-cid");
+        
         // Test with 50 participants
         _setupSimpleRound(50);
         uint32 estimatedGas50 = raffle.estimateVrfCallbackGas(1);
         console.log("50 participants - Estimated gas: %d", estimatedGas50);
+        
+        // Complete round 3 before test ends
+        raffle.closeRound(1);
+        raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
+        raffle.requestVrf(1);
+        vrfCoordinator.fulfillRandomWords(1, randomWords);
+        raffle.submitWinnersRoot(1, keccak256("winners"), "test-cid");
         
         // Validate estimates are reasonable (should be much lower than before)
         assertLt(estimatedGas10, 400_000, "10 participants estimate too high");
@@ -119,7 +145,6 @@ contract VrfGasOptimizationTest is Test {
         
         // Setup round without participants root
         raffle.createRound();
-        raffle.setValidProof(1, keccak256("test"));
         raffle.openRound(1);
         
         // Add some participants
@@ -166,6 +191,14 @@ contract VrfGasOptimizationTest is Test {
         // Verify round is back to Snapshot status
         (round,,,,,) = raffle.getRoundState(1);
         assertEq(uint8(round.status), uint8(PepedawnRaffle.RoundStatus.Snapshot), "Round not reset to Snapshot status");
+        
+        // Complete the round to avoid state pollution
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
+        raffle.requestVrf(1);
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 12345;
+        vrfCoordinator.fulfillRandomWords(1, randomWords);
+        raffle.submitWinnersRoot(1, keccak256("winners"), "test-cid");
         
         console.log("Reset VRF function works correctly!");
     }

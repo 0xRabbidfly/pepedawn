@@ -86,6 +86,7 @@ contract BettingAndProofsTest is Test {
         
         // Create and open round for testing
         raffle.createRound();
+        raffle.setValidProof(1, keccak256("correct_answer"));
         raffle.openRound(1);
     }
     
@@ -278,6 +279,7 @@ contract BettingAndProofsTest is Test {
         raffle.buyTickets{value: 0.04 ether}(10); // Meet minimum
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Get the request ID from the round
@@ -398,20 +400,16 @@ contract BettingAndProofsTest is Test {
      * @dev FR-019: +40% weight bonus (1.4x multiplier)
      */
     function testCorrectProofGrantsWeightBonus() public {
-        // Set valid proof for the round
-        bytes32 validProofHash = keccak256("correct_answer");
-        raffle.setValidProof(1, validProofHash);
-        
         // Alice bets 10 tickets
         vm.prank(alice);
         raffle.buyTickets{value: 0.04 ether}(10);
         
         // Alice submits correct proof
         vm.expectEmit(true, true, false, false);
-        emit ProofSubmitted(alice, 1, validProofHash, 14); // 10 * 1.4 = 14
+        emit ProofSubmitted(alice, 1, keccak256("correct_answer"), 14); // 10 * 1.4 = 14
         
         vm.prank(alice);
-        raffle.submitProof(validProofHash);
+        raffle.submitProof(keccak256("correct_answer"));
         
         // Verify weight increased
         (,, uint256 weight, bool hasProof) = raffle.getUserStats(1, alice);
@@ -424,10 +422,6 @@ contract BettingAndProofsTest is Test {
      * @dev FR-019: Wrong proof = no bonus, immediate feedback
      */
     function testIncorrectProofIsRejected() public {
-        // Set valid proof for the round
-        bytes32 validProofHash = keccak256("correct_answer");
-        raffle.setValidProof(1, validProofHash);
-        
         // Alice bets
         vm.prank(alice);
         raffle.buyTickets{value: 0.04 ether}(10);
@@ -496,9 +490,7 @@ contract BettingAndProofsTest is Test {
      * @dev FR-005, FR-007: Proof bonus visible in weight calculations
      */
     function testProofAffectsLeaderboardOdds() public {
-        // Set valid proof
-        bytes32 validProofHash = keccak256("correct");
-        raffle.setValidProof(1, validProofHash);
+        bytes32 validProofHash = keccak256("correct_answer");
         
         // Alice: 10 tickets with proof
         vm.prank(alice);
@@ -530,8 +522,7 @@ contract BettingAndProofsTest is Test {
      * @dev Verify 1.4x multiplier with various ticket counts
      */
     function testProofWeightCalculationPrecision() public {
-        bytes32 validProofHash = keccak256("valid");
-        raffle.setValidProof(1, validProofHash);
+        bytes32 validProofHash = keccak256("correct_answer");
         
         // Test with 1 ticket: 1 * 1400 / 1000 = 1.4 = 1 (truncated)
         vm.prank(alice);
@@ -581,8 +572,7 @@ contract BettingAndProofsTest is Test {
      * @dev Each user tracked independently
      */
     function testMultipleUsersSubmitProofs() public {
-        bytes32 validProofHash = keccak256("valid");
-        raffle.setValidProof(1, validProofHash);
+        bytes32 validProofHash = keccak256("correct_answer");
         
         // Alice bets and submits correct proof
         vm.prank(alice);

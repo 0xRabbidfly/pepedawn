@@ -104,6 +104,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Mock VRF fulfillment
@@ -146,6 +147,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         // Verify all participants are registered
         address[] memory roundParticipants = raffle.getRoundParticipants(1);
@@ -223,6 +225,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // The weighted lottery system uses _selectWeightedWinner for each prize independently
@@ -261,6 +264,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Verify we have enough participants for all prizes
@@ -286,6 +290,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // With 2 participants but 10+ tickets, all 10 prizes can be awarded
@@ -352,6 +357,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Winner assignments are stored in roundWinners mapping
@@ -388,6 +394,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         // Alice should win all available prizes (since she's the only participant)
         (,, uint256 aliceWeight,) = raffle.getUserStats(1, alice);
@@ -411,6 +418,7 @@ contract WinnerSelectionTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         // Before VRF request
         PepedawnRaffle.Round memory roundBefore = raffle.getRound(1);

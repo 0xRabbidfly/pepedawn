@@ -159,6 +159,12 @@ contract VrfGasMeasurementTest is Test {
         vm.txGasPrice(50 gwei);
         raffle.requestVrf(1);
         
+        // Complete round 1 before creating round 2
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 12345;
+        vrfCoordinator.fulfillRandomWords(1, randomWords);
+        raffle.submitWinnersRoot(1, keccak256("winners"), "test-cid");
+        
         // Reset round for next test
         vm.roll(block.number + 1);
         _setupRoundWithParticipants(10);

@@ -443,6 +443,7 @@ contract RoundLifecycleTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         vm.expectEmit(true, true, false, false);
         emit VRFRequested(1, 1); // requestId will be 1 from mock
@@ -481,6 +482,7 @@ contract RoundLifecycleTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Fulfill VRF and complete round 1
@@ -501,6 +503,7 @@ contract RoundLifecycleTest is Test {
         
         raffle.closeRound(2);
         raffle.snapshotRound(2);
+        raffle.commitParticipantsRoot(2, keccak256("participants"), "test-cid");
         
         // Should fail - too soon after previous VRF request
         vm.expectRevert("VRF request too frequent");
@@ -607,6 +610,7 @@ contract RoundLifecycleTest is Test {
         round = raffle.getRound(1);
         assertEq(uint8(round.status), 3, "Should be Snapshot");
         
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         round = raffle.getRound(1);
         assertEq(uint8(round.status), 4, "Should be VRFRequested");

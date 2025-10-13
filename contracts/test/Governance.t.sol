@@ -287,6 +287,9 @@ contract GovernanceTest is Test {
         raffle.snapshotRound(1);
         
         vm.prank(newOwner);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
+        
+        vm.prank(newOwner);
         raffle.requestVrf(1);
         
         // Round state preserved
@@ -382,6 +385,7 @@ contract GovernanceTest is Test {
         // Complete round
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Config updated

@@ -138,6 +138,7 @@ contract SecurityTest is Test {
         // Close and snapshot round
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         // Request VRF
         raffle.requestVrf(1);
@@ -221,6 +222,7 @@ contract SecurityTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Verify VRF coordinator is correctly set
@@ -276,6 +278,7 @@ contract SecurityTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Timeout protection exists
@@ -305,6 +308,7 @@ contract SecurityTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Complete first round
@@ -325,6 +329,7 @@ contract SecurityTest is Test {
         
         raffle.closeRound(2);
         raffle.snapshotRound(2);
+        raffle.commitParticipantsRoot(2, keccak256("participants"), "test-cid");
         
         // Should fail - too soon
         vm.expectRevert("VRF request too frequent");
@@ -350,6 +355,7 @@ contract SecurityTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         // Request ID stored
@@ -381,6 +387,7 @@ contract SecurityTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         // Before VRF request
         PepedawnRaffle.Round memory roundBefore = raffle.getRound(1);

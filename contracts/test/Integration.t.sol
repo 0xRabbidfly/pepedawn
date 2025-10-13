@@ -91,6 +91,7 @@ contract IntegrationTest is Test {
         // 3. Close and snapshot round
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         console.log("Round closed and snapshotted");
         
         // 4. Request VRF
@@ -153,6 +154,7 @@ contract IntegrationTest is Test {
         
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         
         // Request should use VRFV2PlusClient.RandomWordsRequest struct
         raffle.requestVrf(1);
@@ -187,6 +189,7 @@ contract IntegrationTest is Test {
             // Close, snapshot, request VRF
             raffle.closeRound(i);
             raffle.snapshotRound(i);
+            raffle.commitParticipantsRoot(i, keccak256("participants"), "test-cid");
             raffle.requestVrf(i);
             
             // Fulfill VRF
@@ -229,6 +232,7 @@ contract IntegrationTest is Test {
         // Complete round
         raffle.closeRound(1);
         raffle.snapshotRound(1);
+        raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
         raffle.requestVrf(1);
         
         uint256[] memory randomWords = new uint256[](1);

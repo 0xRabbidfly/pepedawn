@@ -16,7 +16,8 @@
     "deploy": "cd contracts && forge script script/Deploy.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify",
     "release:major": "node scripts/bump-version.js major",
     "release:minor": "node scripts/bump-version.js minor",
-    "release:patch": "node scripts/bump-version.js patch"
+    "release:patch": "node scripts/bump-version.js patch",
+    "release:frontend": "node scripts/bump-version.js patch --frontend-only"
   },
   "devDependencies": {
     "husky": "^9.1.7"

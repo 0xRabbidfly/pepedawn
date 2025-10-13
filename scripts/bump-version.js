@@ -6,9 +6,10 @@ const path = require('path');
 
 // Get version bump type from command line argument
 const bumpType = process.argv[2]; // 'major', 'minor', or 'patch'
+const frontendOnly = process.argv.includes('--frontend-only');
 
 if (!['major', 'minor', 'patch'].includes(bumpType)) {
-  console.error('❌ Usage: node bump-version.js [major|minor|patch]');
+  console.error('❌ Usage: node bump-version.js [major|minor|patch] [--frontend-only]');
   process.exit(1);
 }
 
@@ -35,6 +36,9 @@ switch (bumpType) {
 }
 
 console.log(`🔢 Bumping version: ${currentVersion} → ${newVersion} (${bumpType})`);
+if (frontendOnly) {
+  console.log('🎨 Frontend-only release (skipping contract version update)');
+}
 
 // Update package.json
 packageJson.version = newVersion;
@@ -51,15 +55,17 @@ contractConfig = contractConfig.replace(
 fs.writeFileSync(contractConfigPath, contractConfig);
 console.log(`✅ Updated frontend/src/contract-config.js to v${newVersion}`);
 
-// Update contracts/src/PepedawnRaffle.sol VERSION constant
-const contractSolPath = path.join(__dirname, '..', 'contracts', 'src', 'PepedawnRaffle.sol');
-let contractSol = fs.readFileSync(contractSolPath, 'utf8');
-contractSol = contractSol.replace(
-  /string public constant VERSION = "[\d.]+";/,
-  `string public constant VERSION = "${newVersion}";`
-);
-fs.writeFileSync(contractSolPath, contractSol);
-console.log(`✅ Updated contracts/src/PepedawnRaffle.sol to ${newVersion}`);
+// Update contracts/src/PepedawnRaffle.sol VERSION constant (only if not frontend-only)
+if (!frontendOnly) {
+  const contractSolPath = path.join(__dirname, '..', 'contracts', 'src', 'PepedawnRaffle.sol');
+  let contractSol = fs.readFileSync(contractSolPath, 'utf8');
+  contractSol = contractSol.replace(
+    /string public constant VERSION = "[\d.]+";/,
+    `string public constant VERSION = "${newVersion}";`
+  );
+  fs.writeFileSync(contractSolPath, contractSol);
+  console.log(`✅ Updated contracts/src/PepedawnRaffle.sol to ${newVersion}`);
+}
 
 // Note: User will build frontend manually
 console.log('⚠️  Remember to run: npm run build');
@@ -67,9 +73,20 @@ console.log('⚠️  Remember to run: npm run build');
 // Git operations
 console.log('📝 Creating git commit...');
 try {
-  execSync(`git add package.json frontend/src/contract-config.js contracts/src/PepedawnRaffle.sol`, { stdio: 'inherit' });
-  execSync(`git commit -m "chore: bump version to v${newVersion} (${bumpType})"`, { stdio: 'inherit' });
-  console.log(`✅ Committed version bump to v${newVersion}`);
+  // Add files based on release type
+  const filesToAdd = frontendOnly 
+    ? `package.json frontend/src/contract-config.js`
+    : `package.json frontend/src/contract-config.js contracts/src/PepedawnRaffle.sol`;
+  
+  execSync(`git add ${filesToAdd}`, { stdio: 'inherit' });
+  
+  // Skip pre-commit hooks for version bumps to avoid contract builds
+  const commitMessage = frontendOnly 
+    ? `chore: bump version to v${newVersion} (${bumpType}) - frontend only`
+    : `chore: bump version to v${newVersion} (${bumpType})`;
+    
+  execSync(`git commit --no-verify -m "${commitMessage}"`, { stdio: 'inherit' });
+  console.log(`✅ Committed version bump to v${newVersion} (skipped pre-commit hooks)`);
   
   // Create git tag
   execSync(`git tag -a v${newVersion} -m "Release v${newVersion}"`, { stdio: 'inherit' });

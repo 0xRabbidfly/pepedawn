@@ -7,6 +7,12 @@ npm run release:patch     # Bug fixes (1.0.0 → 1.0.1)
 npm run release:minor     # New features (1.0.0 → 1.1.0)
 npm run release:major     # Breaking changes (1.0.0 → 2.0.0)
 npm run release:frontend  # Frontend-only changes (skips contract build)
+
+# With custom commit message (works for all types):
+npm run release:patch -- --message="fix: resolve wallet connection timeout"
+npm run release:minor -- --message="feat: add leaderboard page with real-time updates"
+npm run release:major -- --message="BREAKING: new contract deployment with gas optimizations"
+npm run release:frontend -- --message="VRF gas optimization: reduced callback gas from 821k to 160k"
 ```
 
 Then:
@@ -37,7 +43,7 @@ git add .
 git commit -m "fix: mobile Brave wallet issue"
 
 # 2. Run frontend-only release (skips contract builds!)
-npm run release:frontend
+npm run release:frontend -- --message="VRF gas optimization: reduced callback gas from 821k to 160k"
 
 # 3. Build frontend with new version number
 npm run build
@@ -55,7 +61,7 @@ git add .
 git commit -m "feat: add new betting feature"
 
 # 2. Run full release command (includes contract version)
-npm run release:minor
+npm run release:minor -- --message="feat: add new betting feature with enhanced UX"
 
 # 3. Build frontend with new version number
 npm run build

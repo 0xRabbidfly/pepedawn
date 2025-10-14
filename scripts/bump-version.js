@@ -7,9 +7,10 @@ const path = require('path');
 // Get version bump type from command line argument
 const bumpType = process.argv[2]; // 'major', 'minor', or 'patch'
 const frontendOnly = process.argv.includes('--frontend-only');
+const customMessage = process.argv.find(arg => arg.startsWith('--message='))?.split('=')[1];
 
 if (!['major', 'minor', 'patch'].includes(bumpType)) {
-  console.error('❌ Usage: node bump-version.js [major|minor|patch] [--frontend-only]');
+  console.error('❌ Usage: node bump-version.js [major|minor|patch] [--frontend-only] [--message="custom message"]');
   process.exit(1);
 }
 
@@ -81,9 +82,14 @@ try {
   execSync(`git add ${filesToAdd}`, { stdio: 'inherit' });
   
   // Skip pre-commit hooks for version bumps to avoid contract builds
-  const commitMessage = frontendOnly 
-    ? `chore: bump version to v${newVersion} (${bumpType}) - frontend only`
-    : `chore: bump version to v${newVersion} (${bumpType})`;
+  let commitMessage;
+  if (customMessage) {
+    commitMessage = customMessage;
+  } else {
+    commitMessage = frontendOnly 
+      ? `chore: bump version to v${newVersion} (${bumpType}) - frontend only`
+      : `chore: bump version to v${newVersion} (${bumpType})`;
+  }
     
   execSync(`git commit --no-verify -m "${commitMessage}"`, { stdio: 'inherit' });
   console.log(`✅ Committed version bump to v${newVersion} (skipped pre-commit hooks)`);

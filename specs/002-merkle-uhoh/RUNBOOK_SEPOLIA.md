@@ -216,6 +216,8 @@ cd Z:\Projects\pepedawn
 node scripts/update-contract-address.js <new_deploy_address>
 ```
 
+**Note**: This updates the ABI (removing deleted functions) and contract address. Deploy frontend after this step.
+
 **Expected Output**:
 ```
 🚀 Updating contract address...
@@ -480,133 +482,14 @@ This polls the contract every 30 seconds and automatically:
 cd Z:\Projects\pepedawn
 cat frontend/src/contract-config.js | Select-String "DEV_MODE"
 ```
-
 Should show: `DEV_MODE: true` for Sepolia testing (set to `false` for mainnet)
 
-### 3.2 Install Frontend Dependencies (First Time Only)
-
+**Deploy Frontend**:
 ```powershell
-cd Z:\Projects\pepedawn\frontend
-npm install
+cd Z:\Projects\pepedawn
+npm run release:frontend -- --message="VRF gas optimization: reduced callback gas from 821k to 160k"
+git push --follow-tags
 ```
-
-### 3.3 Start Frontend Dev Server
-
-```powershell
-npm run dev
-```
-
-**Expected Output**:
-```
-VITE v5.x.x  ready in XXX ms
-
-➜  Local:   http://localhost:5173/
-➜  Network: use --host to expose
-```
-
-**Keep this terminal running!** Open a new terminal for CLI commands.
-
-### 3.4 Open Frontend & Connect Wallet
-
-1. Open browser to `http://localhost:5173/main.html`
-2. Click "**Connect Wallet**" button
-3. Approve MetaMask connection
-4. Ensure you're on **Sepolia network** in MetaMask
-
-**Verify**:
-- ✅ Wallet address displays in header
-- ✅ Round 1 displays
-- ✅ Status shows "Open"
-- ✅ Ticket prices show (1, 5, 10, 25 tickets)
-- ✅ Total tickets shows "0"
-
-### 3.5 Place Bets (Wallet 1 - Your Main Wallet)
-
-**Test with multiple wallets for realistic lottery!**
-
-**Wallet 1 Bet**:
-1. Select "**5 Tickets**" (0.0225 ETH)
-2. Click "**Place Bet**" button
-3. MetaMask opens - review transaction
-4. Confirm transaction
-5. Wait 10-30 seconds for confirmation
-
-**Expected**:
-- ✅ Success message appears
-- ✅ Total tickets: 5
-- ✅ Total wagered: 0.0225 ETH
-- ✅ Participants: 1
-- ✅ Your wallet shows: 5 tickets
-
-### 3.6 Place Bets (Wallet 2)
-
-**Switch to second wallet in MetaMask**:
-1. Click MetaMask extension
-2. Switch to Wallet 2
-3. Refresh page or click "Connect Wallet" again
-
-**Wallet 2 Bet**:
-1. Select "**10 Tickets**" (0.04 ETH)
-2. Place bet
-3. Confirm transaction
-4. Wait for confirmation
-
-**Expected**:
-- Total tickets: 15
-- Participants: 2
-
-### 3.7 Submit Proof (Wallet 2)
-
-**While still on Wallet 2**, test proof submission:
-
-1. Find "**Proof Submission**" section
-2. Enter: `pepedawn2025`
-3. Click "**Submit Proof**"
-4. Confirm transaction in MetaMask
-5. Wait for confirmation
-
-**Expected**:
-- ✅ Success message
-- ✅ Weight bonus badge shows "+40%"
-- ✅ Wallet 2's effective weight increased
-
-### 3.8 Place Bets (Wallet 3)
-
-**Switch to third wallet**:
-
-**Wallet 3 Bet**:
-1. Select "**10 Tickets**" (0.04 ETH)
-2. Place bet
-3. Confirm transaction
-
-**Wallet 3 Proof** (wrong answer to test rejection):
-1. Enter: `wrong_answer`
-2. Submit proof
-3. **Expected**: Error message, no bonus applied
-
-**Current State**:
-- Total tickets: 25
-- Participants: 3
-- Wallet 2 has proof bonus (+40% weight)
-
-### 3.9 Verify State via CLI (Optional)
-
-**Open new terminal**:
-```powershell
-cd Z:\Projects\pepedawn\contracts\scripts\cli
-node manage-round.js status 1
-```
-
-**Expected**:
-```
-Total Tickets: 25
-Total Wagered: 0.1025 ETH
-Participants: 3
-```
-
-Should match UI display!
-
----
 
 ################################################################################
 ################################################################################

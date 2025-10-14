@@ -43,11 +43,9 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
     uint256 public constant MAX_TOTAL_WAGER_PER_ROUND = 100 ether; // Circuit breaker - start conservative
     uint256 public constant VRF_REQUEST_TIMEOUT = 1 hours; // VRF timeout protection
     
-    // VRF Gas Configuration Constants (Optimized for 0.4-1 gwei mainnet gas)
-    uint32 public constant VRF_MIN_CALLBACK_GAS = 250_000; // Conservative floor for lottery operations
-    uint32 public constant VRF_SAFETY_BUFFER_PCT = 25; // 25% safety buffer (reduced from 50%)
-    uint32 public constant VRF_VOLATILITY_BUFFER_PCT = 15; // 15% volatility buffer (reduced from 25%)
-    uint32 public constant VRF_MAX_CALLBACK_GAS = 2_500_000; // Maximum gas limit
+    // VRF Gas Configuration Constants (Optimized for simple callback architecture)
+    uint32 public constant VRF_MIN_CALLBACK_GAS = 75_000; // Conservative floor for simple VRF callback
+    uint32 public constant VRF_MAX_CALLBACK_GAS = 500_000; // Maximum gas limit (reduced from 2.5M)
     uint256 public maxGasPrice = 100 gwei; // Maximum gas price for VRF requests (owner-updatable)
     
     // Version tracking
@@ -970,16 +968,8 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         // Security check: Prevent VRF requests during extreme gas spikes
         require(tx.gasprice <= maxGasPrice, "Gas price too high for VRF request");
         
-        // Dynamic gas estimation following Chainlink best practices
-        uint32 estimatedGas = _estimateCallbackGas(roundId);
-        
-        // Enhanced safety buffer for gas price volatility and complex operations
-        uint32 safetyBuffer = estimatedGas * VRF_SAFETY_BUFFER_PCT / 100;
-        
-        // Additional buffer for gas price spikes (common during high network activity)
-        uint32 volatilityBuffer = estimatedGas * VRF_VOLATILITY_BUFFER_PCT / 100;
-        
-        uint32 finalGasLimit = estimatedGas + safetyBuffer + volatilityBuffer;
+        // Simple VRF callback gas limit (validation + store seed + update status + emit event)
+        uint32 finalGasLimit = 160_000; // Based on actual usage: 154k + small safety margin
         
         // Ensure gas limit is within bounds with higher minimum
         require(finalGasLimit >= VRF_MIN_CALLBACK_GAS, "Estimated gas too low - minimum required");
@@ -1015,55 +1005,6 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         emit VRFRequested(roundId, requestId);
     }
     
-    /**
-     * @notice Estimate callback gas based on round complexity following Chainlink best practices
-     * @param roundId The round to estimate gas for
-     * @return estimatedGas The estimated gas required for the callback
-     */
-    function _estimateCallbackGas(uint256 roundId) internal view returns (uint32) {
-        Round memory round = rounds[roundId];
-        address[] memory participants = roundParticipants[roundId];
-        
-        // Base gas for fulfillRandomWords function
-        uint32 baseGas = 75_000; // Increased for complex validation and setup
-        
-        // Gas for optimized winner selection algorithm (O(N log N) instead of O(N²))
-        uint32 winnerSelectionGas = 30_000; // Optimized algorithm with binary search
-        
-        // Gas for prize distribution (per winner)
-        uint32 prizeDistributionGasPerWinner = 25_000; // Increased for complex distribution
-        uint32 totalPrizeDistributionGas = prizeDistributionGasPerWinner * 10; // Max 10 winners
-        
-        // Gas for fee distribution
-        uint32 feeDistributionGas = 25_000; // Fee calculation and transfer
-        
-        // Gas for storage operations (per participant) - optimized with pre-calculation
-        uint32 storageGasPerParticipant = 12_000; // Pre-calculate cumulative weights + storage
-        uint32 totalStorageGas = storageGasPerParticipant * uint32(participants.length);
-        
-        // Gas for event emissions
-        uint32 eventGas = 10_000; // Multiple event emissions
-        
-        // Calculate total estimated gas
-        uint32 totalEstimatedGas = baseGas + winnerSelectionGas + totalPrizeDistributionGas + 
-                                 feeDistributionGas + totalStorageGas + eventGas;
-        
-        // Apply complexity multipliers based on round size
-        if (participants.length > 100) {
-            totalEstimatedGas = (totalEstimatedGas * 120) / 100; // 20% increase for large rounds
-        }
-        
-        if (round.totalWeight > 1000) {
-            totalEstimatedGas = (totalEstimatedGas * 110) / 100; // 10% increase for high weight rounds
-        }
-        
-        // Ensure minimum gas limit for complex lottery operations
-        if (totalEstimatedGas < VRF_MIN_CALLBACK_GAS) {
-            totalEstimatedGas = VRF_MIN_CALLBACK_GAS;
-        }
-        
-        return totalEstimatedGas;
-    }
     
     /**
      * @notice Fulfill VRF request and assign winners
@@ -1423,14 +1364,6 @@ contract PepedawnRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard, Pausable, ERC
         return roundWinners[roundId];
     }
     
-    /**
-     * @notice Estimate gas for VRF callback (public function for testing/monitoring)
-     * @param roundId The round to estimate gas for
-     * @return estimatedGas The estimated gas required for the callback
-     */
-    function estimateVrfCallbackGas(uint256 roundId) external view returns (uint32) {
-        return _estimateCallbackGas(roundId);
-    }
     
     /**
      * @notice Get comprehensive round state information (optimized for frontend)

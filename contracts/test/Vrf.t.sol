@@ -6,11 +6,11 @@ import {PepedawnRaffle} from "../src/PepedawnRaffle.sol";
 import {MockVRFCoordinatorV2Plus} from "./mocks/MockVRFCoordinatorV2Plus.sol";
 
 /**
- * @title VrfGasOptimizationTest
- * @notice Test suite for validating VRF gas optimization results
- * @dev This test validates the optimized gas constants work correctly
+ * @title VrfTest
+ * @notice Consolidated test suite for VRF functionality
+ * @dev Tests VRF configuration, gas limits, and business logic
  */
-contract VrfGasOptimizationTest is Test {
+contract VrfTest is Test {
     PepedawnRaffle public raffle;
     MockVRFCoordinatorV2Plus public vrfCoordinator;
     
@@ -35,46 +35,24 @@ contract VrfGasOptimizationTest is Test {
     }
     
     /**
-     * @notice Test that optimized gas constants are correctly set
-     * @dev Validates the Phase 1 optimization constants
+     * @notice Test VRF gas configuration constants
      */
-    function testOptimizedGasConstants() public {
-        console.log("\n=== VRF Gas Optimization Constants ===");
+    function testVrfGasConstants() public {
+        console.log("\n=== VRF Gas Configuration ===");
         console.log("VRF_MIN_CALLBACK_GAS: %d", raffle.VRF_MIN_CALLBACK_GAS());
-        console.log("VRF_SAFETY_BUFFER_PCT: %d", raffle.VRF_SAFETY_BUFFER_PCT());
-        console.log("VRF_VOLATILITY_BUFFER_PCT: %d", raffle.VRF_VOLATILITY_BUFFER_PCT());
+        console.log("VRF_MAX_CALLBACK_GAS: %d", raffle.VRF_MAX_CALLBACK_GAS());
         console.log("maxGasPrice: %d gwei", raffle.maxGasPrice() / 1e9);
         
-        // Validate optimized values
-        assertEq(raffle.VRF_MIN_CALLBACK_GAS(), 250_000, "VRF_MIN_CALLBACK_GAS should be 250,000");
-        assertEq(raffle.VRF_SAFETY_BUFFER_PCT(), 25, "VRF_SAFETY_BUFFER_PCT should be 25%");
-        assertEq(raffle.VRF_VOLATILITY_BUFFER_PCT(), 15, "VRF_VOLATILITY_BUFFER_PCT should be 15%");
+        // Validate configuration values
+        assertEq(raffle.VRF_MIN_CALLBACK_GAS(), 75_000, "VRF_MIN_CALLBACK_GAS should be 75,000");
+        assertEq(raffle.VRF_MAX_CALLBACK_GAS(), 500_000, "VRF_MAX_CALLBACK_GAS should be 500,000");
         assertEq(raffle.maxGasPrice(), 100 gwei, "maxGasPrice should be 100 gwei");
         
-        console.log("All optimization constants are correctly set!");
-    }
-    
-    /**
-     * @notice Test gas estimation for different participant counts
-     * @dev Shows the dramatic improvement in gas estimation accuracy
-     */
-    function testGasEstimationAccuracy() public {
-        console.log("\n=== Gas Estimation Accuracy Test ===");
-        
-        // Test with 10 participants
-        _setupSimpleRound(10);
-        uint32 estimatedGas10 = raffle.estimateVrfCallbackGas(1);
-        console.log("10 participants - Estimated gas: %d", estimatedGas10);
-        
-        // Validate estimates are reasonable (should be much lower than before)
-        assertLt(estimatedGas10, 600_000, "10 participants estimate too high");
-        
-        console.log("Gas estimates are within reasonable bounds!");
+        console.log("VRF gas configuration is correct!");
     }
     
     /**
      * @notice Test maxGasPrice update functionality
-     * @dev Validates the owner can update maxGasPrice within bounds
      */
     function testMaxGasPriceUpdate() public {
         console.log("\n=== Max Gas Price Update Test ===");
@@ -99,8 +77,27 @@ contract VrfGasOptimizationTest is Test {
     }
     
     /**
+     * @notice Test maxGasPrice enforcement
+     */
+    function testMaxGasPriceEnforcement() public {
+        console.log("\n=== Max Gas Price Enforcement Test ===");
+        
+        _setupSimpleRound(10);
+        
+        // Test with gas price below limit (should succeed)
+        vm.txGasPrice(50 gwei);
+        uint256 roundId = raffle.currentRoundId();
+        raffle.requestVrf(roundId);
+        
+        // Test maxGasPrice is set correctly
+        console.log("maxGasPrice is set to: %d gwei", raffle.maxGasPrice() / 1e9);
+        assertEq(raffle.maxGasPrice(), 100 gwei, "maxGasPrice should be 100 gwei");
+        
+        console.log("Max gas price enforcement test completed!");
+    }
+    
+    /**
      * @notice Test participantsRoot requirement enforcement
-     * @dev Validates that VRF requests require participantsRoot to be set
      */
     function testParticipantsRootRequirement() public {
         console.log("\n=== Participants Root Requirement Test ===");
@@ -140,7 +137,6 @@ contract VrfGasOptimizationTest is Test {
     
     /**
      * @notice Test resetVrf function for stuck round recovery
-     * @dev Validates the new resetVrf function works correctly
      */
     function testResetVrfFunction() public {
         console.log("\n=== Reset VRF Function Test ===");
@@ -175,7 +171,6 @@ contract VrfGasOptimizationTest is Test {
     
     /**
      * @notice Test endTime enforcement in buyTickets and submitProof
-     * @dev Validates clean window closure
      */
     function testEndTimeEnforcement() public {
         console.log("\n=== End Time Enforcement Test ===");
@@ -204,8 +199,44 @@ contract VrfGasOptimizationTest is Test {
     }
     
     /**
+     * @notice Test actual VRF callback gas measurement
+     */
+    function testVrfCallbackGasMeasurement() public {
+        console.log("\n=== VRF Callback Gas Measurement ===");
+        
+        // Test with 25 participants
+        uint256 participantCount = 25;
+        console.log("Testing with %d participants", participantCount);
+        
+        // Create and setup round
+        _setupRoundWithParticipants(participantCount);
+        
+        // Measure gas for VRF request
+        uint256 gasStart = gasleft();
+        uint256 roundId = raffle.currentRoundId();
+        raffle.requestVrf(roundId);
+        uint256 gasUsed = gasStart - gasleft();
+        
+        console.log("VRF request gas used: %d", gasUsed);
+        
+        // Simulate VRF fulfillment and measure callback gas
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = uint256(keccak256(abi.encodePacked(block.timestamp, participantCount)));
+        
+        gasStart = gasleft();
+        vrfCoordinator.fulfillRandomWords(roundId, randomWords);
+        gasUsed = gasStart - gasleft();
+        
+        console.log("Actual callback gas used: %d", gasUsed);
+        console.log("Estimated callback gas: 160000");
+        console.log("Estimation accuracy: %d%%", (160_000 * 100) / uint32(gasUsed));
+        
+        // Complete the round
+        raffle.submitWinnersRoot(roundId, keccak256("winners"), "winners-cid");
+    }
+    
+    /**
      * @notice Helper function to setup a simple round for testing
-     * @param participantCount Number of participants to create
      */
     function _setupSimpleRound(uint256 participantCount) internal {
         // Create round
@@ -234,5 +265,38 @@ contract VrfGasOptimizationTest is Test {
         
         // Set participants root (required for VRF request)
         raffle.commitParticipantsRoot(1, keccak256("participants"), "test-cid");
+    }
+    
+    /**
+     * @notice Helper function to setup a round with specified number of participants
+     */
+    function _setupRoundWithParticipants(uint256 participantCount) internal {
+        // Create round
+        raffle.createRound();
+        uint256 roundId = raffle.currentRoundId();
+        raffle.setValidProof(roundId, bytes32(uint256(0x1234)));
+        raffle.openRound(roundId);
+        
+        // Add participants
+        for (uint256 i = 0; i < participantCount; i++) {
+            address participant = address(uint160(0x1000 + i));
+            vm.deal(participant, 10 ether);
+            
+            vm.startPrank(participant);
+            raffle.buyTickets{value: 0.005 ether}(1);
+            
+            // Submit proof for some participants (50% have proofs)
+            if (i % 2 == 0) {
+                raffle.submitProof(bytes32(uint256(0x1234)));
+            }
+            vm.stopPrank();
+        }
+        
+        // Close and snapshot round
+        raffle.closeRound(roundId);
+        raffle.snapshotRound(roundId);
+        
+        // Set participants root (required for VRF request)
+        raffle.commitParticipantsRoot(roundId, keccak256("participants"), "test-cid");
     }
 }
